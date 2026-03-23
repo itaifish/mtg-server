@@ -23,7 +23,7 @@ async fn main() {
         .build()
         .expect("failed to build MtgService");
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 13734));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 13734));
     info!(%addr, "starting server");
 
     let server = hyper::Server::bind(&addr).serve(app.into_make_service());
