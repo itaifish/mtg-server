@@ -31,6 +31,12 @@ impl ZoneType {
     /// CR 400.1 — Each player has their own library, hand, and graveyard.
     /// The other zones are shared by all players.
     pub fn is_per_player(self) -> bool {
-        matches!(self, ZoneType::Library | ZoneType::Hand | ZoneType::Graveyard)
+        matches!(
+            self,
+            ZoneType::Library | ZoneType::Hand | ZoneType::Graveyard
+        )
     }
 }
+
+#[cfg(test)]
+mod tests;
