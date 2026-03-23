@@ -29,6 +29,7 @@ export class MtgPipelineStack extends cdk.Stack {
 			pipelineName: 'MtgServerPipeline',
 			synth: new pipelines.ShellStep('Synth', {
 				input: source,
+				installCommands: ['n stable'],
 				commands: ['cd infra', 'npm ci', 'npx cdk synth'],
 				primaryOutputDirectory: 'infra/cdk.out',
 			}),
