@@ -918,6 +918,7 @@ version = "0.1.0"
 dependencies = [
  "hyper",
  "mtg-server-sdk",
+ "serde",
  "tokio",
  "tracing",
  "tracing-subscriber",

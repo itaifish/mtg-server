@@ -3,6 +3,7 @@ use std::net::SocketAddr;
 use mtg_server_sdk::{MtgService, MtgServiceConfig};
 use tracing::info;
 
+mod game;
 mod handlers;
 
 #[tokio::main]

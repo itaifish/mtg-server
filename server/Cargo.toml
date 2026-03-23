@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 mtg-server-sdk = { path = "../mtg-server-sdk" }
+serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 hyper = { version = "0.14", features = ["server"] }
 tracing = "0.1"

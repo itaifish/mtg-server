@@ -20,10 +20,7 @@ pub async fn create_game(
         "game created"
     );
 
-    Ok(output::CreateGameOutput {
-        game_id,
-        player_id,
-    })
+    Ok(output::CreateGameOutput { game_id, player_id })
 }
 
 pub async fn join_game(

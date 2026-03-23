@@ -170,9 +170,11 @@ A Rust-based server that emulates the rules of Magic: The Gathering, using the c
 - [ ] Get codegen working and a hello-world server running
 
 ### Phase 2: Core Game State
-- [ ] Implement basic game objects: Player, Card, Zone (Library, Hand, Battlefield, Graveyard, Stack, Exile)
-- [ ] Implement game state struct with serialization
-- [ ] Implement basic persistence (save/load game state)
+- [x] Implement basic game objects: Player, Card, Zone (Library, Hand, Battlefield, Graveyard, Stack, Exile, Command)
+- [x] Implement card definitions (mana cost with all symbol types, card types including Battle, counters with keyword/P-T/special variants)
+- [x] Implement game state struct with serialization (phases, turns, zones as HashSet/Vec per ordering rules)
+- [x] Implement action types with full replay data (targets, choices, mana payments, multi-block, planeswalker attacks)
+- [ ] Implement basic persistence (save/load game state to PostgreSQL)
 
 ### Phase 3: Turn Structure & Priority
 - [ ] Implement turn phases and steps (CR 500-514)
