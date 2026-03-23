@@ -742,6 +742,12 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
         "HealthCheckProtocol": "HTTP",
         "Port": 80,
         "Protocol": "TCP",
+        "TargetGroupAttributes": [
+          {
+            "Key": "preserve_client_ip.enabled",
+            "Value": "false",
+          },
+        ],
         "TargetType": "alb",
         "Targets": [
           {
@@ -939,6 +945,18 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
             "IpProtocol": "tcp",
             "ToPort": 80,
           },
+          {
+            "CidrIp": {
+              "Fn::GetAtt": [
+                "MtgVpc2242639D",
+                "CidrBlock",
+              ],
+            },
+            "Description": "Allow NLB traffic to ALB",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80,
+          },
         ],
         "VpcId": {
           "Ref": "MtgVpc2242639D",
@@ -1034,7 +1052,7 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:142dfd6c30a20adfd63d6b3755fa8d6033f4b7918cda9bf13667dee686705adb",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:23f0916d5945637c1cb6ad7db4ac4486bb9484f393f29c0db172aba91d24257e",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",
@@ -2352,6 +2370,12 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
         "HealthCheckProtocol": "HTTP",
         "Port": 80,
         "Protocol": "TCP",
+        "TargetGroupAttributes": [
+          {
+            "Key": "preserve_client_ip.enabled",
+            "Value": "false",
+          },
+        ],
         "TargetType": "alb",
         "Targets": [
           {
@@ -2549,6 +2573,18 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
             "IpProtocol": "tcp",
             "ToPort": 80,
           },
+          {
+            "CidrIp": {
+              "Fn::GetAtt": [
+                "MtgVpc2242639D",
+                "CidrBlock",
+              ],
+            },
+            "Description": "Allow NLB traffic to ALB",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80,
+          },
         ],
         "VpcId": {
           "Ref": "MtgVpc2242639D",
@@ -2644,7 +2680,7 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:142dfd6c30a20adfd63d6b3755fa8d6033f4b7918cda9bf13667dee686705adb",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:23f0916d5945637c1cb6ad7db4ac4486bb9484f393f29c0db172aba91d24257e",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",
@@ -4000,6 +4036,12 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
         "HealthCheckProtocol": "HTTP",
         "Port": 80,
         "Protocol": "TCP",
+        "TargetGroupAttributes": [
+          {
+            "Key": "preserve_client_ip.enabled",
+            "Value": "false",
+          },
+        ],
         "TargetType": "alb",
         "Targets": [
           {
@@ -4197,6 +4239,18 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
             "IpProtocol": "tcp",
             "ToPort": 80,
           },
+          {
+            "CidrIp": {
+              "Fn::GetAtt": [
+                "MtgVpc2242639D",
+                "CidrBlock",
+              ],
+            },
+            "Description": "Allow NLB traffic to ALB",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80,
+          },
         ],
         "VpcId": {
           "Ref": "MtgVpc2242639D",
@@ -4292,7 +4346,7 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:142dfd6c30a20adfd63d6b3755fa8d6033f4b7918cda9bf13667dee686705adb",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:23f0916d5945637c1cb6ad7db4ac4486bb9484f393f29c0db172aba91d24257e",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",
@@ -5646,6 +5700,12 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
         "HealthCheckProtocol": "HTTP",
         "Port": 80,
         "Protocol": "TCP",
+        "TargetGroupAttributes": [
+          {
+            "Key": "preserve_client_ip.enabled",
+            "Value": "false",
+          },
+        ],
         "TargetType": "alb",
         "Targets": [
           {
@@ -5843,6 +5903,18 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
             "IpProtocol": "tcp",
             "ToPort": 80,
           },
+          {
+            "CidrIp": {
+              "Fn::GetAtt": [
+                "MtgVpc2242639D",
+                "CidrBlock",
+              ],
+            },
+            "Description": "Allow NLB traffic to ALB",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80,
+          },
         ],
         "VpcId": {
           "Ref": "MtgVpc2242639D",
@@ -5938,7 +6010,7 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:142dfd6c30a20adfd63d6b3755fa8d6033f4b7918cda9bf13667dee686705adb",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:23f0916d5945637c1cb6ad7db4ac4486bb9484f393f29c0db172aba91d24257e",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",

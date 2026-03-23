@@ -147,7 +147,7 @@ export class MtgServerStack extends cdk.Stack {
 
 		const nlbListener = nlb.addListener('NlbListener', { port: 80 });
 
-		nlbListener.addTargets('AlbTarget', {
+		const nlbTargetGroup = nlbListener.addTargets('AlbTarget', {
 			port: 80,
 			targets: [new elbv2_targets.AlbListenerTarget(this.fargateService.listener)],
 			healthCheck: {
@@ -155,6 +155,7 @@ export class MtgServerStack extends cdk.Stack {
 				path: '/ping',
 			},
 		});
+		nlbTargetGroup.setAttribute('preserve_client_ip.enabled', 'false');
 
 		const vpcLink = new apigateway.VpcLink(this, 'VpcLink', {
 			targets: [nlb],

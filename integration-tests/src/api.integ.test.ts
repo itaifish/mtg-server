@@ -58,7 +58,8 @@ describe('Game lifecycle', () => {
 	let client: MtgServiceClient;
 
 	beforeAll(() => {
-		if (!isLocal && !API_KEY) throw new Error('INTEG_TEST_API_KEY environment variable is required');
+		if (!isLocal && !API_KEY)
+			throw new Error('INTEG_TEST_API_KEY environment variable is required');
 		client = createClient(API_KEY);
 	});
 
