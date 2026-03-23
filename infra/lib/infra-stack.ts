@@ -1,5 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as rds from 'aws-cdk-lib/aws-rds';
@@ -22,6 +23,7 @@ export class MtgServerStack extends cdk.Stack {
 	public readonly database: rds.DatabaseInstance;
 	public readonly dbSecurityGroup: ec2.SecurityGroup;
 	public readonly cardImagesBucket: s3.Bucket;
+	public readonly ecrRepository: ecr.Repository;
 	public readonly fargateService: ecs_patterns.ApplicationLoadBalancedFargateService;
 
 	constructor(scope: Construct, id: string, props: MtgServerStackProps) {
@@ -78,6 +80,15 @@ export class MtgServerStack extends cdk.Stack {
 			autoDeleteObjects: true,
 		});
 
+		// --- ECR ---
+
+		this.ecrRepository = new ecr.Repository(this, 'MtgServerRepo', {
+			repositoryName: `mtg-server-${stage}`,
+			removalPolicy: cdk.RemovalPolicy.DESTROY,
+			emptyOnDelete: true,
+			lifecycleRules: [{ maxImageCount: 10 }],
+		});
+
 		// --- ECS Fargate ---
 
 		const cluster = new ecs.Cluster(this, 'MtgCluster', { vpc: this.vpc });
@@ -91,9 +102,7 @@ export class MtgServerStack extends cdk.Stack {
 				memoryLimitMiB: prodLike ? 2048 : 512,
 				desiredCount: prodLike ? 2 : 1,
 				taskImageOptions: {
-					image: ecs.ContainerImage.fromAsset('..', {
-						file: 'Dockerfile',
-					}),
+					image: ecs.ContainerImage.fromEcrRepository(this.ecrRepository, 'latest'),
 					containerPort: 13734,
 					environment: {
 						RUST_LOG: 'info',
@@ -143,6 +152,11 @@ export class MtgServerStack extends cdk.Stack {
 		new cdk.CfnOutput(this, 'CardImagesBucketName', {
 			value: this.cardImagesBucket.bucketName,
 			description: 'S3 bucket for card images',
+		});
+
+		new cdk.CfnOutput(this, 'EcrRepositoryUri', {
+			value: this.ecrRepository.repositoryUri,
+			description: 'ECR repository URI for the MTG server image',
 		});
 	}
 }
