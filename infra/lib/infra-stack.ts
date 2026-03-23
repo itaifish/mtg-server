@@ -130,11 +130,17 @@ export class MtgServerStack extends cdk.Stack {
 			healthyHttpCodes: '200',
 		});
 
-		// Allow NLB to reach the ALB (NLBs have no security groups; traffic originates from VPC CIDR)
+		// Allow NLB to reach the ALB and ALB to respond
+		// (NLBs have no security groups; traffic originates from VPC CIDR)
 		this.fargateService.loadBalancer.connections.allowFrom(
 			ec2.Peer.ipv4(this.vpc.vpcCidrBlock),
 			ec2.Port.tcp(80),
 			'Allow NLB traffic to ALB',
+		);
+		this.fargateService.loadBalancer.connections.allowTo(
+			ec2.Peer.ipv4(this.vpc.vpcCidrBlock),
+			ec2.Port.allTraffic(),
+			'Allow ALB responses to NLB',
 		);
 
 		// --- API Gateway ---
@@ -147,7 +153,7 @@ export class MtgServerStack extends cdk.Stack {
 
 		const nlbListener = nlb.addListener('NlbListener', { port: 80 });
 
-		const nlbTargetGroup = nlbListener.addTargets('AlbTarget', {
+		nlbListener.addTargets('AlbTarget', {
 			port: 80,
 			targets: [new elbv2_targets.AlbListenerTarget(this.fargateService.listener)],
 			healthCheck: {
@@ -155,7 +161,6 @@ export class MtgServerStack extends cdk.Stack {
 				path: '/ping',
 			},
 		});
-		nlbTargetGroup.setAttribute('preserve_client_ip.enabled', 'false');
 
 		const vpcLink = new apigateway.VpcLink(this, 'VpcLink', {
 			targets: [nlb],

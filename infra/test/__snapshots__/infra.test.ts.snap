@@ -742,12 +742,6 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
         "HealthCheckProtocol": "HTTP",
         "Port": 80,
         "Protocol": "TCP",
-        "TargetGroupAttributes": [
-          {
-            "Key": "preserve_client_ip.enabled",
-            "Value": "false",
-          },
-        ],
         "TargetType": "alb",
         "Targets": [
           {
@@ -937,6 +931,18 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
     "MtgServiceLBSecurityGroupFA79AD6E": {
       "Properties": {
         "GroupDescription": "Automatically created Security Group for ELB MtgServerbetaMtgServiceLB9E6FC2F6",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": {
+              "Fn::GetAtt": [
+                "MtgVpc2242639D",
+                "CidrBlock",
+              ],
+            },
+            "Description": "Allow ALB responses to NLB",
+            "IpProtocol": "-1",
+          },
+        ],
         "SecurityGroupIngress": [
           {
             "CidrIp": "0.0.0.0/0",
@@ -2370,12 +2376,6 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
         "HealthCheckProtocol": "HTTP",
         "Port": 80,
         "Protocol": "TCP",
-        "TargetGroupAttributes": [
-          {
-            "Key": "preserve_client_ip.enabled",
-            "Value": "false",
-          },
-        ],
         "TargetType": "alb",
         "Targets": [
           {
@@ -2565,6 +2565,18 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
     "MtgServiceLBSecurityGroupFA79AD6E": {
       "Properties": {
         "GroupDescription": "Automatically created Security Group for ELB MtgServergammaMtgServiceLB02338B0F",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": {
+              "Fn::GetAtt": [
+                "MtgVpc2242639D",
+                "CidrBlock",
+              ],
+            },
+            "Description": "Allow ALB responses to NLB",
+            "IpProtocol": "-1",
+          },
+        ],
         "SecurityGroupIngress": [
           {
             "CidrIp": "0.0.0.0/0",
@@ -4036,12 +4048,6 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
         "HealthCheckProtocol": "HTTP",
         "Port": 80,
         "Protocol": "TCP",
-        "TargetGroupAttributes": [
-          {
-            "Key": "preserve_client_ip.enabled",
-            "Value": "false",
-          },
-        ],
         "TargetType": "alb",
         "Targets": [
           {
@@ -4231,6 +4237,18 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
     "MtgServiceLBSecurityGroupFA79AD6E": {
       "Properties": {
         "GroupDescription": "Automatically created Security Group for ELB MtgServerprodMtgServiceLB3CC6A036",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": {
+              "Fn::GetAtt": [
+                "MtgVpc2242639D",
+                "CidrBlock",
+              ],
+            },
+            "Description": "Allow ALB responses to NLB",
+            "IpProtocol": "-1",
+          },
+        ],
         "SecurityGroupIngress": [
           {
             "CidrIp": "0.0.0.0/0",
@@ -5700,12 +5718,6 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
         "HealthCheckProtocol": "HTTP",
         "Port": 80,
         "Protocol": "TCP",
-        "TargetGroupAttributes": [
-          {
-            "Key": "preserve_client_ip.enabled",
-            "Value": "false",
-          },
-        ],
         "TargetType": "alb",
         "Targets": [
           {
@@ -5895,6 +5907,18 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
     "MtgServiceLBSecurityGroupFA79AD6E": {
       "Properties": {
         "GroupDescription": "Automatically created Security Group for ELB MtgServertestMtgServiceLB347E2C56",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": {
+              "Fn::GetAtt": [
+                "MtgVpc2242639D",
+                "CidrBlock",
+              ],
+            },
+            "Description": "Allow ALB responses to NLB",
+            "IpProtocol": "-1",
+          },
+        ],
         "SecurityGroupIngress": [
           {
             "CidrIp": "0.0.0.0/0",
