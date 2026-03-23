@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "server",
+    "mtg-server-sdk",
+]
+exclude = [
+    "model/build/codegen/mtg-server-sdk/rust-server-codegen",
+]
+resolver = "2"

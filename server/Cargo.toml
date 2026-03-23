@@ -1,0 +1,12 @@
+[package]
+name = "mtg-server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+mtg-server-sdk = { path = "../mtg-server-sdk" }
+tokio = { version = "1", features = ["full"] }
+hyper = { version = "0.14", features = ["server"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1", features = ["v4"] }

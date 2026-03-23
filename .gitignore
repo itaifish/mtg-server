@@ -1,0 +1,16 @@
+# Rust
+target/
+
+# Gradle
+.gradle/
+model/build/
+!model/build.gradle.kts
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
