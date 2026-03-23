@@ -51,8 +51,13 @@ mtg-server/
 │   └── smithy-build.json           # Smithy codegen plugin configuration
 ├── server/                         # Rust server implementation (business logic)
 │   └── src/main.rs
+├── infra/                          # CDK infrastructure & CI/CD pipeline
+│   ├── lib/infra-stack.ts          # AWS resources (VPC, RDS, ECS, S3)
+│   ├── lib/pipeline-stack.ts       # Self-mutating CodePipeline
+│   └── bin/infra.ts                # CDK app entrypoint
 ├── mtg-server-sdk/                 # GENERATED — Rust server SDK (do not edit)
 ├── smithy-rs/                      # Git submodule — smithy-rs code generator
+├── Dockerfile                      # Container image for ECS Fargate
 ├── MagicComprehensiveRules.txt     # MTG Comprehensive Rules (authoritative source)
 ├── PLANNING.md                     # Project planning and design decisions
 ├── Cargo.toml                      # Rust workspace definition
@@ -86,6 +91,68 @@ git add smithy-rs
 git commit -m "Update smithy-rs to release-YYYY-MM-DD"
 ./gradlew assemble  # regenerate the SDK
 ```
+
+## Infrastructure & CI/CD
+
+The `infra/` directory contains a CDK (TypeScript) project that provisions all AWS resources and a self-mutating CI/CD pipeline.
+
+### AWS Resources (per stage)
+
+- VPC with NAT gateway(s)
+- RDS PostgreSQL 16 (T4G.micro for test/beta, R6G.large for gamma/prod)
+- ECS Fargate behind an Application Load Balancer
+- S3 bucket for card images
+- Secrets Manager for DB credentials
+
+### CI/CD Pipeline (CodePipeline)
+
+A CDK Pipelines self-mutating pipeline deploys across four stages:
+
+**test → beta → gamma (manual approval) → prod (manual approval)**
+
+On every push to `main`, the pipeline:
+1. Pulls the source from GitHub
+2. Synthesizes the CDK app in CodeBuild
+3. Builds the Docker image (on Linux x86_64 — no local Docker needed)
+4. Deploys each stage in order
+
+### First-time setup
+
+1. Store a GitHub personal access token in Secrets Manager:
+
+   ```bash
+   aws secretsmanager create-secret \
+     --name mtg-server/github-token \
+     --secret-string "ghp_your_token_here" \
+     --region us-east-1
+   ```
+
+   - **Classic token**: select the `repo` and `admin:repo_hook` scopes.
+   - **Fine-grained token**: select the `mtg-server` repository, then under Repository permissions set **Contents** to Read-only, **Webhooks** to Read and write, and **Metadata** to Read-only.
+
+2. Bootstrap CDK (if not already done):
+
+   ```bash
+   cd infra
+   npx cdk bootstrap
+   ```
+
+3. Deploy the pipeline stack (one-time):
+
+   ```bash
+   npm run cdk deploy MtgServerPipeline
+   ```
+
+### Manual deployment (without the pipeline)
+
+You can still deploy individual stacks directly:
+
+```bash
+cd infra
+npm run cdk deploy MtgServer-test
+```
+
+This requires Docker locally and uses `fromAsset` to build the container image. Note: on Apple Silicon Macs, the Dockerfile includes `--platform=linux/amd64` to match Fargate's architecture.
 
 ## Comprehensive Rules
 
