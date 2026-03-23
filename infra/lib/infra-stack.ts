@@ -21,7 +21,7 @@ function isProdLike(stage: StageName): boolean {
 }
 
 export class MtgServerStack extends cdk.Stack {
-	public readonly vpc: ec2.IVpc;
+	public readonly vpc: ec2.Vpc;
 	public readonly database: rds.DatabaseInstance;
 	public readonly dbSecurityGroup: ec2.SecurityGroup;
 	public readonly cardImagesBucket: s3.Bucket;
@@ -146,9 +146,28 @@ export class MtgServerStack extends cdk.Stack {
 		// --- API Gateway ---
 
 		// NLB in front of ALB (REST API VpcLink requires NLB)
+		// NLB health checks to ALB-type targets use the VPC default security group.
+		// CDK strips its rules, so we must re-allow traffic for the health checks to pass.
+		const defaultSg = ec2.SecurityGroup.fromSecurityGroupId(
+			this,
+			'DefaultSg',
+			this.vpc.vpcDefaultSecurityGroup,
+		);
+		defaultSg.addIngressRule(
+			ec2.Peer.ipv4(this.vpc.vpcCidrBlock),
+			ec2.Port.tcp(80),
+			'NLB health checks to ALB',
+		);
+		defaultSg.addEgressRule(
+			ec2.Peer.ipv4(this.vpc.vpcCidrBlock),
+			ec2.Port.allTraffic(),
+			'NLB health check responses',
+		);
+
 		const nlb = new elbv2.NetworkLoadBalancer(this, 'MtgNlb', {
 			vpc: this.vpc,
 			internetFacing: false,
+			crossZoneEnabled: true,
 		});
 
 		const nlbListener = nlb.addListener('NlbListener', { port: 80 });

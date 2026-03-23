@@ -352,6 +352,27 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
       },
       "Type": "AWS::EC2::SecurityGroupIngress",
     },
+    "DefaultSgfromIndirectPeer80EF0FBEB2": {
+      "Properties": {
+        "CidrIp": {
+          "Fn::GetAtt": [
+            "MtgVpc2242639D",
+            "CidrBlock",
+          ],
+        },
+        "Description": "NLB health checks to ALB",
+        "FromPort": 80,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "MtgVpc2242639D",
+            "DefaultSecurityGroup",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "ToPort": 80,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
     "MtgApi521633AE": {
       "Properties": {
         "Name": "mtg-server-beta",
@@ -717,6 +738,10 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
           {
             "Key": "deletion_protection.enabled",
             "Value": "false",
+          },
+          {
+            "Key": "load_balancing.cross_zone.enabled",
+            "Value": "true",
           },
         ],
         "Scheme": "internal",
@@ -1986,6 +2011,27 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
       },
       "Type": "AWS::EC2::SecurityGroupIngress",
     },
+    "DefaultSgfromIndirectPeer80EF0FBEB2": {
+      "Properties": {
+        "CidrIp": {
+          "Fn::GetAtt": [
+            "MtgVpc2242639D",
+            "CidrBlock",
+          ],
+        },
+        "Description": "NLB health checks to ALB",
+        "FromPort": 80,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "MtgVpc2242639D",
+            "DefaultSecurityGroup",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "ToPort": 80,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
     "MtgApi521633AE": {
       "Properties": {
         "Name": "mtg-server-gamma",
@@ -2351,6 +2397,10 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
           {
             "Key": "deletion_protection.enabled",
             "Value": "false",
+          },
+          {
+            "Key": "load_balancing.cross_zone.enabled",
+            "Value": "true",
           },
         ],
         "Scheme": "internal",
@@ -3656,6 +3706,27 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
       },
       "Type": "AWS::EC2::SecurityGroupIngress",
     },
+    "DefaultSgfromIndirectPeer80EF0FBEB2": {
+      "Properties": {
+        "CidrIp": {
+          "Fn::GetAtt": [
+            "MtgVpc2242639D",
+            "CidrBlock",
+          ],
+        },
+        "Description": "NLB health checks to ALB",
+        "FromPort": 80,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "MtgVpc2242639D",
+            "DefaultSecurityGroup",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "ToPort": 80,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
     "MtgApi521633AE": {
       "Properties": {
         "Name": "mtg-server-prod",
@@ -4023,6 +4094,10 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
           {
             "Key": "deletion_protection.enabled",
             "Value": "false",
+          },
+          {
+            "Key": "load_balancing.cross_zone.enabled",
+            "Value": "true",
           },
         ],
         "Scheme": "internal",
@@ -5328,6 +5403,27 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
       },
       "Type": "AWS::EC2::SecurityGroupIngress",
     },
+    "DefaultSgfromIndirectPeer80EF0FBEB2": {
+      "Properties": {
+        "CidrIp": {
+          "Fn::GetAtt": [
+            "MtgVpc2242639D",
+            "CidrBlock",
+          ],
+        },
+        "Description": "NLB health checks to ALB",
+        "FromPort": 80,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "MtgVpc2242639D",
+            "DefaultSecurityGroup",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "ToPort": 80,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
     "MtgApi521633AE": {
       "Properties": {
         "Name": "mtg-server-test",
@@ -5693,6 +5789,10 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
           {
             "Key": "deletion_protection.enabled",
             "Value": "false",
+          },
+          {
+            "Key": "load_balancing.cross_zone.enabled",
+            "Value": "true",
           },
         ],
         "Scheme": "internal",
