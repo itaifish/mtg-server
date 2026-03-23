@@ -30,7 +30,13 @@ export class MtgPipelineStack extends cdk.Stack {
 			synth: new pipelines.ShellStep('Synth', {
 				input: source,
 				installCommands: ['n stable'],
-				commands: ['cd infra', 'npm ci', 'npx cdk synth'],
+				commands: [
+					'git submodule update --init --recursive',
+					'./gradlew assemble',
+					'cd infra',
+					'npm ci',
+					'npx cdk synth',
+				],
 				primaryOutputDirectory: 'infra/cdk.out',
 			}),
 			dockerEnabledForSelfMutation: true,
