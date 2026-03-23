@@ -1,0 +1,3727 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`MtgServerStack (beta) matches snapshot 1`] = `
+{
+  "Outputs": {
+    "DbEndpoint": {
+      "Description": "RDS PostgreSQL endpoint",
+      "Value": {
+        "Fn::GetAtt": [
+          "MtgDatabase64C4CEAE",
+          "Endpoint.Address",
+        ],
+      },
+    },
+    "DbSecretArn": {
+      "Description": "ARN of the Secrets Manager secret for DB credentials",
+      "Value": {
+        "Ref": "MtgDatabaseSecretAttachment81454F84",
+      },
+    },
+    "LoadBalancerDns": {
+      "Description": "ALB DNS name for the MTG server",
+      "Value": {
+        "Fn::GetAtt": [
+          "MtgServiceLB727DC4CB",
+          "DNSName",
+        ],
+      },
+    },
+    "MtgServiceLoadBalancerDNSBB92C30E": {
+      "Value": {
+        "Fn::GetAtt": [
+          "MtgServiceLB727DC4CB",
+          "DNSName",
+        ],
+      },
+    },
+    "MtgServiceServiceURLBAF75C06": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "http://",
+            {
+              "Fn::GetAtt": [
+                "MtgServiceLB727DC4CB",
+                "DNSName",
+              ],
+            },
+          ],
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "DbSecurityGroupE9D701AD": {
+      "Properties": {
+        "GroupDescription": "Security group for MTG Server RDS instance (beta)",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "255.255.255.255/32",
+            "Description": "Disallow all traffic",
+            "FromPort": 252,
+            "IpProtocol": "icmp",
+            "ToPort": 86,
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "DbSecurityGroupfromMtgServerbetaMtgServiceSecurityGroupD573C3365432145BCA25": {
+      "Properties": {
+        "Description": "Allow Postgres from Fargate tasks",
+        "FromPort": 5432,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "DbSecurityGroupE9D701AD",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceSecurityGroup42D3C015",
+            "GroupId",
+          ],
+        },
+        "ToPort": 5432,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "MtgClusterDD54BADF": {
+      "Type": "AWS::ECS::Cluster",
+    },
+    "MtgDatabase64C4CEAE": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AllocatedStorage": "20",
+        "BackupRetentionPeriod": 1,
+        "CopyTagsToSnapshot": true,
+        "DBInstanceClass": "db.t4g.micro",
+        "DBName": "mtg",
+        "DBSubnetGroupName": {
+          "Ref": "MtgDatabaseSubnetGroup6519A9CA",
+        },
+        "DeletionProtection": false,
+        "Engine": "postgres",
+        "EngineVersion": "16",
+        "MasterUserPassword": {
+          "Fn::Join": [
+            "",
+            [
+              "{{resolve:secretsmanager:",
+              {
+                "Ref": "MtgServerbetaMtgDatabaseSecret44C360CC3fdaad7efa858a3daf9490cf0a702aeb",
+              },
+              ":SecretString:password::}}",
+            ],
+          ],
+        },
+        "MasterUsername": "mtg_admin",
+        "MaxAllocatedStorage": 40,
+        "MultiAZ": false,
+        "PubliclyAccessible": false,
+        "StorageEncrypted": true,
+        "StorageType": "gp2",
+        "VPCSecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "DbSecurityGroupE9D701AD",
+              "GroupId",
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBInstance",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "MtgDatabaseSecretAttachment81454F84": {
+      "Properties": {
+        "SecretId": {
+          "Ref": "MtgServerbetaMtgDatabaseSecret44C360CC3fdaad7efa858a3daf9490cf0a702aeb",
+        },
+        "TargetId": {
+          "Ref": "MtgDatabase64C4CEAE",
+        },
+        "TargetType": "AWS::RDS::DBInstance",
+      },
+      "Type": "AWS::SecretsManager::SecretTargetAttachment",
+    },
+    "MtgDatabaseSubnetGroup6519A9CA": {
+      "Properties": {
+        "DBSubnetGroupDescription": "Subnet group for MtgDatabase database",
+        "SubnetIds": [
+          {
+            "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
+          },
+          {
+            "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBSubnetGroup",
+    },
+    "MtgServerbetaMtgDatabaseSecret44C360CC3fdaad7efa858a3daf9490cf0a702aeb": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Generated by the CDK for stack: ",
+              {
+                "Ref": "AWS::StackName",
+              },
+            ],
+          ],
+        },
+        "GenerateSecretString": {
+          "ExcludeCharacters": " %+~\`#$&*()|[]{}:;<>?!'/@"\\",
+          "GenerateStringKey": "password",
+          "PasswordLength": 30,
+          "SecretStringTemplate": "{"username":"mtg_admin"}",
+        },
+        "Name": "mtg-server/beta/db-credentials",
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "MtgServiceD0BF3F86": {
+      "DependsOn": [
+        "MtgServiceLBPublicListenerECSGroup351BEA4C",
+        "MtgServiceLBPublicListener6EB1F6FB",
+        "MtgServiceTaskDefTaskRole0D4FCAB0",
+      ],
+      "Properties": {
+        "Cluster": {
+          "Ref": "MtgClusterDD54BADF",
+        },
+        "DeploymentConfiguration": {
+          "Alarms": {
+            "AlarmNames": [],
+            "Enable": false,
+            "Rollback": false,
+          },
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 50,
+        },
+        "DesiredCount": 1,
+        "EnableECSManagedTags": false,
+        "HealthCheckGracePeriodSeconds": 60,
+        "LaunchType": "FARGATE",
+        "LoadBalancers": [
+          {
+            "ContainerName": "web",
+            "ContainerPort": 13734,
+            "TargetGroupArn": {
+              "Ref": "MtgServiceLBPublicListenerECSGroup351BEA4C",
+            },
+          },
+        ],
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "MtgServiceSecurityGroup42D3C015",
+                  "GroupId",
+                ],
+              },
+            ],
+            "Subnets": [
+              {
+                "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
+              },
+              {
+                "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
+              },
+            ],
+          },
+        },
+        "TaskDefinition": {
+          "Ref": "MtgServiceTaskDef43D3C00D",
+        },
+      },
+      "Type": "AWS::ECS::Service",
+    },
+    "MtgServiceLB727DC4CB": {
+      "DependsOn": [
+        "MtgVpcPublicSubnet1DefaultRoute177F3219",
+        "MtgVpcPublicSubnet1RouteTableAssociation6BB0F351",
+        "MtgVpcPublicSubnet2DefaultRoute81A3E0FF",
+        "MtgVpcPublicSubnet2RouteTableAssociation19ECDFD9",
+      ],
+      "Properties": {
+        "LoadBalancerAttributes": [
+          {
+            "Key": "deletion_protection.enabled",
+            "Value": "false",
+          },
+        ],
+        "Scheme": "internet-facing",
+        "SecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "MtgServiceLBSecurityGroupFA79AD6E",
+              "GroupId",
+            ],
+          },
+        ],
+        "Subnets": [
+          {
+            "Ref": "MtgVpcPublicSubnet1Subnet5289BC50",
+          },
+          {
+            "Ref": "MtgVpcPublicSubnet2SubnetC2F18AE7",
+          },
+        ],
+        "Type": "application",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+    },
+    "MtgServiceLBPublicListener6EB1F6FB": {
+      "Properties": {
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "MtgServiceLBPublicListenerECSGroup351BEA4C",
+            },
+            "Type": "forward",
+          },
+        ],
+        "LoadBalancerArn": {
+          "Ref": "MtgServiceLB727DC4CB",
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+    },
+    "MtgServiceLBPublicListenerECSGroup351BEA4C": {
+      "Properties": {
+        "HealthCheckPath": "/ping",
+        "Matcher": {
+          "HttpCode": "200",
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+        "TargetGroupAttributes": [
+          {
+            "Key": "stickiness.enabled",
+            "Value": "false",
+          },
+        ],
+        "TargetType": "ip",
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+    },
+    "MtgServiceLBSecurityGroupFA79AD6E": {
+      "Properties": {
+        "GroupDescription": "Automatically created Security Group for ELB MtgServerbetaMtgServiceLB9E6FC2F6",
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow from anyone on port 80",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80,
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "MtgServiceLBSecurityGrouptoMtgServerbetaMtgServiceSecurityGroupD573C336137343E9DB4E4": {
+      "Properties": {
+        "Description": "Load balancer to target",
+        "DestinationSecurityGroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceSecurityGroup42D3C015",
+            "GroupId",
+          ],
+        },
+        "FromPort": 13734,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceLBSecurityGroupFA79AD6E",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "ToPort": 13734,
+      },
+      "Type": "AWS::EC2::SecurityGroupEgress",
+    },
+    "MtgServiceSecurityGroup42D3C015": {
+      "DependsOn": [
+        "MtgServiceTaskDefTaskRole0D4FCAB0",
+      ],
+      "Properties": {
+        "GroupDescription": "MtgServer-beta/MtgService/Service/SecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "MtgServiceSecurityGroupfromMtgServerbetaMtgServiceLBSecurityGroup42AC307C13734A4DD9D9D": {
+      "DependsOn": [
+        "MtgServiceTaskDefTaskRole0D4FCAB0",
+      ],
+      "Properties": {
+        "Description": "Load balancer to target",
+        "FromPort": 13734,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceSecurityGroup42D3C015",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceLBSecurityGroupFA79AD6E",
+            "GroupId",
+          ],
+        },
+        "ToPort": 13734,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "MtgServiceTaskDef43D3C00D": {
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Environment": [
+              {
+                "Name": "RUST_LOG",
+                "Value": "info",
+              },
+              {
+                "Name": "STAGE",
+                "Value": "beta",
+              },
+            ],
+            "Essential": true,
+            "Image": "public.ecr.aws/docker/library/hello-world:latest",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "MtgServiceTaskDefwebLogGroupE8036CF3",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "MtgService",
+              },
+            },
+            "Name": "web",
+            "PortMappings": [
+              {
+                "ContainerPort": 13734,
+                "Protocol": "tcp",
+              },
+            ],
+            "Secrets": [
+              {
+                "Name": "DB_SECRET",
+                "ValueFrom": {
+                  "Ref": "MtgDatabaseSecretAttachment81454F84",
+                },
+              },
+            ],
+          },
+        ],
+        "Cpu": "256",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "MtgServiceTaskDefExecutionRole657C40A4",
+            "Arn",
+          ],
+        },
+        "Family": "MtgServerbetaMtgServiceTaskDef0493D01C",
+        "Memory": "512",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE",
+        ],
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "MtgServiceTaskDefTaskRole0D4FCAB0",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::ECS::TaskDefinition",
+    },
+    "MtgServiceTaskDefExecutionRole657C40A4": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "MtgServiceTaskDefExecutionRoleDefaultPolicy46637495": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "MtgServiceTaskDefwebLogGroupE8036CF3",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "MtgDatabaseSecretAttachment81454F84",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "MtgServiceTaskDefExecutionRoleDefaultPolicy46637495",
+        "Roles": [
+          {
+            "Ref": "MtgServiceTaskDefExecutionRole657C40A4",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "MtgServiceTaskDefTaskRole0D4FCAB0": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "MtgServiceTaskDefwebLogGroupE8036CF3": {
+      "DeletionPolicy": "Retain",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "MtgVpc2242639D": {
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": true,
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-beta/MtgVpc",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::VPC",
+    },
+    "MtgVpcIGWA33FAFDD": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-beta/MtgVpc",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::InternetGateway",
+    },
+    "MtgVpcPrivateSubnet1DefaultRouteFA45CE04": {
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "MtgVpcPublicSubnet1NATGateway8FF1F51C",
+        },
+        "RouteTableId": {
+          "Ref": "MtgVpcPrivateSubnet1RouteTableEA956BF3",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "MtgVpcPrivateSubnet1RouteTableAssociationB3D0FA71": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "MtgVpcPrivateSubnet1RouteTableEA956BF3",
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "MtgVpcPrivateSubnet1RouteTableEA956BF3": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-beta/MtgVpc/PrivateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "MtgVpcPrivateSubnet1Subnet419C8450": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.128.0/18",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Private",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private",
+          },
+          {
+            "Key": "Name",
+            "Value": "MtgServer-beta/MtgVpc/PrivateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "MtgVpcPrivateSubnet2DefaultRoute06036717": {
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "MtgVpcPublicSubnet1NATGateway8FF1F51C",
+        },
+        "RouteTableId": {
+          "Ref": "MtgVpcPrivateSubnet2RouteTableE0CBC84D",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "MtgVpcPrivateSubnet2RouteTableAssociationDBF1E622": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "MtgVpcPrivateSubnet2RouteTableE0CBC84D",
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "MtgVpcPrivateSubnet2RouteTableE0CBC84D": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-beta/MtgVpc/PrivateSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "MtgVpcPrivateSubnet2SubnetB7A4FF12": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.192.0/18",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Private",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private",
+          },
+          {
+            "Key": "Name",
+            "Value": "MtgServer-beta/MtgVpc/PrivateSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "MtgVpcPublicSubnet1DefaultRoute177F3219": {
+      "DependsOn": [
+        "MtgVpcVPCGW8441F645",
+      ],
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "MtgVpcIGWA33FAFDD",
+        },
+        "RouteTableId": {
+          "Ref": "MtgVpcPublicSubnet1RouteTable3C061B9E",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "MtgVpcPublicSubnet1EIP01E06F1E": {
+      "Properties": {
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-beta/MtgVpc/PublicSubnet1",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::EIP",
+    },
+    "MtgVpcPublicSubnet1NATGateway8FF1F51C": {
+      "DependsOn": [
+        "MtgVpcPublicSubnet1DefaultRoute177F3219",
+        "MtgVpcPublicSubnet1RouteTableAssociation6BB0F351",
+      ],
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "MtgVpcPublicSubnet1EIP01E06F1E",
+            "AllocationId",
+          ],
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPublicSubnet1Subnet5289BC50",
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-beta/MtgVpc/PublicSubnet1",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::NatGateway",
+    },
+    "MtgVpcPublicSubnet1RouteTable3C061B9E": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-beta/MtgVpc/PublicSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "MtgVpcPublicSubnet1RouteTableAssociation6BB0F351": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "MtgVpcPublicSubnet1RouteTable3C061B9E",
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPublicSubnet1Subnet5289BC50",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "MtgVpcPublicSubnet1Subnet5289BC50": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.0.0/18",
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Public",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public",
+          },
+          {
+            "Key": "Name",
+            "Value": "MtgServer-beta/MtgVpc/PublicSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "MtgVpcPublicSubnet2DefaultRoute81A3E0FF": {
+      "DependsOn": [
+        "MtgVpcVPCGW8441F645",
+      ],
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "MtgVpcIGWA33FAFDD",
+        },
+        "RouteTableId": {
+          "Ref": "MtgVpcPublicSubnet2RouteTable649CEE74",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "MtgVpcPublicSubnet2RouteTable649CEE74": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-beta/MtgVpc/PublicSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "MtgVpcPublicSubnet2RouteTableAssociation19ECDFD9": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "MtgVpcPublicSubnet2RouteTable649CEE74",
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPublicSubnet2SubnetC2F18AE7",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "MtgVpcPublicSubnet2SubnetC2F18AE7": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.64.0/18",
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Public",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public",
+          },
+          {
+            "Key": "Name",
+            "Value": "MtgServer-beta/MtgVpc/PublicSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "MtgVpcVPCGW8441F645": {
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "MtgVpcIGWA33FAFDD",
+        },
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`MtgServerStack (gamma) matches snapshot 1`] = `
+{
+  "Outputs": {
+    "DbEndpoint": {
+      "Description": "RDS PostgreSQL endpoint",
+      "Value": {
+        "Fn::GetAtt": [
+          "MtgDatabase64C4CEAE",
+          "Endpoint.Address",
+        ],
+      },
+    },
+    "DbSecretArn": {
+      "Description": "ARN of the Secrets Manager secret for DB credentials",
+      "Value": {
+        "Ref": "MtgDatabaseSecretAttachment81454F84",
+      },
+    },
+    "LoadBalancerDns": {
+      "Description": "ALB DNS name for the MTG server",
+      "Value": {
+        "Fn::GetAtt": [
+          "MtgServiceLB727DC4CB",
+          "DNSName",
+        ],
+      },
+    },
+    "MtgServiceLoadBalancerDNSBB92C30E": {
+      "Value": {
+        "Fn::GetAtt": [
+          "MtgServiceLB727DC4CB",
+          "DNSName",
+        ],
+      },
+    },
+    "MtgServiceServiceURLBAF75C06": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "http://",
+            {
+              "Fn::GetAtt": [
+                "MtgServiceLB727DC4CB",
+                "DNSName",
+              ],
+            },
+          ],
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "DbSecurityGroupE9D701AD": {
+      "Properties": {
+        "GroupDescription": "Security group for MTG Server RDS instance (gamma)",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "255.255.255.255/32",
+            "Description": "Disallow all traffic",
+            "FromPort": 252,
+            "IpProtocol": "icmp",
+            "ToPort": 86,
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "DbSecurityGroupfromMtgServergammaMtgServiceSecurityGroupA60B295954325FAA8968": {
+      "Properties": {
+        "Description": "Allow Postgres from Fargate tasks",
+        "FromPort": 5432,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "DbSecurityGroupE9D701AD",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceSecurityGroup42D3C015",
+            "GroupId",
+          ],
+        },
+        "ToPort": 5432,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "MtgClusterDD54BADF": {
+      "Type": "AWS::ECS::Cluster",
+    },
+    "MtgDatabase64C4CEAE": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AllocatedStorage": "20",
+        "BackupRetentionPeriod": 14,
+        "CopyTagsToSnapshot": true,
+        "DBInstanceClass": "db.r6g.large",
+        "DBName": "mtg",
+        "DBSubnetGroupName": {
+          "Ref": "MtgDatabaseSubnetGroup6519A9CA",
+        },
+        "DeletionProtection": false,
+        "Engine": "postgres",
+        "EngineVersion": "16",
+        "MasterUserPassword": {
+          "Fn::Join": [
+            "",
+            [
+              "{{resolve:secretsmanager:",
+              {
+                "Ref": "MtgServergammaMtgDatabaseSecretCCB0DEE13fdaad7efa858a3daf9490cf0a702aeb",
+              },
+              ":SecretString:password::}}",
+            ],
+          ],
+        },
+        "MasterUsername": "mtg_admin",
+        "MaxAllocatedStorage": 100,
+        "MultiAZ": true,
+        "PubliclyAccessible": false,
+        "StorageEncrypted": true,
+        "StorageType": "gp2",
+        "VPCSecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "DbSecurityGroupE9D701AD",
+              "GroupId",
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBInstance",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "MtgDatabaseSecretAttachment81454F84": {
+      "Properties": {
+        "SecretId": {
+          "Ref": "MtgServergammaMtgDatabaseSecretCCB0DEE13fdaad7efa858a3daf9490cf0a702aeb",
+        },
+        "TargetId": {
+          "Ref": "MtgDatabase64C4CEAE",
+        },
+        "TargetType": "AWS::RDS::DBInstance",
+      },
+      "Type": "AWS::SecretsManager::SecretTargetAttachment",
+    },
+    "MtgDatabaseSubnetGroup6519A9CA": {
+      "Properties": {
+        "DBSubnetGroupDescription": "Subnet group for MtgDatabase database",
+        "SubnetIds": [
+          {
+            "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
+          },
+          {
+            "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBSubnetGroup",
+    },
+    "MtgServergammaMtgDatabaseSecretCCB0DEE13fdaad7efa858a3daf9490cf0a702aeb": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Generated by the CDK for stack: ",
+              {
+                "Ref": "AWS::StackName",
+              },
+            ],
+          ],
+        },
+        "GenerateSecretString": {
+          "ExcludeCharacters": " %+~\`#$&*()|[]{}:;<>?!'/@"\\",
+          "GenerateStringKey": "password",
+          "PasswordLength": 30,
+          "SecretStringTemplate": "{"username":"mtg_admin"}",
+        },
+        "Name": "mtg-server/gamma/db-credentials",
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "MtgServiceD0BF3F86": {
+      "DependsOn": [
+        "MtgServiceLBPublicListenerECSGroup351BEA4C",
+        "MtgServiceLBPublicListener6EB1F6FB",
+        "MtgServiceTaskDefTaskRole0D4FCAB0",
+      ],
+      "Properties": {
+        "Cluster": {
+          "Ref": "MtgClusterDD54BADF",
+        },
+        "DeploymentConfiguration": {
+          "Alarms": {
+            "AlarmNames": [],
+            "Enable": false,
+            "Rollback": false,
+          },
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 50,
+        },
+        "DesiredCount": 2,
+        "EnableECSManagedTags": false,
+        "HealthCheckGracePeriodSeconds": 60,
+        "LaunchType": "FARGATE",
+        "LoadBalancers": [
+          {
+            "ContainerName": "web",
+            "ContainerPort": 13734,
+            "TargetGroupArn": {
+              "Ref": "MtgServiceLBPublicListenerECSGroup351BEA4C",
+            },
+          },
+        ],
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "MtgServiceSecurityGroup42D3C015",
+                  "GroupId",
+                ],
+              },
+            ],
+            "Subnets": [
+              {
+                "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
+              },
+              {
+                "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
+              },
+            ],
+          },
+        },
+        "TaskDefinition": {
+          "Ref": "MtgServiceTaskDef43D3C00D",
+        },
+      },
+      "Type": "AWS::ECS::Service",
+    },
+    "MtgServiceLB727DC4CB": {
+      "DependsOn": [
+        "MtgVpcPublicSubnet1DefaultRoute177F3219",
+        "MtgVpcPublicSubnet1RouteTableAssociation6BB0F351",
+        "MtgVpcPublicSubnet2DefaultRoute81A3E0FF",
+        "MtgVpcPublicSubnet2RouteTableAssociation19ECDFD9",
+      ],
+      "Properties": {
+        "LoadBalancerAttributes": [
+          {
+            "Key": "deletion_protection.enabled",
+            "Value": "false",
+          },
+        ],
+        "Scheme": "internet-facing",
+        "SecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "MtgServiceLBSecurityGroupFA79AD6E",
+              "GroupId",
+            ],
+          },
+        ],
+        "Subnets": [
+          {
+            "Ref": "MtgVpcPublicSubnet1Subnet5289BC50",
+          },
+          {
+            "Ref": "MtgVpcPublicSubnet2SubnetC2F18AE7",
+          },
+        ],
+        "Type": "application",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+    },
+    "MtgServiceLBPublicListener6EB1F6FB": {
+      "Properties": {
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "MtgServiceLBPublicListenerECSGroup351BEA4C",
+            },
+            "Type": "forward",
+          },
+        ],
+        "LoadBalancerArn": {
+          "Ref": "MtgServiceLB727DC4CB",
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+    },
+    "MtgServiceLBPublicListenerECSGroup351BEA4C": {
+      "Properties": {
+        "HealthCheckPath": "/ping",
+        "Matcher": {
+          "HttpCode": "200",
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+        "TargetGroupAttributes": [
+          {
+            "Key": "stickiness.enabled",
+            "Value": "false",
+          },
+        ],
+        "TargetType": "ip",
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+    },
+    "MtgServiceLBSecurityGroupFA79AD6E": {
+      "Properties": {
+        "GroupDescription": "Automatically created Security Group for ELB MtgServergammaMtgServiceLB02338B0F",
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow from anyone on port 80",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80,
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "MtgServiceLBSecurityGrouptoMtgServergammaMtgServiceSecurityGroupA60B2959137346497F36B": {
+      "Properties": {
+        "Description": "Load balancer to target",
+        "DestinationSecurityGroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceSecurityGroup42D3C015",
+            "GroupId",
+          ],
+        },
+        "FromPort": 13734,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceLBSecurityGroupFA79AD6E",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "ToPort": 13734,
+      },
+      "Type": "AWS::EC2::SecurityGroupEgress",
+    },
+    "MtgServiceSecurityGroup42D3C015": {
+      "DependsOn": [
+        "MtgServiceTaskDefTaskRole0D4FCAB0",
+      ],
+      "Properties": {
+        "GroupDescription": "MtgServer-gamma/MtgService/Service/SecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "MtgServiceSecurityGroupfromMtgServergammaMtgServiceLBSecurityGroup01ADBDAB13734FB52EEF9": {
+      "DependsOn": [
+        "MtgServiceTaskDefTaskRole0D4FCAB0",
+      ],
+      "Properties": {
+        "Description": "Load balancer to target",
+        "FromPort": 13734,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceSecurityGroup42D3C015",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceLBSecurityGroupFA79AD6E",
+            "GroupId",
+          ],
+        },
+        "ToPort": 13734,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "MtgServiceTaskDef43D3C00D": {
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Environment": [
+              {
+                "Name": "RUST_LOG",
+                "Value": "info",
+              },
+              {
+                "Name": "STAGE",
+                "Value": "gamma",
+              },
+            ],
+            "Essential": true,
+            "Image": "public.ecr.aws/docker/library/hello-world:latest",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "MtgServiceTaskDefwebLogGroupE8036CF3",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "MtgService",
+              },
+            },
+            "Name": "web",
+            "PortMappings": [
+              {
+                "ContainerPort": 13734,
+                "Protocol": "tcp",
+              },
+            ],
+            "Secrets": [
+              {
+                "Name": "DB_SECRET",
+                "ValueFrom": {
+                  "Ref": "MtgDatabaseSecretAttachment81454F84",
+                },
+              },
+            ],
+          },
+        ],
+        "Cpu": "1024",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "MtgServiceTaskDefExecutionRole657C40A4",
+            "Arn",
+          ],
+        },
+        "Family": "MtgServergammaMtgServiceTaskDef72471EB9",
+        "Memory": "2048",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE",
+        ],
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "MtgServiceTaskDefTaskRole0D4FCAB0",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::ECS::TaskDefinition",
+    },
+    "MtgServiceTaskDefExecutionRole657C40A4": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "MtgServiceTaskDefExecutionRoleDefaultPolicy46637495": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "MtgServiceTaskDefwebLogGroupE8036CF3",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "MtgDatabaseSecretAttachment81454F84",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "MtgServiceTaskDefExecutionRoleDefaultPolicy46637495",
+        "Roles": [
+          {
+            "Ref": "MtgServiceTaskDefExecutionRole657C40A4",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "MtgServiceTaskDefTaskRole0D4FCAB0": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "MtgServiceTaskDefwebLogGroupE8036CF3": {
+      "DeletionPolicy": "Retain",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "MtgVpc2242639D": {
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": true,
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-gamma/MtgVpc",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::VPC",
+    },
+    "MtgVpcIGWA33FAFDD": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-gamma/MtgVpc",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::InternetGateway",
+    },
+    "MtgVpcPrivateSubnet1DefaultRouteFA45CE04": {
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "MtgVpcPublicSubnet1NATGateway8FF1F51C",
+        },
+        "RouteTableId": {
+          "Ref": "MtgVpcPrivateSubnet1RouteTableEA956BF3",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "MtgVpcPrivateSubnet1RouteTableAssociationB3D0FA71": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "MtgVpcPrivateSubnet1RouteTableEA956BF3",
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "MtgVpcPrivateSubnet1RouteTableEA956BF3": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-gamma/MtgVpc/PrivateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "MtgVpcPrivateSubnet1Subnet419C8450": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.128.0/18",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Private",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private",
+          },
+          {
+            "Key": "Name",
+            "Value": "MtgServer-gamma/MtgVpc/PrivateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "MtgVpcPrivateSubnet2DefaultRoute06036717": {
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "MtgVpcPublicSubnet2NATGateway57019C00",
+        },
+        "RouteTableId": {
+          "Ref": "MtgVpcPrivateSubnet2RouteTableE0CBC84D",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "MtgVpcPrivateSubnet2RouteTableAssociationDBF1E622": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "MtgVpcPrivateSubnet2RouteTableE0CBC84D",
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "MtgVpcPrivateSubnet2RouteTableE0CBC84D": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-gamma/MtgVpc/PrivateSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "MtgVpcPrivateSubnet2SubnetB7A4FF12": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.192.0/18",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Private",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private",
+          },
+          {
+            "Key": "Name",
+            "Value": "MtgServer-gamma/MtgVpc/PrivateSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "MtgVpcPublicSubnet1DefaultRoute177F3219": {
+      "DependsOn": [
+        "MtgVpcVPCGW8441F645",
+      ],
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "MtgVpcIGWA33FAFDD",
+        },
+        "RouteTableId": {
+          "Ref": "MtgVpcPublicSubnet1RouteTable3C061B9E",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "MtgVpcPublicSubnet1EIP01E06F1E": {
+      "Properties": {
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-gamma/MtgVpc/PublicSubnet1",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::EIP",
+    },
+    "MtgVpcPublicSubnet1NATGateway8FF1F51C": {
+      "DependsOn": [
+        "MtgVpcPublicSubnet1DefaultRoute177F3219",
+        "MtgVpcPublicSubnet1RouteTableAssociation6BB0F351",
+      ],
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "MtgVpcPublicSubnet1EIP01E06F1E",
+            "AllocationId",
+          ],
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPublicSubnet1Subnet5289BC50",
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-gamma/MtgVpc/PublicSubnet1",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::NatGateway",
+    },
+    "MtgVpcPublicSubnet1RouteTable3C061B9E": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-gamma/MtgVpc/PublicSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "MtgVpcPublicSubnet1RouteTableAssociation6BB0F351": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "MtgVpcPublicSubnet1RouteTable3C061B9E",
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPublicSubnet1Subnet5289BC50",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "MtgVpcPublicSubnet1Subnet5289BC50": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.0.0/18",
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Public",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public",
+          },
+          {
+            "Key": "Name",
+            "Value": "MtgServer-gamma/MtgVpc/PublicSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "MtgVpcPublicSubnet2DefaultRoute81A3E0FF": {
+      "DependsOn": [
+        "MtgVpcVPCGW8441F645",
+      ],
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "MtgVpcIGWA33FAFDD",
+        },
+        "RouteTableId": {
+          "Ref": "MtgVpcPublicSubnet2RouteTable649CEE74",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "MtgVpcPublicSubnet2EIP296BC352": {
+      "Properties": {
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-gamma/MtgVpc/PublicSubnet2",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::EIP",
+    },
+    "MtgVpcPublicSubnet2NATGateway57019C00": {
+      "DependsOn": [
+        "MtgVpcPublicSubnet2DefaultRoute81A3E0FF",
+        "MtgVpcPublicSubnet2RouteTableAssociation19ECDFD9",
+      ],
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "MtgVpcPublicSubnet2EIP296BC352",
+            "AllocationId",
+          ],
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPublicSubnet2SubnetC2F18AE7",
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-gamma/MtgVpc/PublicSubnet2",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::NatGateway",
+    },
+    "MtgVpcPublicSubnet2RouteTable649CEE74": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-gamma/MtgVpc/PublicSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "MtgVpcPublicSubnet2RouteTableAssociation19ECDFD9": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "MtgVpcPublicSubnet2RouteTable649CEE74",
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPublicSubnet2SubnetC2F18AE7",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "MtgVpcPublicSubnet2SubnetC2F18AE7": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.64.0/18",
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Public",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public",
+          },
+          {
+            "Key": "Name",
+            "Value": "MtgServer-gamma/MtgVpc/PublicSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "MtgVpcVPCGW8441F645": {
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "MtgVpcIGWA33FAFDD",
+        },
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`MtgServerStack (prod) matches snapshot 1`] = `
+{
+  "Outputs": {
+    "DbEndpoint": {
+      "Description": "RDS PostgreSQL endpoint",
+      "Value": {
+        "Fn::GetAtt": [
+          "MtgDatabase64C4CEAE",
+          "Endpoint.Address",
+        ],
+      },
+    },
+    "DbSecretArn": {
+      "Description": "ARN of the Secrets Manager secret for DB credentials",
+      "Value": {
+        "Ref": "MtgDatabaseSecretAttachment81454F84",
+      },
+    },
+    "LoadBalancerDns": {
+      "Description": "ALB DNS name for the MTG server",
+      "Value": {
+        "Fn::GetAtt": [
+          "MtgServiceLB727DC4CB",
+          "DNSName",
+        ],
+      },
+    },
+    "MtgServiceLoadBalancerDNSBB92C30E": {
+      "Value": {
+        "Fn::GetAtt": [
+          "MtgServiceLB727DC4CB",
+          "DNSName",
+        ],
+      },
+    },
+    "MtgServiceServiceURLBAF75C06": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "http://",
+            {
+              "Fn::GetAtt": [
+                "MtgServiceLB727DC4CB",
+                "DNSName",
+              ],
+            },
+          ],
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "DbSecurityGroupE9D701AD": {
+      "Properties": {
+        "GroupDescription": "Security group for MTG Server RDS instance (prod)",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "255.255.255.255/32",
+            "Description": "Disallow all traffic",
+            "FromPort": 252,
+            "IpProtocol": "icmp",
+            "ToPort": 86,
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "DbSecurityGroupfromMtgServerprodMtgServiceSecurityGroup2BA4998F5432379E9F7F": {
+      "Properties": {
+        "Description": "Allow Postgres from Fargate tasks",
+        "FromPort": 5432,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "DbSecurityGroupE9D701AD",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceSecurityGroup42D3C015",
+            "GroupId",
+          ],
+        },
+        "ToPort": 5432,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "MtgClusterDD54BADF": {
+      "Type": "AWS::ECS::Cluster",
+    },
+    "MtgDatabase64C4CEAE": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "AllocatedStorage": "20",
+        "BackupRetentionPeriod": 14,
+        "CopyTagsToSnapshot": true,
+        "DBInstanceClass": "db.r6g.large",
+        "DBName": "mtg",
+        "DBSubnetGroupName": {
+          "Ref": "MtgDatabaseSubnetGroup6519A9CA",
+        },
+        "DeletionProtection": true,
+        "Engine": "postgres",
+        "EngineVersion": "16",
+        "MasterUserPassword": {
+          "Fn::Join": [
+            "",
+            [
+              "{{resolve:secretsmanager:",
+              {
+                "Ref": "MtgServerprodMtgDatabaseSecret34704DEE3fdaad7efa858a3daf9490cf0a702aeb",
+              },
+              ":SecretString:password::}}",
+            ],
+          ],
+        },
+        "MasterUsername": "mtg_admin",
+        "MaxAllocatedStorage": 100,
+        "MultiAZ": true,
+        "PubliclyAccessible": false,
+        "StorageEncrypted": true,
+        "StorageType": "gp2",
+        "VPCSecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "DbSecurityGroupE9D701AD",
+              "GroupId",
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBInstance",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "MtgDatabaseSecretAttachment81454F84": {
+      "Properties": {
+        "SecretId": {
+          "Ref": "MtgServerprodMtgDatabaseSecret34704DEE3fdaad7efa858a3daf9490cf0a702aeb",
+        },
+        "TargetId": {
+          "Ref": "MtgDatabase64C4CEAE",
+        },
+        "TargetType": "AWS::RDS::DBInstance",
+      },
+      "Type": "AWS::SecretsManager::SecretTargetAttachment",
+    },
+    "MtgDatabaseSubnetGroup6519A9CA": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "DBSubnetGroupDescription": "Subnet group for MtgDatabase database",
+        "SubnetIds": [
+          {
+            "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
+          },
+          {
+            "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBSubnetGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "MtgServerprodMtgDatabaseSecret34704DEE3fdaad7efa858a3daf9490cf0a702aeb": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Generated by the CDK for stack: ",
+              {
+                "Ref": "AWS::StackName",
+              },
+            ],
+          ],
+        },
+        "GenerateSecretString": {
+          "ExcludeCharacters": " %+~\`#$&*()|[]{}:;<>?!'/@"\\",
+          "GenerateStringKey": "password",
+          "PasswordLength": 30,
+          "SecretStringTemplate": "{"username":"mtg_admin"}",
+        },
+        "Name": "mtg-server/prod/db-credentials",
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "MtgServiceD0BF3F86": {
+      "DependsOn": [
+        "MtgServiceLBPublicListenerECSGroup351BEA4C",
+        "MtgServiceLBPublicListener6EB1F6FB",
+        "MtgServiceTaskDefTaskRole0D4FCAB0",
+      ],
+      "Properties": {
+        "Cluster": {
+          "Ref": "MtgClusterDD54BADF",
+        },
+        "DeploymentConfiguration": {
+          "Alarms": {
+            "AlarmNames": [],
+            "Enable": false,
+            "Rollback": false,
+          },
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 50,
+        },
+        "DesiredCount": 2,
+        "EnableECSManagedTags": false,
+        "HealthCheckGracePeriodSeconds": 60,
+        "LaunchType": "FARGATE",
+        "LoadBalancers": [
+          {
+            "ContainerName": "web",
+            "ContainerPort": 13734,
+            "TargetGroupArn": {
+              "Ref": "MtgServiceLBPublicListenerECSGroup351BEA4C",
+            },
+          },
+        ],
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "MtgServiceSecurityGroup42D3C015",
+                  "GroupId",
+                ],
+              },
+            ],
+            "Subnets": [
+              {
+                "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
+              },
+              {
+                "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
+              },
+            ],
+          },
+        },
+        "TaskDefinition": {
+          "Ref": "MtgServiceTaskDef43D3C00D",
+        },
+      },
+      "Type": "AWS::ECS::Service",
+    },
+    "MtgServiceLB727DC4CB": {
+      "DependsOn": [
+        "MtgVpcPublicSubnet1DefaultRoute177F3219",
+        "MtgVpcPublicSubnet1RouteTableAssociation6BB0F351",
+        "MtgVpcPublicSubnet2DefaultRoute81A3E0FF",
+        "MtgVpcPublicSubnet2RouteTableAssociation19ECDFD9",
+      ],
+      "Properties": {
+        "LoadBalancerAttributes": [
+          {
+            "Key": "deletion_protection.enabled",
+            "Value": "false",
+          },
+        ],
+        "Scheme": "internet-facing",
+        "SecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "MtgServiceLBSecurityGroupFA79AD6E",
+              "GroupId",
+            ],
+          },
+        ],
+        "Subnets": [
+          {
+            "Ref": "MtgVpcPublicSubnet1Subnet5289BC50",
+          },
+          {
+            "Ref": "MtgVpcPublicSubnet2SubnetC2F18AE7",
+          },
+        ],
+        "Type": "application",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+    },
+    "MtgServiceLBPublicListener6EB1F6FB": {
+      "Properties": {
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "MtgServiceLBPublicListenerECSGroup351BEA4C",
+            },
+            "Type": "forward",
+          },
+        ],
+        "LoadBalancerArn": {
+          "Ref": "MtgServiceLB727DC4CB",
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+    },
+    "MtgServiceLBPublicListenerECSGroup351BEA4C": {
+      "Properties": {
+        "HealthCheckPath": "/ping",
+        "Matcher": {
+          "HttpCode": "200",
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+        "TargetGroupAttributes": [
+          {
+            "Key": "stickiness.enabled",
+            "Value": "false",
+          },
+        ],
+        "TargetType": "ip",
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+    },
+    "MtgServiceLBSecurityGroupFA79AD6E": {
+      "Properties": {
+        "GroupDescription": "Automatically created Security Group for ELB MtgServerprodMtgServiceLB3CC6A036",
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow from anyone on port 80",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80,
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "MtgServiceLBSecurityGrouptoMtgServerprodMtgServiceSecurityGroup2BA4998F13734370C099A": {
+      "Properties": {
+        "Description": "Load balancer to target",
+        "DestinationSecurityGroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceSecurityGroup42D3C015",
+            "GroupId",
+          ],
+        },
+        "FromPort": 13734,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceLBSecurityGroupFA79AD6E",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "ToPort": 13734,
+      },
+      "Type": "AWS::EC2::SecurityGroupEgress",
+    },
+    "MtgServiceSecurityGroup42D3C015": {
+      "DependsOn": [
+        "MtgServiceTaskDefTaskRole0D4FCAB0",
+      ],
+      "Properties": {
+        "GroupDescription": "MtgServer-prod/MtgService/Service/SecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "MtgServiceSecurityGroupfromMtgServerprodMtgServiceLBSecurityGroup6266E8D9137343F1FF5CD": {
+      "DependsOn": [
+        "MtgServiceTaskDefTaskRole0D4FCAB0",
+      ],
+      "Properties": {
+        "Description": "Load balancer to target",
+        "FromPort": 13734,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceSecurityGroup42D3C015",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceLBSecurityGroupFA79AD6E",
+            "GroupId",
+          ],
+        },
+        "ToPort": 13734,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "MtgServiceTaskDef43D3C00D": {
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Environment": [
+              {
+                "Name": "RUST_LOG",
+                "Value": "info",
+              },
+              {
+                "Name": "STAGE",
+                "Value": "prod",
+              },
+            ],
+            "Essential": true,
+            "Image": "public.ecr.aws/docker/library/hello-world:latest",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "MtgServiceTaskDefwebLogGroupE8036CF3",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "MtgService",
+              },
+            },
+            "Name": "web",
+            "PortMappings": [
+              {
+                "ContainerPort": 13734,
+                "Protocol": "tcp",
+              },
+            ],
+            "Secrets": [
+              {
+                "Name": "DB_SECRET",
+                "ValueFrom": {
+                  "Ref": "MtgDatabaseSecretAttachment81454F84",
+                },
+              },
+            ],
+          },
+        ],
+        "Cpu": "1024",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "MtgServiceTaskDefExecutionRole657C40A4",
+            "Arn",
+          ],
+        },
+        "Family": "MtgServerprodMtgServiceTaskDef11FE7EC8",
+        "Memory": "2048",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE",
+        ],
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "MtgServiceTaskDefTaskRole0D4FCAB0",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::ECS::TaskDefinition",
+    },
+    "MtgServiceTaskDefExecutionRole657C40A4": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "MtgServiceTaskDefExecutionRoleDefaultPolicy46637495": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "MtgServiceTaskDefwebLogGroupE8036CF3",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "MtgDatabaseSecretAttachment81454F84",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "MtgServiceTaskDefExecutionRoleDefaultPolicy46637495",
+        "Roles": [
+          {
+            "Ref": "MtgServiceTaskDefExecutionRole657C40A4",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "MtgServiceTaskDefTaskRole0D4FCAB0": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "MtgServiceTaskDefwebLogGroupE8036CF3": {
+      "DeletionPolicy": "Retain",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "MtgVpc2242639D": {
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": true,
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-prod/MtgVpc",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::VPC",
+    },
+    "MtgVpcIGWA33FAFDD": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-prod/MtgVpc",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::InternetGateway",
+    },
+    "MtgVpcPrivateSubnet1DefaultRouteFA45CE04": {
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "MtgVpcPublicSubnet1NATGateway8FF1F51C",
+        },
+        "RouteTableId": {
+          "Ref": "MtgVpcPrivateSubnet1RouteTableEA956BF3",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "MtgVpcPrivateSubnet1RouteTableAssociationB3D0FA71": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "MtgVpcPrivateSubnet1RouteTableEA956BF3",
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "MtgVpcPrivateSubnet1RouteTableEA956BF3": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-prod/MtgVpc/PrivateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "MtgVpcPrivateSubnet1Subnet419C8450": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.128.0/18",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Private",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private",
+          },
+          {
+            "Key": "Name",
+            "Value": "MtgServer-prod/MtgVpc/PrivateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "MtgVpcPrivateSubnet2DefaultRoute06036717": {
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "MtgVpcPublicSubnet2NATGateway57019C00",
+        },
+        "RouteTableId": {
+          "Ref": "MtgVpcPrivateSubnet2RouteTableE0CBC84D",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "MtgVpcPrivateSubnet2RouteTableAssociationDBF1E622": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "MtgVpcPrivateSubnet2RouteTableE0CBC84D",
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "MtgVpcPrivateSubnet2RouteTableE0CBC84D": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-prod/MtgVpc/PrivateSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "MtgVpcPrivateSubnet2SubnetB7A4FF12": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.192.0/18",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Private",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private",
+          },
+          {
+            "Key": "Name",
+            "Value": "MtgServer-prod/MtgVpc/PrivateSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "MtgVpcPublicSubnet1DefaultRoute177F3219": {
+      "DependsOn": [
+        "MtgVpcVPCGW8441F645",
+      ],
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "MtgVpcIGWA33FAFDD",
+        },
+        "RouteTableId": {
+          "Ref": "MtgVpcPublicSubnet1RouteTable3C061B9E",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "MtgVpcPublicSubnet1EIP01E06F1E": {
+      "Properties": {
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-prod/MtgVpc/PublicSubnet1",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::EIP",
+    },
+    "MtgVpcPublicSubnet1NATGateway8FF1F51C": {
+      "DependsOn": [
+        "MtgVpcPublicSubnet1DefaultRoute177F3219",
+        "MtgVpcPublicSubnet1RouteTableAssociation6BB0F351",
+      ],
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "MtgVpcPublicSubnet1EIP01E06F1E",
+            "AllocationId",
+          ],
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPublicSubnet1Subnet5289BC50",
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-prod/MtgVpc/PublicSubnet1",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::NatGateway",
+    },
+    "MtgVpcPublicSubnet1RouteTable3C061B9E": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-prod/MtgVpc/PublicSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "MtgVpcPublicSubnet1RouteTableAssociation6BB0F351": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "MtgVpcPublicSubnet1RouteTable3C061B9E",
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPublicSubnet1Subnet5289BC50",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "MtgVpcPublicSubnet1Subnet5289BC50": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.0.0/18",
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Public",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public",
+          },
+          {
+            "Key": "Name",
+            "Value": "MtgServer-prod/MtgVpc/PublicSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "MtgVpcPublicSubnet2DefaultRoute81A3E0FF": {
+      "DependsOn": [
+        "MtgVpcVPCGW8441F645",
+      ],
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "MtgVpcIGWA33FAFDD",
+        },
+        "RouteTableId": {
+          "Ref": "MtgVpcPublicSubnet2RouteTable649CEE74",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "MtgVpcPublicSubnet2EIP296BC352": {
+      "Properties": {
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-prod/MtgVpc/PublicSubnet2",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::EIP",
+    },
+    "MtgVpcPublicSubnet2NATGateway57019C00": {
+      "DependsOn": [
+        "MtgVpcPublicSubnet2DefaultRoute81A3E0FF",
+        "MtgVpcPublicSubnet2RouteTableAssociation19ECDFD9",
+      ],
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "MtgVpcPublicSubnet2EIP296BC352",
+            "AllocationId",
+          ],
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPublicSubnet2SubnetC2F18AE7",
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-prod/MtgVpc/PublicSubnet2",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::NatGateway",
+    },
+    "MtgVpcPublicSubnet2RouteTable649CEE74": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-prod/MtgVpc/PublicSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "MtgVpcPublicSubnet2RouteTableAssociation19ECDFD9": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "MtgVpcPublicSubnet2RouteTable649CEE74",
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPublicSubnet2SubnetC2F18AE7",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "MtgVpcPublicSubnet2SubnetC2F18AE7": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.64.0/18",
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Public",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public",
+          },
+          {
+            "Key": "Name",
+            "Value": "MtgServer-prod/MtgVpc/PublicSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "MtgVpcVPCGW8441F645": {
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "MtgVpcIGWA33FAFDD",
+        },
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`MtgServerStack (test) matches snapshot 1`] = `
+{
+  "Outputs": {
+    "DbEndpoint": {
+      "Description": "RDS PostgreSQL endpoint",
+      "Value": {
+        "Fn::GetAtt": [
+          "MtgDatabase64C4CEAE",
+          "Endpoint.Address",
+        ],
+      },
+    },
+    "DbSecretArn": {
+      "Description": "ARN of the Secrets Manager secret for DB credentials",
+      "Value": {
+        "Ref": "MtgDatabaseSecretAttachment81454F84",
+      },
+    },
+    "LoadBalancerDns": {
+      "Description": "ALB DNS name for the MTG server",
+      "Value": {
+        "Fn::GetAtt": [
+          "MtgServiceLB727DC4CB",
+          "DNSName",
+        ],
+      },
+    },
+    "MtgServiceLoadBalancerDNSBB92C30E": {
+      "Value": {
+        "Fn::GetAtt": [
+          "MtgServiceLB727DC4CB",
+          "DNSName",
+        ],
+      },
+    },
+    "MtgServiceServiceURLBAF75C06": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "http://",
+            {
+              "Fn::GetAtt": [
+                "MtgServiceLB727DC4CB",
+                "DNSName",
+              ],
+            },
+          ],
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "DbSecurityGroupE9D701AD": {
+      "Properties": {
+        "GroupDescription": "Security group for MTG Server RDS instance (test)",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "255.255.255.255/32",
+            "Description": "Disallow all traffic",
+            "FromPort": 252,
+            "IpProtocol": "icmp",
+            "ToPort": 86,
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "DbSecurityGroupfromMtgServertestMtgServiceSecurityGroupC60D5B2754324DDCD00C": {
+      "Properties": {
+        "Description": "Allow Postgres from Fargate tasks",
+        "FromPort": 5432,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "DbSecurityGroupE9D701AD",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceSecurityGroup42D3C015",
+            "GroupId",
+          ],
+        },
+        "ToPort": 5432,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "MtgClusterDD54BADF": {
+      "Type": "AWS::ECS::Cluster",
+    },
+    "MtgDatabase64C4CEAE": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AllocatedStorage": "20",
+        "BackupRetentionPeriod": 1,
+        "CopyTagsToSnapshot": true,
+        "DBInstanceClass": "db.t4g.micro",
+        "DBName": "mtg",
+        "DBSubnetGroupName": {
+          "Ref": "MtgDatabaseSubnetGroup6519A9CA",
+        },
+        "DeletionProtection": false,
+        "Engine": "postgres",
+        "EngineVersion": "16",
+        "MasterUserPassword": {
+          "Fn::Join": [
+            "",
+            [
+              "{{resolve:secretsmanager:",
+              {
+                "Ref": "MtgServertestMtgDatabaseSecret4606343C3fdaad7efa858a3daf9490cf0a702aeb",
+              },
+              ":SecretString:password::}}",
+            ],
+          ],
+        },
+        "MasterUsername": "mtg_admin",
+        "MaxAllocatedStorage": 40,
+        "MultiAZ": false,
+        "PubliclyAccessible": false,
+        "StorageEncrypted": true,
+        "StorageType": "gp2",
+        "VPCSecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "DbSecurityGroupE9D701AD",
+              "GroupId",
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBInstance",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "MtgDatabaseSecretAttachment81454F84": {
+      "Properties": {
+        "SecretId": {
+          "Ref": "MtgServertestMtgDatabaseSecret4606343C3fdaad7efa858a3daf9490cf0a702aeb",
+        },
+        "TargetId": {
+          "Ref": "MtgDatabase64C4CEAE",
+        },
+        "TargetType": "AWS::RDS::DBInstance",
+      },
+      "Type": "AWS::SecretsManager::SecretTargetAttachment",
+    },
+    "MtgDatabaseSubnetGroup6519A9CA": {
+      "Properties": {
+        "DBSubnetGroupDescription": "Subnet group for MtgDatabase database",
+        "SubnetIds": [
+          {
+            "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
+          },
+          {
+            "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBSubnetGroup",
+    },
+    "MtgServertestMtgDatabaseSecret4606343C3fdaad7efa858a3daf9490cf0a702aeb": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Generated by the CDK for stack: ",
+              {
+                "Ref": "AWS::StackName",
+              },
+            ],
+          ],
+        },
+        "GenerateSecretString": {
+          "ExcludeCharacters": " %+~\`#$&*()|[]{}:;<>?!'/@"\\",
+          "GenerateStringKey": "password",
+          "PasswordLength": 30,
+          "SecretStringTemplate": "{"username":"mtg_admin"}",
+        },
+        "Name": "mtg-server/test/db-credentials",
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "MtgServiceD0BF3F86": {
+      "DependsOn": [
+        "MtgServiceLBPublicListenerECSGroup351BEA4C",
+        "MtgServiceLBPublicListener6EB1F6FB",
+        "MtgServiceTaskDefTaskRole0D4FCAB0",
+      ],
+      "Properties": {
+        "Cluster": {
+          "Ref": "MtgClusterDD54BADF",
+        },
+        "DeploymentConfiguration": {
+          "Alarms": {
+            "AlarmNames": [],
+            "Enable": false,
+            "Rollback": false,
+          },
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 50,
+        },
+        "DesiredCount": 1,
+        "EnableECSManagedTags": false,
+        "HealthCheckGracePeriodSeconds": 60,
+        "LaunchType": "FARGATE",
+        "LoadBalancers": [
+          {
+            "ContainerName": "web",
+            "ContainerPort": 13734,
+            "TargetGroupArn": {
+              "Ref": "MtgServiceLBPublicListenerECSGroup351BEA4C",
+            },
+          },
+        ],
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "MtgServiceSecurityGroup42D3C015",
+                  "GroupId",
+                ],
+              },
+            ],
+            "Subnets": [
+              {
+                "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
+              },
+              {
+                "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
+              },
+            ],
+          },
+        },
+        "TaskDefinition": {
+          "Ref": "MtgServiceTaskDef43D3C00D",
+        },
+      },
+      "Type": "AWS::ECS::Service",
+    },
+    "MtgServiceLB727DC4CB": {
+      "DependsOn": [
+        "MtgVpcPublicSubnet1DefaultRoute177F3219",
+        "MtgVpcPublicSubnet1RouteTableAssociation6BB0F351",
+        "MtgVpcPublicSubnet2DefaultRoute81A3E0FF",
+        "MtgVpcPublicSubnet2RouteTableAssociation19ECDFD9",
+      ],
+      "Properties": {
+        "LoadBalancerAttributes": [
+          {
+            "Key": "deletion_protection.enabled",
+            "Value": "false",
+          },
+        ],
+        "Scheme": "internet-facing",
+        "SecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "MtgServiceLBSecurityGroupFA79AD6E",
+              "GroupId",
+            ],
+          },
+        ],
+        "Subnets": [
+          {
+            "Ref": "MtgVpcPublicSubnet1Subnet5289BC50",
+          },
+          {
+            "Ref": "MtgVpcPublicSubnet2SubnetC2F18AE7",
+          },
+        ],
+        "Type": "application",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+    },
+    "MtgServiceLBPublicListener6EB1F6FB": {
+      "Properties": {
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "MtgServiceLBPublicListenerECSGroup351BEA4C",
+            },
+            "Type": "forward",
+          },
+        ],
+        "LoadBalancerArn": {
+          "Ref": "MtgServiceLB727DC4CB",
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+    },
+    "MtgServiceLBPublicListenerECSGroup351BEA4C": {
+      "Properties": {
+        "HealthCheckPath": "/ping",
+        "Matcher": {
+          "HttpCode": "200",
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+        "TargetGroupAttributes": [
+          {
+            "Key": "stickiness.enabled",
+            "Value": "false",
+          },
+        ],
+        "TargetType": "ip",
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+    },
+    "MtgServiceLBSecurityGroupFA79AD6E": {
+      "Properties": {
+        "GroupDescription": "Automatically created Security Group for ELB MtgServertestMtgServiceLB347E2C56",
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow from anyone on port 80",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80,
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "MtgServiceLBSecurityGrouptoMtgServertestMtgServiceSecurityGroupC60D5B2713734FFDAE0A1": {
+      "Properties": {
+        "Description": "Load balancer to target",
+        "DestinationSecurityGroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceSecurityGroup42D3C015",
+            "GroupId",
+          ],
+        },
+        "FromPort": 13734,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceLBSecurityGroupFA79AD6E",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "ToPort": 13734,
+      },
+      "Type": "AWS::EC2::SecurityGroupEgress",
+    },
+    "MtgServiceSecurityGroup42D3C015": {
+      "DependsOn": [
+        "MtgServiceTaskDefTaskRole0D4FCAB0",
+      ],
+      "Properties": {
+        "GroupDescription": "MtgServer-test/MtgService/Service/SecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "MtgServiceSecurityGroupfromMtgServertestMtgServiceLBSecurityGroup00A6B5FB13734515F1DE5": {
+      "DependsOn": [
+        "MtgServiceTaskDefTaskRole0D4FCAB0",
+      ],
+      "Properties": {
+        "Description": "Load balancer to target",
+        "FromPort": 13734,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceSecurityGroup42D3C015",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "MtgServiceLBSecurityGroupFA79AD6E",
+            "GroupId",
+          ],
+        },
+        "ToPort": 13734,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "MtgServiceTaskDef43D3C00D": {
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Environment": [
+              {
+                "Name": "RUST_LOG",
+                "Value": "info",
+              },
+              {
+                "Name": "STAGE",
+                "Value": "test",
+              },
+            ],
+            "Essential": true,
+            "Image": "public.ecr.aws/docker/library/hello-world:latest",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "MtgServiceTaskDefwebLogGroupE8036CF3",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "MtgService",
+              },
+            },
+            "Name": "web",
+            "PortMappings": [
+              {
+                "ContainerPort": 13734,
+                "Protocol": "tcp",
+              },
+            ],
+            "Secrets": [
+              {
+                "Name": "DB_SECRET",
+                "ValueFrom": {
+                  "Ref": "MtgDatabaseSecretAttachment81454F84",
+                },
+              },
+            ],
+          },
+        ],
+        "Cpu": "256",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "MtgServiceTaskDefExecutionRole657C40A4",
+            "Arn",
+          ],
+        },
+        "Family": "MtgServertestMtgServiceTaskDefCFF1035F",
+        "Memory": "512",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE",
+        ],
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "MtgServiceTaskDefTaskRole0D4FCAB0",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::ECS::TaskDefinition",
+    },
+    "MtgServiceTaskDefExecutionRole657C40A4": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "MtgServiceTaskDefExecutionRoleDefaultPolicy46637495": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "MtgServiceTaskDefwebLogGroupE8036CF3",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "MtgDatabaseSecretAttachment81454F84",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "MtgServiceTaskDefExecutionRoleDefaultPolicy46637495",
+        "Roles": [
+          {
+            "Ref": "MtgServiceTaskDefExecutionRole657C40A4",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "MtgServiceTaskDefTaskRole0D4FCAB0": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "MtgServiceTaskDefwebLogGroupE8036CF3": {
+      "DeletionPolicy": "Retain",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "MtgVpc2242639D": {
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": true,
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-test/MtgVpc",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::VPC",
+    },
+    "MtgVpcIGWA33FAFDD": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-test/MtgVpc",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::InternetGateway",
+    },
+    "MtgVpcPrivateSubnet1DefaultRouteFA45CE04": {
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "MtgVpcPublicSubnet1NATGateway8FF1F51C",
+        },
+        "RouteTableId": {
+          "Ref": "MtgVpcPrivateSubnet1RouteTableEA956BF3",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "MtgVpcPrivateSubnet1RouteTableAssociationB3D0FA71": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "MtgVpcPrivateSubnet1RouteTableEA956BF3",
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "MtgVpcPrivateSubnet1RouteTableEA956BF3": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-test/MtgVpc/PrivateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "MtgVpcPrivateSubnet1Subnet419C8450": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.128.0/18",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Private",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private",
+          },
+          {
+            "Key": "Name",
+            "Value": "MtgServer-test/MtgVpc/PrivateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "MtgVpcPrivateSubnet2DefaultRoute06036717": {
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "MtgVpcPublicSubnet1NATGateway8FF1F51C",
+        },
+        "RouteTableId": {
+          "Ref": "MtgVpcPrivateSubnet2RouteTableE0CBC84D",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "MtgVpcPrivateSubnet2RouteTableAssociationDBF1E622": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "MtgVpcPrivateSubnet2RouteTableE0CBC84D",
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "MtgVpcPrivateSubnet2RouteTableE0CBC84D": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-test/MtgVpc/PrivateSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "MtgVpcPrivateSubnet2SubnetB7A4FF12": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.192.0/18",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Private",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private",
+          },
+          {
+            "Key": "Name",
+            "Value": "MtgServer-test/MtgVpc/PrivateSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "MtgVpcPublicSubnet1DefaultRoute177F3219": {
+      "DependsOn": [
+        "MtgVpcVPCGW8441F645",
+      ],
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "MtgVpcIGWA33FAFDD",
+        },
+        "RouteTableId": {
+          "Ref": "MtgVpcPublicSubnet1RouteTable3C061B9E",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "MtgVpcPublicSubnet1EIP01E06F1E": {
+      "Properties": {
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-test/MtgVpc/PublicSubnet1",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::EIP",
+    },
+    "MtgVpcPublicSubnet1NATGateway8FF1F51C": {
+      "DependsOn": [
+        "MtgVpcPublicSubnet1DefaultRoute177F3219",
+        "MtgVpcPublicSubnet1RouteTableAssociation6BB0F351",
+      ],
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "MtgVpcPublicSubnet1EIP01E06F1E",
+            "AllocationId",
+          ],
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPublicSubnet1Subnet5289BC50",
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-test/MtgVpc/PublicSubnet1",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::NatGateway",
+    },
+    "MtgVpcPublicSubnet1RouteTable3C061B9E": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-test/MtgVpc/PublicSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "MtgVpcPublicSubnet1RouteTableAssociation6BB0F351": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "MtgVpcPublicSubnet1RouteTable3C061B9E",
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPublicSubnet1Subnet5289BC50",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "MtgVpcPublicSubnet1Subnet5289BC50": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.0.0/18",
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Public",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public",
+          },
+          {
+            "Key": "Name",
+            "Value": "MtgServer-test/MtgVpc/PublicSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "MtgVpcPublicSubnet2DefaultRoute81A3E0FF": {
+      "DependsOn": [
+        "MtgVpcVPCGW8441F645",
+      ],
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "MtgVpcIGWA33FAFDD",
+        },
+        "RouteTableId": {
+          "Ref": "MtgVpcPublicSubnet2RouteTable649CEE74",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "MtgVpcPublicSubnet2RouteTable649CEE74": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MtgServer-test/MtgVpc/PublicSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "MtgVpcPublicSubnet2RouteTableAssociation19ECDFD9": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "MtgVpcPublicSubnet2RouteTable649CEE74",
+        },
+        "SubnetId": {
+          "Ref": "MtgVpcPublicSubnet2SubnetC2F18AE7",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "MtgVpcPublicSubnet2SubnetC2F18AE7": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.64.0/18",
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Public",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public",
+          },
+          {
+            "Key": "Name",
+            "Value": "MtgServer-test/MtgVpc/PublicSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "MtgVpcVPCGW8441F645": {
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "MtgVpcIGWA33FAFDD",
+        },
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;

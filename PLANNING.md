@@ -175,6 +175,8 @@ A Rust-based server that emulates the rules of Magic: The Gathering, using the c
 - [x] Implement game state struct with serialization (phases, turns, zones as HashSet/Vec per ordering rules)
 - [x] Implement action types with full replay data (targets, choices, mana payments, multi-block, planeswalker attacks)
 - [ ] Implement basic persistence (save/load game state to PostgreSQL)
+- [x] CDK infrastructure: VPC, RDS PostgreSQL, ECS Fargate behind ALB, Secrets Manager for DB credentials
+- [x] Dockerfile for Rust server
 
 ### Phase 3: Turn Structure & Priority
 - [ ] Implement turn phases and steps (CR 500-514)

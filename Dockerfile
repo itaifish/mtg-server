@@ -1,0 +1,12 @@
+FROM rust:1.94-slim AS builder
+WORKDIR /app
+COPY Cargo.toml Cargo.lock ./
+COPY server/ server/
+COPY mtg-server-sdk/ mtg-server-sdk/
+RUN cargo build --release --manifest-path server/Cargo.toml
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /app/target/release/mtg-server /usr/local/bin/mtg-server
+EXPOSE 13734
+CMD ["mtg-server"]
