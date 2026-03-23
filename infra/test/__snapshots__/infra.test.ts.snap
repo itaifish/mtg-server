@@ -352,27 +352,6 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
       },
       "Type": "AWS::EC2::SecurityGroupIngress",
     },
-    "DefaultSgfromIndirectPeer80EF0FBEB2": {
-      "Properties": {
-        "CidrIp": {
-          "Fn::GetAtt": [
-            "MtgVpc2242639D",
-            "CidrBlock",
-          ],
-        },
-        "Description": "NLB health checks to ALB",
-        "FromPort": 80,
-        "GroupId": {
-          "Fn::GetAtt": [
-            "MtgVpc2242639D",
-            "DefaultSecurityGroup",
-          ],
-        },
-        "IpProtocol": "tcp",
-        "ToPort": 80,
-      },
-      "Type": "AWS::EC2::SecurityGroupIngress",
-    },
     "MtgApi521633AE": {
       "Properties": {
         "Name": "mtg-server-beta",
@@ -745,6 +724,14 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
           },
         ],
         "Scheme": "internal",
+        "SecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "NlbSecurityGroup08F7DC4B",
+              "GroupId",
+            ],
+          },
+        ],
         "Subnets": [
           {
             "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
@@ -956,34 +943,10 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
     "MtgServiceLBSecurityGroupFA79AD6E": {
       "Properties": {
         "GroupDescription": "Automatically created Security Group for ELB MtgServerbetaMtgServiceLB9E6FC2F6",
-        "SecurityGroupEgress": [
-          {
-            "CidrIp": {
-              "Fn::GetAtt": [
-                "MtgVpc2242639D",
-                "CidrBlock",
-              ],
-            },
-            "Description": "Allow ALB responses to NLB",
-            "IpProtocol": "-1",
-          },
-        ],
         "SecurityGroupIngress": [
           {
             "CidrIp": "0.0.0.0/0",
             "Description": "Allow from anyone on port 80",
-            "FromPort": 80,
-            "IpProtocol": "tcp",
-            "ToPort": 80,
-          },
-          {
-            "CidrIp": {
-              "Fn::GetAtt": [
-                "MtgVpc2242639D",
-                "CidrBlock",
-              ],
-            },
-            "Description": "Allow NLB traffic to ALB",
             "FromPort": 80,
             "IpProtocol": "tcp",
             "ToPort": 80,
@@ -1083,7 +1046,7 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:23f0916d5945637c1cb6ad7db4ac4486bb9484f393f29c0db172aba91d24257e",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:c36a5329267c8769dc08bb7b4095b2bcc989a9ce5ae7b58e5ef4cf0807fbe3d9",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",
@@ -1617,6 +1580,31 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
       },
       "Type": "AWS::EC2::VPCGatewayAttachment",
     },
+    "NlbSecurityGroup08F7DC4B": {
+      "Properties": {
+        "GroupDescription": "Security group for NLB in front of ALB",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow inbound HTTP",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80,
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
     "VpcLink42ED6FF0": {
       "Properties": {
         "Name": "MtgServerbetaVpcLink5445F06E",
@@ -2011,27 +1999,6 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
       },
       "Type": "AWS::EC2::SecurityGroupIngress",
     },
-    "DefaultSgfromIndirectPeer80EF0FBEB2": {
-      "Properties": {
-        "CidrIp": {
-          "Fn::GetAtt": [
-            "MtgVpc2242639D",
-            "CidrBlock",
-          ],
-        },
-        "Description": "NLB health checks to ALB",
-        "FromPort": 80,
-        "GroupId": {
-          "Fn::GetAtt": [
-            "MtgVpc2242639D",
-            "DefaultSecurityGroup",
-          ],
-        },
-        "IpProtocol": "tcp",
-        "ToPort": 80,
-      },
-      "Type": "AWS::EC2::SecurityGroupIngress",
-    },
     "MtgApi521633AE": {
       "Properties": {
         "Name": "mtg-server-gamma",
@@ -2404,6 +2371,14 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
           },
         ],
         "Scheme": "internal",
+        "SecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "NlbSecurityGroup08F7DC4B",
+              "GroupId",
+            ],
+          },
+        ],
         "Subnets": [
           {
             "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
@@ -2615,34 +2590,10 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
     "MtgServiceLBSecurityGroupFA79AD6E": {
       "Properties": {
         "GroupDescription": "Automatically created Security Group for ELB MtgServergammaMtgServiceLB02338B0F",
-        "SecurityGroupEgress": [
-          {
-            "CidrIp": {
-              "Fn::GetAtt": [
-                "MtgVpc2242639D",
-                "CidrBlock",
-              ],
-            },
-            "Description": "Allow ALB responses to NLB",
-            "IpProtocol": "-1",
-          },
-        ],
         "SecurityGroupIngress": [
           {
             "CidrIp": "0.0.0.0/0",
             "Description": "Allow from anyone on port 80",
-            "FromPort": 80,
-            "IpProtocol": "tcp",
-            "ToPort": 80,
-          },
-          {
-            "CidrIp": {
-              "Fn::GetAtt": [
-                "MtgVpc2242639D",
-                "CidrBlock",
-              ],
-            },
-            "Description": "Allow NLB traffic to ALB",
             "FromPort": 80,
             "IpProtocol": "tcp",
             "ToPort": 80,
@@ -2742,7 +2693,7 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:23f0916d5945637c1cb6ad7db4ac4486bb9484f393f29c0db172aba91d24257e",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:c36a5329267c8769dc08bb7b4095b2bcc989a9ce5ae7b58e5ef4cf0807fbe3d9",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",
@@ -3312,6 +3263,31 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
       },
       "Type": "AWS::EC2::VPCGatewayAttachment",
     },
+    "NlbSecurityGroup08F7DC4B": {
+      "Properties": {
+        "GroupDescription": "Security group for NLB in front of ALB",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow inbound HTTP",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80,
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
     "VpcLink42ED6FF0": {
       "Properties": {
         "Name": "MtgServergammaVpcLink6B73BE67",
@@ -3706,27 +3682,6 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
       },
       "Type": "AWS::EC2::SecurityGroupIngress",
     },
-    "DefaultSgfromIndirectPeer80EF0FBEB2": {
-      "Properties": {
-        "CidrIp": {
-          "Fn::GetAtt": [
-            "MtgVpc2242639D",
-            "CidrBlock",
-          ],
-        },
-        "Description": "NLB health checks to ALB",
-        "FromPort": 80,
-        "GroupId": {
-          "Fn::GetAtt": [
-            "MtgVpc2242639D",
-            "DefaultSecurityGroup",
-          ],
-        },
-        "IpProtocol": "tcp",
-        "ToPort": 80,
-      },
-      "Type": "AWS::EC2::SecurityGroupIngress",
-    },
     "MtgApi521633AE": {
       "Properties": {
         "Name": "mtg-server-prod",
@@ -4101,6 +4056,14 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
           },
         ],
         "Scheme": "internal",
+        "SecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "NlbSecurityGroup08F7DC4B",
+              "GroupId",
+            ],
+          },
+        ],
         "Subnets": [
           {
             "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
@@ -4312,34 +4275,10 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
     "MtgServiceLBSecurityGroupFA79AD6E": {
       "Properties": {
         "GroupDescription": "Automatically created Security Group for ELB MtgServerprodMtgServiceLB3CC6A036",
-        "SecurityGroupEgress": [
-          {
-            "CidrIp": {
-              "Fn::GetAtt": [
-                "MtgVpc2242639D",
-                "CidrBlock",
-              ],
-            },
-            "Description": "Allow ALB responses to NLB",
-            "IpProtocol": "-1",
-          },
-        ],
         "SecurityGroupIngress": [
           {
             "CidrIp": "0.0.0.0/0",
             "Description": "Allow from anyone on port 80",
-            "FromPort": 80,
-            "IpProtocol": "tcp",
-            "ToPort": 80,
-          },
-          {
-            "CidrIp": {
-              "Fn::GetAtt": [
-                "MtgVpc2242639D",
-                "CidrBlock",
-              ],
-            },
-            "Description": "Allow NLB traffic to ALB",
             "FromPort": 80,
             "IpProtocol": "tcp",
             "ToPort": 80,
@@ -4439,7 +4378,7 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:23f0916d5945637c1cb6ad7db4ac4486bb9484f393f29c0db172aba91d24257e",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:c36a5329267c8769dc08bb7b4095b2bcc989a9ce5ae7b58e5ef4cf0807fbe3d9",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",
@@ -5009,6 +4948,31 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
       },
       "Type": "AWS::EC2::VPCGatewayAttachment",
     },
+    "NlbSecurityGroup08F7DC4B": {
+      "Properties": {
+        "GroupDescription": "Security group for NLB in front of ALB",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow inbound HTTP",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80,
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
     "VpcLink42ED6FF0": {
       "Properties": {
         "Name": "MtgServerprodVpcLinkBF1A0B02",
@@ -5403,27 +5367,6 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
       },
       "Type": "AWS::EC2::SecurityGroupIngress",
     },
-    "DefaultSgfromIndirectPeer80EF0FBEB2": {
-      "Properties": {
-        "CidrIp": {
-          "Fn::GetAtt": [
-            "MtgVpc2242639D",
-            "CidrBlock",
-          ],
-        },
-        "Description": "NLB health checks to ALB",
-        "FromPort": 80,
-        "GroupId": {
-          "Fn::GetAtt": [
-            "MtgVpc2242639D",
-            "DefaultSecurityGroup",
-          ],
-        },
-        "IpProtocol": "tcp",
-        "ToPort": 80,
-      },
-      "Type": "AWS::EC2::SecurityGroupIngress",
-    },
     "MtgApi521633AE": {
       "Properties": {
         "Name": "mtg-server-test",
@@ -5796,6 +5739,14 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
           },
         ],
         "Scheme": "internal",
+        "SecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "NlbSecurityGroup08F7DC4B",
+              "GroupId",
+            ],
+          },
+        ],
         "Subnets": [
           {
             "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
@@ -6007,34 +5958,10 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
     "MtgServiceLBSecurityGroupFA79AD6E": {
       "Properties": {
         "GroupDescription": "Automatically created Security Group for ELB MtgServertestMtgServiceLB347E2C56",
-        "SecurityGroupEgress": [
-          {
-            "CidrIp": {
-              "Fn::GetAtt": [
-                "MtgVpc2242639D",
-                "CidrBlock",
-              ],
-            },
-            "Description": "Allow ALB responses to NLB",
-            "IpProtocol": "-1",
-          },
-        ],
         "SecurityGroupIngress": [
           {
             "CidrIp": "0.0.0.0/0",
             "Description": "Allow from anyone on port 80",
-            "FromPort": 80,
-            "IpProtocol": "tcp",
-            "ToPort": 80,
-          },
-          {
-            "CidrIp": {
-              "Fn::GetAtt": [
-                "MtgVpc2242639D",
-                "CidrBlock",
-              ],
-            },
-            "Description": "Allow NLB traffic to ALB",
             "FromPort": 80,
             "IpProtocol": "tcp",
             "ToPort": 80,
@@ -6134,7 +6061,7 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:23f0916d5945637c1cb6ad7db4ac4486bb9484f393f29c0db172aba91d24257e",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:c36a5329267c8769dc08bb7b4095b2bcc989a9ce5ae7b58e5ef4cf0807fbe3d9",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",
@@ -6667,6 +6594,31 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
         },
       },
       "Type": "AWS::EC2::VPCGatewayAttachment",
+    },
+    "NlbSecurityGroup08F7DC4B": {
+      "Properties": {
+        "GroupDescription": "Security group for NLB in front of ALB",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow inbound HTTP",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80,
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
     },
     "VpcLink42ED6FF0": {
       "Properties": {

@@ -130,44 +130,21 @@ export class MtgServerStack extends cdk.Stack {
 			healthyHttpCodes: '200',
 		});
 
-		// Allow NLB to reach the ALB and ALB to respond
-		// (NLBs have no security groups; traffic originates from VPC CIDR)
-		this.fargateService.loadBalancer.connections.allowFrom(
-			ec2.Peer.ipv4(this.vpc.vpcCidrBlock),
-			ec2.Port.tcp(80),
-			'Allow NLB traffic to ALB',
-		);
-		this.fargateService.loadBalancer.connections.allowTo(
-			ec2.Peer.ipv4(this.vpc.vpcCidrBlock),
-			ec2.Port.allTraffic(),
-			'Allow ALB responses to NLB',
-		);
-
 		// --- API Gateway ---
 
-		// NLB in front of ALB (REST API VpcLink requires NLB)
-		// NLB health checks to ALB-type targets use the VPC default security group.
-		// CDK strips its rules, so we must re-allow traffic for the health checks to pass.
-		const defaultSg = ec2.SecurityGroup.fromSecurityGroupId(
-			this,
-			'DefaultSg',
-			this.vpc.vpcDefaultSecurityGroup,
-		);
-		defaultSg.addIngressRule(
-			ec2.Peer.ipv4(this.vpc.vpcCidrBlock),
-			ec2.Port.tcp(80),
-			'NLB health checks to ALB',
-		);
-		defaultSg.addEgressRule(
-			ec2.Peer.ipv4(this.vpc.vpcCidrBlock),
-			ec2.Port.allTraffic(),
-			'NLB health check responses',
-		);
+		// NLB security group — must allow health check and forwarding traffic to the ALB
+		const nlbSg = new ec2.SecurityGroup(this, 'NlbSecurityGroup', {
+			vpc: this.vpc,
+			description: 'Security group for NLB in front of ALB',
+			allowAllOutbound: true,
+		});
+		nlbSg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80), 'Allow inbound HTTP');
 
 		const nlb = new elbv2.NetworkLoadBalancer(this, 'MtgNlb', {
 			vpc: this.vpc,
 			internetFacing: false,
 			crossZoneEnabled: true,
+			securityGroups: [nlbSg],
 		});
 
 		const nlbListener = nlb.addListener('NlbListener', { port: 80 });
