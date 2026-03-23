@@ -82,12 +82,17 @@ The `smithy-rs/` directory is a [git submodule](https://git-scm.com/book/en/v2/G
 - Only developers who modify the Smithy model need to run `./gradlew assemble`. Everyone else just needs `cargo build`.
 
 **Updating smithy-rs:**
+
+The release tag is stored in `.gitmodules` (`branch` field) — this is the single source of truth used by both local dev and the CI/CD pipeline.
+
 ```bash
 cd smithy-rs
 git fetch
 git checkout release-YYYY-MM-DD  # pick a new release tag
 cd ..
 git add smithy-rs
+git config -f .gitmodules submodule.smithy-rs.branch release-YYYY-MM-DD
+git add .gitmodules
 git commit -m "Update smithy-rs to release-YYYY-MM-DD"
 ./gradlew assemble  # regenerate the SDK
 ```
@@ -112,9 +117,12 @@ A CDK Pipelines self-mutating pipeline deploys across four stages:
 
 On every push to `main`, the pipeline:
 1. Pulls the source from GitHub
-2. Synthesizes the CDK app in CodeBuild
-3. Builds the Docker image (on Linux x86_64 — no local Docker needed)
-4. Deploys each stage in order
+2. Clones the pinned smithy-rs tag (read from `.gitmodules`) and runs `./gradlew assemble` to generate the server SDK
+3. Synthesizes the CDK app in CodeBuild
+4. Builds the Docker image (on Linux x86_64 — no local Docker needed)
+5. Deploys each stage in order
+
+**Note:** The generated `mtg-server-sdk/src/` files are gitignored, so the pipeline must regenerate them. The Dockerfile uses ECR Public Gallery base images (`public.ecr.aws/docker/library/...`) instead of Docker Hub to avoid rate limits in CodeBuild.
 
 ### First-time setup
 

@@ -31,7 +31,8 @@ export class MtgPipelineStack extends cdk.Stack {
 				input: source,
 				installCommands: ['n stable'],
 				commands: [
-					'git submodule update --init --recursive',
+					'SMITHY_RS_TAG=$(git config -f .gitmodules --get submodule.smithy-rs.branch || git -C smithy-rs describe --tags --exact-match 2>/dev/null)',
+					'git clone --depth 1 --branch "$SMITHY_RS_TAG" https://github.com/smithy-lang/smithy-rs.git smithy-rs',
 					'./gradlew assemble',
 					'cd infra',
 					'npm ci',

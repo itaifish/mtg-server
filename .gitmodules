@@ -1,3 +1,4 @@
 [submodule "smithy-rs"]
 	path = smithy-rs
 	url = https://github.com/smithy-lang/smithy-rs.git
+	branch = release-2026-03-16
