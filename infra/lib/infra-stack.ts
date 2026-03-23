@@ -3,6 +3,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as rds from 'aws-cdk-lib/aws-rds';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 
 export type StageName = 'test' | 'beta' | 'gamma' | 'prod';
@@ -20,6 +21,7 @@ export class MtgServerStack extends cdk.Stack {
 	public readonly vpc: ec2.IVpc;
 	public readonly database: rds.DatabaseInstance;
 	public readonly dbSecurityGroup: ec2.SecurityGroup;
+	public readonly cardImagesBucket: s3.Bucket;
 	public readonly fargateService: ecs_patterns.ApplicationLoadBalancedFargateService;
 
 	constructor(scope: Construct, id: string, props: MtgServerStackProps) {
@@ -65,6 +67,17 @@ export class MtgServerStack extends cdk.Stack {
 			removalPolicy: stage === 'prod' ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
 		});
 
+		// --- S3 ---
+
+		this.cardImagesBucket = new s3.Bucket(this, 'CardImagesBucket', {
+			bucketName: `mtg-card-images-${stage}-${this.account}`,
+			blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+			encryption: s3.BucketEncryption.S3_MANAGED,
+			enforceSSL: true,
+			removalPolicy: cdk.RemovalPolicy.DESTROY,
+			autoDeleteObjects: true,
+		});
+
 		// --- ECS Fargate ---
 
 		const cluster = new ecs.Cluster(this, 'MtgCluster', { vpc: this.vpc });
@@ -78,13 +91,14 @@ export class MtgServerStack extends cdk.Stack {
 				memoryLimitMiB: prodLike ? 2048 : 512,
 				desiredCount: prodLike ? 2 : 1,
 				taskImageOptions: {
-					image: ecs.ContainerImage.fromRegistry(
-						'public.ecr.aws/docker/library/hello-world:latest',
-					),
+					image: ecs.ContainerImage.fromAsset('..', {
+						file: 'Dockerfile',
+					}),
 					containerPort: 13734,
 					environment: {
 						RUST_LOG: 'info',
 						STAGE: stage,
+						CARD_IMAGES_BUCKET: this.cardImagesBucket.bucketName,
 					},
 					secrets: {
 						DB_SECRET: ecs.Secret.fromSecretsManager(this.database.secret!),
@@ -100,6 +114,9 @@ export class MtgServerStack extends cdk.Stack {
 			ec2.Port.tcp(5432),
 			'Allow Postgres from Fargate tasks',
 		);
+
+		// Allow Fargate tasks to read/write card images
+		this.cardImagesBucket.grantReadWrite(this.fargateService.taskDefinition.taskRole);
 
 		// Health check on the ALB target group
 		this.fargateService.targetGroup.configureHealthCheck({
@@ -121,6 +138,11 @@ export class MtgServerStack extends cdk.Stack {
 		new cdk.CfnOutput(this, 'DbSecretArn', {
 			value: this.database.secret?.secretArn ?? 'N/A',
 			description: 'ARN of the Secrets Manager secret for DB credentials',
+		});
+
+		new cdk.CfnOutput(this, 'CardImagesBucketName', {
+			value: this.cardImagesBucket.bucketName,
+			description: 'S3 bucket for card images',
 		});
 	}
 }

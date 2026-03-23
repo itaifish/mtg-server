@@ -1,0 +1,6 @@
+infra/
+smithy-rs/
+.gradle/
+.git/
+target/
+model/

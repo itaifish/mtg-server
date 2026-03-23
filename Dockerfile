@@ -3,7 +3,7 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 COPY server/ server/
 COPY mtg-server-sdk/ mtg-server-sdk/
-RUN cargo build --release --manifest-path server/Cargo.toml
+RUN cargo build --release --manifest-path server/Cargo.toml --bin mtg-server
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
