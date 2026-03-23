@@ -15,6 +15,15 @@
           }
         }
       }
+    },
+    "mtg-client-ts": {
+      "imports": ["src/main/smithy/main.smithy"],
+      "plugins": {
+        "typescript-client-codegen": {
+          "package": "@mtg-server/client",
+          "packageVersion": "0.1.0"
+        }
+      }
     }
   }
 }

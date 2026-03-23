@@ -10,6 +10,9 @@ dependencies {
     implementation("software.amazon.smithy:smithy-model:$smithyVersion")
     implementation("software.amazon.smithy:smithy-validation-model:$smithyVersion")
     smithyCli("software.amazon.smithy.rust:codegen-server:+")
+    // TypeScript client codegen
+    implementation("software.amazon.smithy.typescript:smithy-typescript-codegen:0.47.0")
+    implementation("software.amazon.smithy.typescript:smithy-aws-typescript-codegen:0.47.0")
 }
 
 smithy {
@@ -25,8 +28,13 @@ tasks {
         into("$srcDir/$serverSdkCrateName")
     }
 
+    val copyTsClient = register<Copy>("copyTsClient") {
+        from("${layout.buildDirectory.get()}/codegen/mtg-client-ts/typescript-client-codegen")
+        into("$srcDir/integration-tests/mtg-client")
+    }
+
     named("assemble") {
         dependsOn("smithyBuild")
-        finalizedBy(copyServerCrate)
+        finalizedBy(copyServerCrate, copyTsClient)
     }
 }

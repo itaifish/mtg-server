@@ -64,9 +64,28 @@ export class MtgPipelineStack extends cdk.Stack {
 			});
 
 			pipeline.addStage(appStage, {
-				pre: manualApproval
-					? [new pipelines.ManualApprovalStep(`Approve-${stage}`)]
-					: undefined,
+				pre: manualApproval ? [new pipelines.ManualApprovalStep(`Approve-${stage}`)] : undefined,
+				post: [
+					new pipelines.ShellStep(`IntegTest-${stage}`, {
+						input: source,
+						envFromCfnOutputs: {
+							API_URL: appStage.apiUrl,
+							INTEG_TEST_API_KEY_ID: appStage.integTestApiKeyId,
+						},
+						installCommands: ['n stable'],
+						commands: [
+							// Regenerate the TS client (source checkout has no generated files)
+							'SMITHY_RS_TAG=$(git config -f .gitmodules --get submodule.smithy-rs.branch)',
+							'git clone --depth 1 --branch "$SMITHY_RS_TAG" https://github.com/smithy-lang/smithy-rs.git smithy-rs',
+							'./gradlew assemble',
+							// Run integration tests
+							'INTEG_TEST_API_KEY=$(aws apigateway get-api-key --api-key "$INTEG_TEST_API_KEY_ID" --include-value --query value --output text)',
+							'cd integration-tests',
+							'npm ci',
+							'API_URL="$API_URL" INTEG_TEST_API_KEY="$INTEG_TEST_API_KEY" npm test',
+						],
+					}),
+				],
 			});
 		}
 	}
@@ -77,11 +96,19 @@ interface MtgServerStageProps extends cdk.StageProps {
 }
 
 class MtgServerStage extends cdk.Stage {
+	public readonly apiUrl: cdk.CfnOutput;
+	public readonly integTestApiKeyId: cdk.CfnOutput;
+
 	constructor(scope: Construct, id: string, props: MtgServerStageProps) {
 		super(scope, id, props);
 
-		new MtgServerStack(this, `MtgServer-${props.stage}`, {
+		const stack = new MtgServerStack(this, `MtgServer-${props.stage}`, {
 			stage: props.stage,
+		});
+
+		this.apiUrl = new cdk.CfnOutput(stack, 'IntegApiUrl', { value: stack.api.url });
+		this.integTestApiKeyId = new cdk.CfnOutput(stack, 'IntegTestKeyId', {
+			value: stack.integTestApiKey.keyId,
 		});
 	}
 }

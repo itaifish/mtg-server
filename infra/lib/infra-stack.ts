@@ -1,7 +1,10 @@
 import * as cdk from 'aws-cdk-lib';
+import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as elbv2_targets from 'aws-cdk-lib/aws-elasticloadbalancingv2-targets';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
@@ -23,6 +26,9 @@ export class MtgServerStack extends cdk.Stack {
 	public readonly dbSecurityGroup: ec2.SecurityGroup;
 	public readonly cardImagesBucket: s3.Bucket;
 	public readonly fargateService: ecs_patterns.ApplicationLoadBalancedFargateService;
+	public readonly api: apigateway.RestApi;
+	public readonly apiKey: apigateway.IApiKey;
+	public readonly integTestApiKey: apigateway.IApiKey;
 
 	constructor(scope: Construct, id: string, props: MtgServerStackProps) {
 		super(scope, id, props);
@@ -78,7 +84,7 @@ export class MtgServerStack extends cdk.Stack {
 			autoDeleteObjects: true,
 		});
 
-		// --- ECS Fargate ---
+		// --- ECS Fargate (internal ALB) ---
 
 		const cluster = new ecs.Cluster(this, 'MtgCluster', { vpc: this.vpc });
 
@@ -104,7 +110,7 @@ export class MtgServerStack extends cdk.Stack {
 						DB_SECRET: ecs.Secret.fromSecretsManager(this.database.secret!),
 					},
 				},
-				publicLoadBalancer: true,
+				publicLoadBalancer: false,
 			},
 		);
 
@@ -124,10 +130,115 @@ export class MtgServerStack extends cdk.Stack {
 			healthyHttpCodes: '200',
 		});
 
+		// --- API Gateway ---
+
+		// NLB in front of ALB (REST API VpcLink requires NLB)
+		const nlb = new elbv2.NetworkLoadBalancer(this, 'MtgNlb', {
+			vpc: this.vpc,
+			internetFacing: false,
+		});
+
+		const nlbListener = nlb.addListener('NlbListener', { port: 80 });
+
+		nlbListener.addTargets('AlbTarget', {
+			port: 80,
+			targets: [new elbv2_targets.AlbTarget(this.fargateService.loadBalancer, 80)],
+			healthCheck: {
+				protocol: elbv2.Protocol.HTTP,
+				path: '/ping',
+			},
+		});
+
+		const vpcLink = new apigateway.VpcLink(this, 'VpcLink', {
+			targets: [nlb],
+		});
+
+		const nlbDns = nlb.loadBalancerDnsName;
+
+		const pingIntegration = new apigateway.Integration({
+			type: apigateway.IntegrationType.HTTP_PROXY,
+			integrationHttpMethod: 'GET',
+			uri: `http://${nlbDns}/ping`,
+			options: {
+				connectionType: apigateway.ConnectionType.VPC_LINK,
+				vpcLink,
+			},
+		});
+
+		const proxyIntegration = new apigateway.Integration({
+			type: apigateway.IntegrationType.HTTP_PROXY,
+			integrationHttpMethod: 'ANY',
+			uri: `http://${nlbDns}/{proxy}`,
+			options: {
+				connectionType: apigateway.ConnectionType.VPC_LINK,
+				vpcLink,
+				requestParameters: {
+					'integration.request.path.proxy': 'method.request.path.proxy',
+				},
+			},
+		});
+
+		this.api = new apigateway.RestApi(this, 'MtgApi', {
+			restApiName: `mtg-server-${stage}`,
+			deployOptions: {
+				stageName: stage,
+				throttlingRateLimit: prodLike ? 100 : 20,
+				throttlingBurstLimit: prodLike ? 200 : 40,
+			},
+		});
+
+		// /ping — open, no API key required
+		const pingResource = this.api.root.addResource('ping');
+		pingResource.addMethod('GET', pingIntegration, { apiKeyRequired: false });
+
+		// /{proxy+} — all other routes require API key
+		const proxyResource = this.api.root.addResource('{proxy+}');
+		proxyResource.addMethod('ANY', proxyIntegration, {
+			apiKeyRequired: true,
+			requestParameters: { 'method.request.path.proxy': true },
+		});
+
+		// API keys
+		this.apiKey = this.api.addApiKey('MtgApiKey', {
+			apiKeyName: `mtg-server-${stage}-key`,
+		});
+
+		this.integTestApiKey = this.api.addApiKey('IntegTestApiKey', {
+			apiKeyName: `mtg-server-${stage}-integ-test-key`,
+		});
+
+		const usagePlan = this.api.addUsagePlan('MtgUsagePlan', {
+			name: `mtg-server-${stage}-usage-plan`,
+			throttle: {
+				rateLimit: prodLike ? 100 : 20,
+				burstLimit: prodLike ? 200 : 40,
+			},
+			apiStages: [{ api: this.api, stage: this.api.deploymentStage }],
+		});
+
+		usagePlan.addApiKey(this.apiKey);
+		usagePlan.addApiKey(this.integTestApiKey);
+
 		// Outputs
+		new cdk.CfnOutput(this, 'ApiUrl', {
+			value: this.api.url,
+			description: 'API Gateway URL for the MTG server',
+		});
+
+		new cdk.CfnOutput(this, 'ApiKeyId', {
+			value: this.apiKey.keyId,
+			description:
+				'API Key ID (retrieve value with: aws apigateway get-api-key --api-key <id> --include-value)',
+		});
+
+		new cdk.CfnOutput(this, 'IntegTestApiKeyId', {
+			value: this.integTestApiKey.keyId,
+			description: 'Integration test API Key ID',
+		});
+
 		new cdk.CfnOutput(this, 'LoadBalancerDns', {
 			value: this.fargateService.loadBalancer.loadBalancerDnsName,
-			description: 'ALB DNS name for the MTG server',
+			description: 'Internal ALB DNS name (not publicly accessible)',
 		});
 
 		new cdk.CfnOutput(this, 'DbEndpoint', {

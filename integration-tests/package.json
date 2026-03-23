@@ -1,0 +1,28 @@
+{
+	"name": "mtg-server-integration-tests",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"preinstall": "cd mtg-client && npm install --include=dev yarn@1 concurrently && npx yarn run build",
+		"test": "jest --forceExit",
+		"lint": "eslint 'src/**/*.ts'",
+		"lint:fix": "eslint --fix 'src/**/*.ts'",
+		"format": "prettier --write 'src/**/*.ts'"
+	},
+	"dependencies": {
+		"@mtg-server/client": "file:./mtg-client"
+	},
+	"devDependencies": {
+		"@types/jest": "^30",
+		"@types/node": "^20",
+		"@typescript-eslint/eslint-plugin": "^8.57.1",
+		"@typescript-eslint/parser": "^8.57.1",
+		"eslint": "^10.1.0",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-prettier": "^5.5.5",
+		"jest": "^30",
+		"prettier": "^3.8.1",
+		"ts-jest": "^29",
+		"typescript": "~5.8.3"
+	}
+}
