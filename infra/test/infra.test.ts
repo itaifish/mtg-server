@@ -29,8 +29,8 @@ describe.each(stages)('MtgServerStack (%s)', (stage) => {
 		});
 	});
 
-	it('creates an ALB', () => {
-		template.resourceCountIs('AWS::ElasticLoadBalancingV2::LoadBalancer', 1);
+	it('creates an ALB and NLB', () => {
+		template.resourceCountIs('AWS::ElasticLoadBalancingV2::LoadBalancer', 2);
 	});
 
 	if (stage === 'gamma' || stage === 'prod') {

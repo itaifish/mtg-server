@@ -8,6 +8,7 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
+    "test:update-snapshots": "jest --updateSnapshot",
     "cdk": "cdk",
     "lint": "eslint 'bin/**/*.ts' 'lib/**/*.ts' 'test/**/*.ts'",
     "lint:fix": "eslint --fix 'bin/**/*.ts' 'lib/**/*.ts' 'test/**/*.ts'",

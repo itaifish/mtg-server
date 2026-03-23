@@ -1,5 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import * as pipelines from 'aws-cdk-lib/pipelines';
 import { Construct } from 'constructs';
 import { MtgServerStack, StageName } from './infra-stack';
@@ -66,12 +67,18 @@ export class MtgPipelineStack extends cdk.Stack {
 			pipeline.addStage(appStage, {
 				pre: manualApproval ? [new pipelines.ManualApprovalStep(`Approve-${stage}`)] : undefined,
 				post: [
-					new pipelines.ShellStep(`IntegTest-${stage}`, {
+					new pipelines.CodeBuildStep(`IntegTest-${stage}`, {
 						input: source,
 						envFromCfnOutputs: {
 							API_URL: appStage.apiUrl,
 							INTEG_TEST_API_KEY_ID: appStage.integTestApiKeyId,
 						},
+						rolePolicyStatements: [
+							new iam.PolicyStatement({
+								actions: ['apigateway:GET'],
+								resources: ['arn:aws:apigateway:*::/apikeys/*'],
+							}),
+						],
 						installCommands: ['n stable'],
 						commands: [
 							// Regenerate the TS client (source checkout has no generated files)

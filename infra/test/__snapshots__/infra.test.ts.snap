@@ -3,6 +3,41 @@
 exports[`MtgServerStack (beta) matches snapshot 1`] = `
 {
   "Outputs": {
+    "ApiKeyId": {
+      "Description": "API Key ID (retrieve value with: aws apigateway get-api-key --api-key <id> --include-value)",
+      "Value": {
+        "Ref": "MtgApiMtgApiKey50FAE616",
+      },
+    },
+    "ApiUrl": {
+      "Description": "API Gateway URL for the MTG server",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "MtgApi521633AE",
+            },
+            ".execute-api.us-east-1.",
+            {
+              "Ref": "AWS::URLSuffix",
+            },
+            "/",
+            {
+              "Ref": "MtgApiDeploymentStagebeta6D5BDB66",
+            },
+            "/",
+          ],
+        ],
+      },
+    },
+    "CardImagesBucketName": {
+      "Description": "S3 bucket for card images",
+      "Value": {
+        "Ref": "CardImagesBucketE37ABA68",
+      },
+    },
     "DbEndpoint": {
       "Description": "RDS PostgreSQL endpoint",
       "Value": {
@@ -18,12 +53,40 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
         "Ref": "MtgDatabaseSecretAttachment81454F84",
       },
     },
+    "IntegTestApiKeyId": {
+      "Description": "Integration test API Key ID",
+      "Value": {
+        "Ref": "MtgApiIntegTestApiKey790A917F",
+      },
+    },
     "LoadBalancerDns": {
-      "Description": "ALB DNS name for the MTG server",
+      "Description": "Internal ALB DNS name (not publicly accessible)",
       "Value": {
         "Fn::GetAtt": [
           "MtgServiceLB727DC4CB",
           "DNSName",
+        ],
+      },
+    },
+    "MtgApiEndpoint5E694A79": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "MtgApi521633AE",
+            },
+            ".execute-api.us-east-1.",
+            {
+              "Ref": "AWS::URLSuffix",
+            },
+            "/",
+            {
+              "Ref": "MtgApiDeploymentStagebeta6D5BDB66",
+            },
+            "/",
+          ],
         ],
       },
     },
@@ -60,6 +123,196 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
     },
   },
   "Resources": {
+    "CardImagesBucketAutoDeleteObjectsCustomResourceEE3C3AC6": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "CardImagesBucketPolicy72C2DA5E",
+      ],
+      "Properties": {
+        "BucketName": {
+          "Ref": "CardImagesBucketE37ABA68",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::S3AutoDeleteObjects",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "CardImagesBucketE37ABA68": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "BucketName": "mtg-card-images-beta-123456789012",
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "Tags": [
+          {
+            "Key": "aws-cdk:auto-delete-objects",
+            "Value": "true",
+          },
+        ],
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "CardImagesBucketPolicy72C2DA5E": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "CardImagesBucketE37ABA68",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "CardImagesBucketE37ABA68",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "CardImagesBucketE37ABA68",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "s3:PutBucketPolicy",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": [
+                    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+                    "Arn",
+                  ],
+                },
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "CardImagesBucketE37ABA68",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "CardImagesBucketE37ABA68",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+      "DependsOn": [
+        "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip",
+        },
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Lambda function for auto-deleting objects in ",
+              {
+                "Ref": "CardImagesBucketE37ABA68",
+              },
+              " S3 bucket.",
+            ],
+          ],
+        },
+        "Handler": "index.handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:\${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
     "DbSecurityGroupE9D701AD": {
       "Properties": {
         "GroupDescription": "Security group for MTG Server RDS instance (beta)",
@@ -98,6 +351,292 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
         "ToPort": 5432,
       },
       "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "MtgApi521633AE": {
+      "Properties": {
+        "Name": "mtg-server-beta",
+      },
+      "Type": "AWS::ApiGateway::RestApi",
+    },
+    "MtgApiAccount3CFB526A": {
+      "DeletionPolicy": "Retain",
+      "DependsOn": [
+        "MtgApi521633AE",
+      ],
+      "Properties": {
+        "CloudWatchRoleArn": {
+          "Fn::GetAtt": [
+            "MtgApiCloudWatchRole2D7195D7",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::ApiGateway::Account",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "MtgApiCloudWatchRole2D7195D7": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "apigateway.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "MtgApiDeploymentC718C16A34ca8b9eaad93a61d02bcb7a9ad7f558": {
+      "DependsOn": [
+        "MtgApiproxyANY6946CC1C",
+        "MtgApiproxyF237E1E6",
+        "MtgApipingGETAE177988",
+        "MtgApiping2582AE19",
+      ],
+      "Metadata": {
+        "aws:cdk:do-not-refactor": true,
+      },
+      "Properties": {
+        "Description": "Automatically created by the RestApi construct",
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Deployment",
+    },
+    "MtgApiDeploymentStagebeta6D5BDB66": {
+      "DependsOn": [
+        "MtgApiAccount3CFB526A",
+      ],
+      "Properties": {
+        "DeploymentId": {
+          "Ref": "MtgApiDeploymentC718C16A34ca8b9eaad93a61d02bcb7a9ad7f558",
+        },
+        "MethodSettings": [
+          {
+            "DataTraceEnabled": false,
+            "HttpMethod": "*",
+            "ResourcePath": "/*",
+            "ThrottlingBurstLimit": 40,
+            "ThrottlingRateLimit": 20,
+          },
+        ],
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+        "StageName": "beta",
+      },
+      "Type": "AWS::ApiGateway::Stage",
+    },
+    "MtgApiIntegTestApiKey790A917F": {
+      "Properties": {
+        "Enabled": true,
+        "Name": "mtg-server-beta-integ-test-key",
+        "StageKeys": [
+          {
+            "RestApiId": {
+              "Ref": "MtgApi521633AE",
+            },
+            "StageName": {
+              "Ref": "MtgApiDeploymentStagebeta6D5BDB66",
+            },
+          },
+        ],
+      },
+      "Type": "AWS::ApiGateway::ApiKey",
+    },
+    "MtgApiMtgApiKey50FAE616": {
+      "Properties": {
+        "Enabled": true,
+        "Name": "mtg-server-beta-key",
+        "StageKeys": [
+          {
+            "RestApiId": {
+              "Ref": "MtgApi521633AE",
+            },
+            "StageName": {
+              "Ref": "MtgApiDeploymentStagebeta6D5BDB66",
+            },
+          },
+        ],
+      },
+      "Type": "AWS::ApiGateway::ApiKey",
+    },
+    "MtgApiMtgUsagePlanF24DE3D3": {
+      "Properties": {
+        "ApiStages": [
+          {
+            "ApiId": {
+              "Ref": "MtgApi521633AE",
+            },
+            "Stage": {
+              "Ref": "MtgApiDeploymentStagebeta6D5BDB66",
+            },
+            "Throttle": {},
+          },
+        ],
+        "Throttle": {
+          "BurstLimit": 40,
+          "RateLimit": 20,
+        },
+        "UsagePlanName": "mtg-server-beta-usage-plan",
+      },
+      "Type": "AWS::ApiGateway::UsagePlan",
+    },
+    "MtgApiMtgUsagePlanUsagePlanKeyResourceMtgServerbetaMtgApiIntegTestApiKey4B5CDFD10B8F069F": {
+      "Properties": {
+        "KeyId": {
+          "Ref": "MtgApiIntegTestApiKey790A917F",
+        },
+        "KeyType": "API_KEY",
+        "UsagePlanId": {
+          "Ref": "MtgApiMtgUsagePlanF24DE3D3",
+        },
+      },
+      "Type": "AWS::ApiGateway::UsagePlanKey",
+    },
+    "MtgApiMtgUsagePlanUsagePlanKeyResourceMtgServerbetaMtgApiMtgApiKey836B3E706339A801": {
+      "Properties": {
+        "KeyId": {
+          "Ref": "MtgApiMtgApiKey50FAE616",
+        },
+        "KeyType": "API_KEY",
+        "UsagePlanId": {
+          "Ref": "MtgApiMtgUsagePlanF24DE3D3",
+        },
+      },
+      "Type": "AWS::ApiGateway::UsagePlanKey",
+    },
+    "MtgApiping2582AE19": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "MtgApi521633AE",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "ping",
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "MtgApipingGETAE177988": {
+      "Properties": {
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "GET",
+        "Integration": {
+          "ConnectionId": {
+            "Ref": "VpcLink42ED6FF0",
+          },
+          "ConnectionType": "VPC_LINK",
+          "IntegrationHttpMethod": "GET",
+          "Type": "HTTP_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "http://",
+                {
+                  "Fn::GetAtt": [
+                    "MtgNlbFC396503",
+                    "DNSName",
+                  ],
+                },
+                "/ping",
+              ],
+            ],
+          },
+        },
+        "ResourceId": {
+          "Ref": "MtgApiping2582AE19",
+        },
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "MtgApiproxyANY6946CC1C": {
+      "Properties": {
+        "ApiKeyRequired": true,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "ANY",
+        "Integration": {
+          "ConnectionId": {
+            "Ref": "VpcLink42ED6FF0",
+          },
+          "ConnectionType": "VPC_LINK",
+          "IntegrationHttpMethod": "ANY",
+          "RequestParameters": {
+            "integration.request.path.proxy": "method.request.path.proxy",
+          },
+          "Type": "HTTP_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "http://",
+                {
+                  "Fn::GetAtt": [
+                    "MtgNlbFC396503",
+                    "DNSName",
+                  ],
+                },
+                "/{proxy}",
+              ],
+            ],
+          },
+        },
+        "RequestParameters": {
+          "method.request.path.proxy": true,
+        },
+        "ResourceId": {
+          "Ref": "MtgApiproxyF237E1E6",
+        },
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "MtgApiproxyF237E1E6": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "MtgApi521633AE",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "{proxy+}",
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
     },
     "MtgClusterDD54BADF": {
       "Type": "AWS::ECS::Cluster",
@@ -172,6 +711,70 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
       },
       "Type": "AWS::RDS::DBSubnetGroup",
     },
+    "MtgNlbFC396503": {
+      "Properties": {
+        "LoadBalancerAttributes": [
+          {
+            "Key": "deletion_protection.enabled",
+            "Value": "false",
+          },
+        ],
+        "Scheme": "internal",
+        "Subnets": [
+          {
+            "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
+          },
+          {
+            "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
+          },
+        ],
+        "Type": "network",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+    },
+    "MtgNlbNlbListenerAlbTargetGroup2BEADC38": {
+      "DependsOn": [
+        "MtgServiceLBPublicListenerECSGroup351BEA4C",
+        "MtgServiceLBPublicListener6EB1F6FB",
+      ],
+      "Properties": {
+        "HealthCheckPath": "/ping",
+        "HealthCheckProtocol": "HTTP",
+        "Port": 80,
+        "Protocol": "TCP",
+        "TargetType": "alb",
+        "Targets": [
+          {
+            "Id": {
+              "Ref": "MtgServiceLB727DC4CB",
+            },
+            "Port": 80,
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+    },
+    "MtgNlbNlbListenerD4B5C9FA": {
+      "Properties": {
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "MtgNlbNlbListenerAlbTargetGroup2BEADC38",
+            },
+            "Type": "forward",
+          },
+        ],
+        "LoadBalancerArn": {
+          "Ref": "MtgNlbFC396503",
+        },
+        "Port": 80,
+        "Protocol": "TCP",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+    },
     "MtgServerbetaMtgDatabaseSecret44C360CC3fdaad7efa858a3daf9490cf0a702aeb": {
       "DeletionPolicy": "Delete",
       "Properties": {
@@ -201,6 +804,7 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
       "DependsOn": [
         "MtgServiceLBPublicListenerECSGroup351BEA4C",
         "MtgServiceLBPublicListener6EB1F6FB",
+        "MtgServiceTaskDefTaskRoleDefaultPolicy29053150",
         "MtgServiceTaskDefTaskRole0D4FCAB0",
       ],
       "Properties": {
@@ -257,12 +861,6 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
       "Type": "AWS::ECS::Service",
     },
     "MtgServiceLB727DC4CB": {
-      "DependsOn": [
-        "MtgVpcPublicSubnet1DefaultRoute177F3219",
-        "MtgVpcPublicSubnet1RouteTableAssociation6BB0F351",
-        "MtgVpcPublicSubnet2DefaultRoute81A3E0FF",
-        "MtgVpcPublicSubnet2RouteTableAssociation19ECDFD9",
-      ],
       "Properties": {
         "LoadBalancerAttributes": [
           {
@@ -270,7 +868,7 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
             "Value": "false",
           },
         ],
-        "Scheme": "internet-facing",
+        "Scheme": "internal",
         "SecurityGroups": [
           {
             "Fn::GetAtt": [
@@ -281,10 +879,10 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
         ],
         "Subnets": [
           {
-            "Ref": "MtgVpcPublicSubnet1Subnet5289BC50",
+            "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
           },
           {
-            "Ref": "MtgVpcPublicSubnet2SubnetC2F18AE7",
+            "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
           },
         ],
         "Type": "application",
@@ -371,6 +969,7 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
     },
     "MtgServiceSecurityGroup42D3C015": {
       "DependsOn": [
+        "MtgServiceTaskDefTaskRoleDefaultPolicy29053150",
         "MtgServiceTaskDefTaskRole0D4FCAB0",
       ],
       "Properties": {
@@ -390,6 +989,7 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
     },
     "MtgServiceSecurityGroupfromMtgServerbetaMtgServiceLBSecurityGroup42AC307C13734A4DD9D9D": {
       "DependsOn": [
+        "MtgServiceTaskDefTaskRoleDefaultPolicy29053150",
         "MtgServiceTaskDefTaskRole0D4FCAB0",
       ],
       "Properties": {
@@ -425,9 +1025,17 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
                 "Name": "STAGE",
                 "Value": "beta",
               },
+              {
+                "Name": "CARD_IMAGES_BUCKET",
+                "Value": {
+                  "Ref": "CardImagesBucketE37ABA68",
+                },
+              },
             ],
             "Essential": true,
-            "Image": "public.ecr.aws/docker/library/hello-world:latest",
+            "Image": {
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:142dfd6c30a20adfd63d6b3755fa8d6033f4b7918cda9bf13667dee686705adb",
+            },
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -500,6 +1108,31 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
           "Statement": [
             {
               "Action": [
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":ecr:us-east-1:123456789012:repository/cdk-hnb659fds-container-assets-123456789012-us-east-1",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": "ecr:GetAuthorizationToken",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
                 "logs:CreateLogStream",
                 "logs:PutLogEvents",
               ],
@@ -549,6 +1182,59 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
         },
       },
       "Type": "AWS::IAM::Role",
+    },
+    "MtgServiceTaskDefTaskRoleDefaultPolicy29053150": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+                "s3:PutObject",
+                "s3:PutObjectLegalHold",
+                "s3:PutObjectRetention",
+                "s3:PutObjectTagging",
+                "s3:PutObjectVersionTagging",
+                "s3:Abort*",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "CardImagesBucketE37ABA68",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "CardImagesBucketE37ABA68",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "MtgServiceTaskDefTaskRoleDefaultPolicy29053150",
+        "Roles": [
+          {
+            "Ref": "MtgServiceTaskDefTaskRole0D4FCAB0",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
     },
     "MtgServiceTaskDefwebLogGroupE8036CF3": {
       "DeletionPolicy": "Retain",
@@ -882,6 +1568,17 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
       },
       "Type": "AWS::EC2::VPCGatewayAttachment",
     },
+    "VpcLink42ED6FF0": {
+      "Properties": {
+        "Name": "MtgServerbetaVpcLink5445F06E",
+        "TargetArns": [
+          {
+            "Ref": "MtgNlbFC396503",
+          },
+        ],
+      },
+      "Type": "AWS::ApiGateway::VpcLink",
+    },
   },
   "Rules": {
     "CheckBootstrapVersion": {
@@ -916,6 +1613,41 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
 exports[`MtgServerStack (gamma) matches snapshot 1`] = `
 {
   "Outputs": {
+    "ApiKeyId": {
+      "Description": "API Key ID (retrieve value with: aws apigateway get-api-key --api-key <id> --include-value)",
+      "Value": {
+        "Ref": "MtgApiMtgApiKey50FAE616",
+      },
+    },
+    "ApiUrl": {
+      "Description": "API Gateway URL for the MTG server",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "MtgApi521633AE",
+            },
+            ".execute-api.us-east-1.",
+            {
+              "Ref": "AWS::URLSuffix",
+            },
+            "/",
+            {
+              "Ref": "MtgApiDeploymentStagegamma56DD331E",
+            },
+            "/",
+          ],
+        ],
+      },
+    },
+    "CardImagesBucketName": {
+      "Description": "S3 bucket for card images",
+      "Value": {
+        "Ref": "CardImagesBucketE37ABA68",
+      },
+    },
     "DbEndpoint": {
       "Description": "RDS PostgreSQL endpoint",
       "Value": {
@@ -931,12 +1663,40 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
         "Ref": "MtgDatabaseSecretAttachment81454F84",
       },
     },
+    "IntegTestApiKeyId": {
+      "Description": "Integration test API Key ID",
+      "Value": {
+        "Ref": "MtgApiIntegTestApiKey790A917F",
+      },
+    },
     "LoadBalancerDns": {
-      "Description": "ALB DNS name for the MTG server",
+      "Description": "Internal ALB DNS name (not publicly accessible)",
       "Value": {
         "Fn::GetAtt": [
           "MtgServiceLB727DC4CB",
           "DNSName",
+        ],
+      },
+    },
+    "MtgApiEndpoint5E694A79": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "MtgApi521633AE",
+            },
+            ".execute-api.us-east-1.",
+            {
+              "Ref": "AWS::URLSuffix",
+            },
+            "/",
+            {
+              "Ref": "MtgApiDeploymentStagegamma56DD331E",
+            },
+            "/",
+          ],
         ],
       },
     },
@@ -973,6 +1733,196 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
     },
   },
   "Resources": {
+    "CardImagesBucketAutoDeleteObjectsCustomResourceEE3C3AC6": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "CardImagesBucketPolicy72C2DA5E",
+      ],
+      "Properties": {
+        "BucketName": {
+          "Ref": "CardImagesBucketE37ABA68",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::S3AutoDeleteObjects",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "CardImagesBucketE37ABA68": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "BucketName": "mtg-card-images-gamma-123456789012",
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "Tags": [
+          {
+            "Key": "aws-cdk:auto-delete-objects",
+            "Value": "true",
+          },
+        ],
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "CardImagesBucketPolicy72C2DA5E": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "CardImagesBucketE37ABA68",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "CardImagesBucketE37ABA68",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "CardImagesBucketE37ABA68",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "s3:PutBucketPolicy",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": [
+                    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+                    "Arn",
+                  ],
+                },
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "CardImagesBucketE37ABA68",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "CardImagesBucketE37ABA68",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+      "DependsOn": [
+        "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip",
+        },
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Lambda function for auto-deleting objects in ",
+              {
+                "Ref": "CardImagesBucketE37ABA68",
+              },
+              " S3 bucket.",
+            ],
+          ],
+        },
+        "Handler": "index.handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:\${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
     "DbSecurityGroupE9D701AD": {
       "Properties": {
         "GroupDescription": "Security group for MTG Server RDS instance (gamma)",
@@ -1011,6 +1961,292 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
         "ToPort": 5432,
       },
       "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "MtgApi521633AE": {
+      "Properties": {
+        "Name": "mtg-server-gamma",
+      },
+      "Type": "AWS::ApiGateway::RestApi",
+    },
+    "MtgApiAccount3CFB526A": {
+      "DeletionPolicy": "Retain",
+      "DependsOn": [
+        "MtgApi521633AE",
+      ],
+      "Properties": {
+        "CloudWatchRoleArn": {
+          "Fn::GetAtt": [
+            "MtgApiCloudWatchRole2D7195D7",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::ApiGateway::Account",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "MtgApiCloudWatchRole2D7195D7": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "apigateway.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "MtgApiDeploymentC718C16A4fcdc4ea26d631720238c8ed690532f2": {
+      "DependsOn": [
+        "MtgApiproxyANY6946CC1C",
+        "MtgApiproxyF237E1E6",
+        "MtgApipingGETAE177988",
+        "MtgApiping2582AE19",
+      ],
+      "Metadata": {
+        "aws:cdk:do-not-refactor": true,
+      },
+      "Properties": {
+        "Description": "Automatically created by the RestApi construct",
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Deployment",
+    },
+    "MtgApiDeploymentStagegamma56DD331E": {
+      "DependsOn": [
+        "MtgApiAccount3CFB526A",
+      ],
+      "Properties": {
+        "DeploymentId": {
+          "Ref": "MtgApiDeploymentC718C16A4fcdc4ea26d631720238c8ed690532f2",
+        },
+        "MethodSettings": [
+          {
+            "DataTraceEnabled": false,
+            "HttpMethod": "*",
+            "ResourcePath": "/*",
+            "ThrottlingBurstLimit": 200,
+            "ThrottlingRateLimit": 100,
+          },
+        ],
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+        "StageName": "gamma",
+      },
+      "Type": "AWS::ApiGateway::Stage",
+    },
+    "MtgApiIntegTestApiKey790A917F": {
+      "Properties": {
+        "Enabled": true,
+        "Name": "mtg-server-gamma-integ-test-key",
+        "StageKeys": [
+          {
+            "RestApiId": {
+              "Ref": "MtgApi521633AE",
+            },
+            "StageName": {
+              "Ref": "MtgApiDeploymentStagegamma56DD331E",
+            },
+          },
+        ],
+      },
+      "Type": "AWS::ApiGateway::ApiKey",
+    },
+    "MtgApiMtgApiKey50FAE616": {
+      "Properties": {
+        "Enabled": true,
+        "Name": "mtg-server-gamma-key",
+        "StageKeys": [
+          {
+            "RestApiId": {
+              "Ref": "MtgApi521633AE",
+            },
+            "StageName": {
+              "Ref": "MtgApiDeploymentStagegamma56DD331E",
+            },
+          },
+        ],
+      },
+      "Type": "AWS::ApiGateway::ApiKey",
+    },
+    "MtgApiMtgUsagePlanF24DE3D3": {
+      "Properties": {
+        "ApiStages": [
+          {
+            "ApiId": {
+              "Ref": "MtgApi521633AE",
+            },
+            "Stage": {
+              "Ref": "MtgApiDeploymentStagegamma56DD331E",
+            },
+            "Throttle": {},
+          },
+        ],
+        "Throttle": {
+          "BurstLimit": 200,
+          "RateLimit": 100,
+        },
+        "UsagePlanName": "mtg-server-gamma-usage-plan",
+      },
+      "Type": "AWS::ApiGateway::UsagePlan",
+    },
+    "MtgApiMtgUsagePlanUsagePlanKeyResourceMtgServergammaMtgApiIntegTestApiKey489919225F113696": {
+      "Properties": {
+        "KeyId": {
+          "Ref": "MtgApiIntegTestApiKey790A917F",
+        },
+        "KeyType": "API_KEY",
+        "UsagePlanId": {
+          "Ref": "MtgApiMtgUsagePlanF24DE3D3",
+        },
+      },
+      "Type": "AWS::ApiGateway::UsagePlanKey",
+    },
+    "MtgApiMtgUsagePlanUsagePlanKeyResourceMtgServergammaMtgApiMtgApiKeyF6F8E6CF28415BAC": {
+      "Properties": {
+        "KeyId": {
+          "Ref": "MtgApiMtgApiKey50FAE616",
+        },
+        "KeyType": "API_KEY",
+        "UsagePlanId": {
+          "Ref": "MtgApiMtgUsagePlanF24DE3D3",
+        },
+      },
+      "Type": "AWS::ApiGateway::UsagePlanKey",
+    },
+    "MtgApiping2582AE19": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "MtgApi521633AE",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "ping",
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "MtgApipingGETAE177988": {
+      "Properties": {
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "GET",
+        "Integration": {
+          "ConnectionId": {
+            "Ref": "VpcLink42ED6FF0",
+          },
+          "ConnectionType": "VPC_LINK",
+          "IntegrationHttpMethod": "GET",
+          "Type": "HTTP_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "http://",
+                {
+                  "Fn::GetAtt": [
+                    "MtgNlbFC396503",
+                    "DNSName",
+                  ],
+                },
+                "/ping",
+              ],
+            ],
+          },
+        },
+        "ResourceId": {
+          "Ref": "MtgApiping2582AE19",
+        },
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "MtgApiproxyANY6946CC1C": {
+      "Properties": {
+        "ApiKeyRequired": true,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "ANY",
+        "Integration": {
+          "ConnectionId": {
+            "Ref": "VpcLink42ED6FF0",
+          },
+          "ConnectionType": "VPC_LINK",
+          "IntegrationHttpMethod": "ANY",
+          "RequestParameters": {
+            "integration.request.path.proxy": "method.request.path.proxy",
+          },
+          "Type": "HTTP_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "http://",
+                {
+                  "Fn::GetAtt": [
+                    "MtgNlbFC396503",
+                    "DNSName",
+                  ],
+                },
+                "/{proxy}",
+              ],
+            ],
+          },
+        },
+        "RequestParameters": {
+          "method.request.path.proxy": true,
+        },
+        "ResourceId": {
+          "Ref": "MtgApiproxyF237E1E6",
+        },
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "MtgApiproxyF237E1E6": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "MtgApi521633AE",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "{proxy+}",
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
     },
     "MtgClusterDD54BADF": {
       "Type": "AWS::ECS::Cluster",
@@ -1085,6 +2321,70 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
       },
       "Type": "AWS::RDS::DBSubnetGroup",
     },
+    "MtgNlbFC396503": {
+      "Properties": {
+        "LoadBalancerAttributes": [
+          {
+            "Key": "deletion_protection.enabled",
+            "Value": "false",
+          },
+        ],
+        "Scheme": "internal",
+        "Subnets": [
+          {
+            "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
+          },
+          {
+            "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
+          },
+        ],
+        "Type": "network",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+    },
+    "MtgNlbNlbListenerAlbTargetGroup2BEADC38": {
+      "DependsOn": [
+        "MtgServiceLBPublicListenerECSGroup351BEA4C",
+        "MtgServiceLBPublicListener6EB1F6FB",
+      ],
+      "Properties": {
+        "HealthCheckPath": "/ping",
+        "HealthCheckProtocol": "HTTP",
+        "Port": 80,
+        "Protocol": "TCP",
+        "TargetType": "alb",
+        "Targets": [
+          {
+            "Id": {
+              "Ref": "MtgServiceLB727DC4CB",
+            },
+            "Port": 80,
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+    },
+    "MtgNlbNlbListenerD4B5C9FA": {
+      "Properties": {
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "MtgNlbNlbListenerAlbTargetGroup2BEADC38",
+            },
+            "Type": "forward",
+          },
+        ],
+        "LoadBalancerArn": {
+          "Ref": "MtgNlbFC396503",
+        },
+        "Port": 80,
+        "Protocol": "TCP",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+    },
     "MtgServergammaMtgDatabaseSecretCCB0DEE13fdaad7efa858a3daf9490cf0a702aeb": {
       "DeletionPolicy": "Delete",
       "Properties": {
@@ -1114,6 +2414,7 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
       "DependsOn": [
         "MtgServiceLBPublicListenerECSGroup351BEA4C",
         "MtgServiceLBPublicListener6EB1F6FB",
+        "MtgServiceTaskDefTaskRoleDefaultPolicy29053150",
         "MtgServiceTaskDefTaskRole0D4FCAB0",
       ],
       "Properties": {
@@ -1170,12 +2471,6 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
       "Type": "AWS::ECS::Service",
     },
     "MtgServiceLB727DC4CB": {
-      "DependsOn": [
-        "MtgVpcPublicSubnet1DefaultRoute177F3219",
-        "MtgVpcPublicSubnet1RouteTableAssociation6BB0F351",
-        "MtgVpcPublicSubnet2DefaultRoute81A3E0FF",
-        "MtgVpcPublicSubnet2RouteTableAssociation19ECDFD9",
-      ],
       "Properties": {
         "LoadBalancerAttributes": [
           {
@@ -1183,7 +2478,7 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
             "Value": "false",
           },
         ],
-        "Scheme": "internet-facing",
+        "Scheme": "internal",
         "SecurityGroups": [
           {
             "Fn::GetAtt": [
@@ -1194,10 +2489,10 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
         ],
         "Subnets": [
           {
-            "Ref": "MtgVpcPublicSubnet1Subnet5289BC50",
+            "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
           },
           {
-            "Ref": "MtgVpcPublicSubnet2SubnetC2F18AE7",
+            "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
           },
         ],
         "Type": "application",
@@ -1284,6 +2579,7 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
     },
     "MtgServiceSecurityGroup42D3C015": {
       "DependsOn": [
+        "MtgServiceTaskDefTaskRoleDefaultPolicy29053150",
         "MtgServiceTaskDefTaskRole0D4FCAB0",
       ],
       "Properties": {
@@ -1303,6 +2599,7 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
     },
     "MtgServiceSecurityGroupfromMtgServergammaMtgServiceLBSecurityGroup01ADBDAB13734FB52EEF9": {
       "DependsOn": [
+        "MtgServiceTaskDefTaskRoleDefaultPolicy29053150",
         "MtgServiceTaskDefTaskRole0D4FCAB0",
       ],
       "Properties": {
@@ -1338,9 +2635,17 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
                 "Name": "STAGE",
                 "Value": "gamma",
               },
+              {
+                "Name": "CARD_IMAGES_BUCKET",
+                "Value": {
+                  "Ref": "CardImagesBucketE37ABA68",
+                },
+              },
             ],
             "Essential": true,
-            "Image": "public.ecr.aws/docker/library/hello-world:latest",
+            "Image": {
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:142dfd6c30a20adfd63d6b3755fa8d6033f4b7918cda9bf13667dee686705adb",
+            },
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -1413,6 +2718,31 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
           "Statement": [
             {
               "Action": [
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":ecr:us-east-1:123456789012:repository/cdk-hnb659fds-container-assets-123456789012-us-east-1",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": "ecr:GetAuthorizationToken",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
                 "logs:CreateLogStream",
                 "logs:PutLogEvents",
               ],
@@ -1462,6 +2792,59 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
         },
       },
       "Type": "AWS::IAM::Role",
+    },
+    "MtgServiceTaskDefTaskRoleDefaultPolicy29053150": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+                "s3:PutObject",
+                "s3:PutObjectLegalHold",
+                "s3:PutObjectRetention",
+                "s3:PutObjectTagging",
+                "s3:PutObjectVersionTagging",
+                "s3:Abort*",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "CardImagesBucketE37ABA68",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "CardImagesBucketE37ABA68",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "MtgServiceTaskDefTaskRoleDefaultPolicy29053150",
+        "Roles": [
+          {
+            "Ref": "MtgServiceTaskDefTaskRole0D4FCAB0",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
     },
     "MtgServiceTaskDefwebLogGroupE8036CF3": {
       "DeletionPolicy": "Retain",
@@ -1831,6 +3214,17 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
       },
       "Type": "AWS::EC2::VPCGatewayAttachment",
     },
+    "VpcLink42ED6FF0": {
+      "Properties": {
+        "Name": "MtgServergammaVpcLink6B73BE67",
+        "TargetArns": [
+          {
+            "Ref": "MtgNlbFC396503",
+          },
+        ],
+      },
+      "Type": "AWS::ApiGateway::VpcLink",
+    },
   },
   "Rules": {
     "CheckBootstrapVersion": {
@@ -1865,6 +3259,41 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
 exports[`MtgServerStack (prod) matches snapshot 1`] = `
 {
   "Outputs": {
+    "ApiKeyId": {
+      "Description": "API Key ID (retrieve value with: aws apigateway get-api-key --api-key <id> --include-value)",
+      "Value": {
+        "Ref": "MtgApiMtgApiKey50FAE616",
+      },
+    },
+    "ApiUrl": {
+      "Description": "API Gateway URL for the MTG server",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "MtgApi521633AE",
+            },
+            ".execute-api.us-east-1.",
+            {
+              "Ref": "AWS::URLSuffix",
+            },
+            "/",
+            {
+              "Ref": "MtgApiDeploymentStageprod66B75BB4",
+            },
+            "/",
+          ],
+        ],
+      },
+    },
+    "CardImagesBucketName": {
+      "Description": "S3 bucket for card images",
+      "Value": {
+        "Ref": "CardImagesBucketE37ABA68",
+      },
+    },
     "DbEndpoint": {
       "Description": "RDS PostgreSQL endpoint",
       "Value": {
@@ -1880,12 +3309,40 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
         "Ref": "MtgDatabaseSecretAttachment81454F84",
       },
     },
+    "IntegTestApiKeyId": {
+      "Description": "Integration test API Key ID",
+      "Value": {
+        "Ref": "MtgApiIntegTestApiKey790A917F",
+      },
+    },
     "LoadBalancerDns": {
-      "Description": "ALB DNS name for the MTG server",
+      "Description": "Internal ALB DNS name (not publicly accessible)",
       "Value": {
         "Fn::GetAtt": [
           "MtgServiceLB727DC4CB",
           "DNSName",
+        ],
+      },
+    },
+    "MtgApiEndpoint5E694A79": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "MtgApi521633AE",
+            },
+            ".execute-api.us-east-1.",
+            {
+              "Ref": "AWS::URLSuffix",
+            },
+            "/",
+            {
+              "Ref": "MtgApiDeploymentStageprod66B75BB4",
+            },
+            "/",
+          ],
         ],
       },
     },
@@ -1922,6 +3379,196 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
     },
   },
   "Resources": {
+    "CardImagesBucketAutoDeleteObjectsCustomResourceEE3C3AC6": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "CardImagesBucketPolicy72C2DA5E",
+      ],
+      "Properties": {
+        "BucketName": {
+          "Ref": "CardImagesBucketE37ABA68",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::S3AutoDeleteObjects",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "CardImagesBucketE37ABA68": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "BucketName": "mtg-card-images-prod-123456789012",
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "Tags": [
+          {
+            "Key": "aws-cdk:auto-delete-objects",
+            "Value": "true",
+          },
+        ],
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "CardImagesBucketPolicy72C2DA5E": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "CardImagesBucketE37ABA68",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "CardImagesBucketE37ABA68",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "CardImagesBucketE37ABA68",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "s3:PutBucketPolicy",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": [
+                    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+                    "Arn",
+                  ],
+                },
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "CardImagesBucketE37ABA68",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "CardImagesBucketE37ABA68",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+      "DependsOn": [
+        "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip",
+        },
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Lambda function for auto-deleting objects in ",
+              {
+                "Ref": "CardImagesBucketE37ABA68",
+              },
+              " S3 bucket.",
+            ],
+          ],
+        },
+        "Handler": "index.handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:\${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
     "DbSecurityGroupE9D701AD": {
       "Properties": {
         "GroupDescription": "Security group for MTG Server RDS instance (prod)",
@@ -1960,6 +3607,292 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
         "ToPort": 5432,
       },
       "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "MtgApi521633AE": {
+      "Properties": {
+        "Name": "mtg-server-prod",
+      },
+      "Type": "AWS::ApiGateway::RestApi",
+    },
+    "MtgApiAccount3CFB526A": {
+      "DeletionPolicy": "Retain",
+      "DependsOn": [
+        "MtgApi521633AE",
+      ],
+      "Properties": {
+        "CloudWatchRoleArn": {
+          "Fn::GetAtt": [
+            "MtgApiCloudWatchRole2D7195D7",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::ApiGateway::Account",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "MtgApiCloudWatchRole2D7195D7": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "apigateway.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "MtgApiDeploymentC718C16A653370a38fe61fc53b09087788c84283": {
+      "DependsOn": [
+        "MtgApiproxyANY6946CC1C",
+        "MtgApiproxyF237E1E6",
+        "MtgApipingGETAE177988",
+        "MtgApiping2582AE19",
+      ],
+      "Metadata": {
+        "aws:cdk:do-not-refactor": true,
+      },
+      "Properties": {
+        "Description": "Automatically created by the RestApi construct",
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Deployment",
+    },
+    "MtgApiDeploymentStageprod66B75BB4": {
+      "DependsOn": [
+        "MtgApiAccount3CFB526A",
+      ],
+      "Properties": {
+        "DeploymentId": {
+          "Ref": "MtgApiDeploymentC718C16A653370a38fe61fc53b09087788c84283",
+        },
+        "MethodSettings": [
+          {
+            "DataTraceEnabled": false,
+            "HttpMethod": "*",
+            "ResourcePath": "/*",
+            "ThrottlingBurstLimit": 200,
+            "ThrottlingRateLimit": 100,
+          },
+        ],
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+        "StageName": "prod",
+      },
+      "Type": "AWS::ApiGateway::Stage",
+    },
+    "MtgApiIntegTestApiKey790A917F": {
+      "Properties": {
+        "Enabled": true,
+        "Name": "mtg-server-prod-integ-test-key",
+        "StageKeys": [
+          {
+            "RestApiId": {
+              "Ref": "MtgApi521633AE",
+            },
+            "StageName": {
+              "Ref": "MtgApiDeploymentStageprod66B75BB4",
+            },
+          },
+        ],
+      },
+      "Type": "AWS::ApiGateway::ApiKey",
+    },
+    "MtgApiMtgApiKey50FAE616": {
+      "Properties": {
+        "Enabled": true,
+        "Name": "mtg-server-prod-key",
+        "StageKeys": [
+          {
+            "RestApiId": {
+              "Ref": "MtgApi521633AE",
+            },
+            "StageName": {
+              "Ref": "MtgApiDeploymentStageprod66B75BB4",
+            },
+          },
+        ],
+      },
+      "Type": "AWS::ApiGateway::ApiKey",
+    },
+    "MtgApiMtgUsagePlanF24DE3D3": {
+      "Properties": {
+        "ApiStages": [
+          {
+            "ApiId": {
+              "Ref": "MtgApi521633AE",
+            },
+            "Stage": {
+              "Ref": "MtgApiDeploymentStageprod66B75BB4",
+            },
+            "Throttle": {},
+          },
+        ],
+        "Throttle": {
+          "BurstLimit": 200,
+          "RateLimit": 100,
+        },
+        "UsagePlanName": "mtg-server-prod-usage-plan",
+      },
+      "Type": "AWS::ApiGateway::UsagePlan",
+    },
+    "MtgApiMtgUsagePlanUsagePlanKeyResourceMtgServerprodMtgApiIntegTestApiKey351FB92C34C7490B": {
+      "Properties": {
+        "KeyId": {
+          "Ref": "MtgApiIntegTestApiKey790A917F",
+        },
+        "KeyType": "API_KEY",
+        "UsagePlanId": {
+          "Ref": "MtgApiMtgUsagePlanF24DE3D3",
+        },
+      },
+      "Type": "AWS::ApiGateway::UsagePlanKey",
+    },
+    "MtgApiMtgUsagePlanUsagePlanKeyResourceMtgServerprodMtgApiMtgApiKey440AAF95BCB7A26F": {
+      "Properties": {
+        "KeyId": {
+          "Ref": "MtgApiMtgApiKey50FAE616",
+        },
+        "KeyType": "API_KEY",
+        "UsagePlanId": {
+          "Ref": "MtgApiMtgUsagePlanF24DE3D3",
+        },
+      },
+      "Type": "AWS::ApiGateway::UsagePlanKey",
+    },
+    "MtgApiping2582AE19": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "MtgApi521633AE",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "ping",
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "MtgApipingGETAE177988": {
+      "Properties": {
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "GET",
+        "Integration": {
+          "ConnectionId": {
+            "Ref": "VpcLink42ED6FF0",
+          },
+          "ConnectionType": "VPC_LINK",
+          "IntegrationHttpMethod": "GET",
+          "Type": "HTTP_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "http://",
+                {
+                  "Fn::GetAtt": [
+                    "MtgNlbFC396503",
+                    "DNSName",
+                  ],
+                },
+                "/ping",
+              ],
+            ],
+          },
+        },
+        "ResourceId": {
+          "Ref": "MtgApiping2582AE19",
+        },
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "MtgApiproxyANY6946CC1C": {
+      "Properties": {
+        "ApiKeyRequired": true,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "ANY",
+        "Integration": {
+          "ConnectionId": {
+            "Ref": "VpcLink42ED6FF0",
+          },
+          "ConnectionType": "VPC_LINK",
+          "IntegrationHttpMethod": "ANY",
+          "RequestParameters": {
+            "integration.request.path.proxy": "method.request.path.proxy",
+          },
+          "Type": "HTTP_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "http://",
+                {
+                  "Fn::GetAtt": [
+                    "MtgNlbFC396503",
+                    "DNSName",
+                  ],
+                },
+                "/{proxy}",
+              ],
+            ],
+          },
+        },
+        "RequestParameters": {
+          "method.request.path.proxy": true,
+        },
+        "ResourceId": {
+          "Ref": "MtgApiproxyF237E1E6",
+        },
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "MtgApiproxyF237E1E6": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "MtgApi521633AE",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "{proxy+}",
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
     },
     "MtgClusterDD54BADF": {
       "Type": "AWS::ECS::Cluster",
@@ -2036,6 +3969,70 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
       "Type": "AWS::RDS::DBSubnetGroup",
       "UpdateReplacePolicy": "Retain",
     },
+    "MtgNlbFC396503": {
+      "Properties": {
+        "LoadBalancerAttributes": [
+          {
+            "Key": "deletion_protection.enabled",
+            "Value": "false",
+          },
+        ],
+        "Scheme": "internal",
+        "Subnets": [
+          {
+            "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
+          },
+          {
+            "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
+          },
+        ],
+        "Type": "network",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+    },
+    "MtgNlbNlbListenerAlbTargetGroup2BEADC38": {
+      "DependsOn": [
+        "MtgServiceLBPublicListenerECSGroup351BEA4C",
+        "MtgServiceLBPublicListener6EB1F6FB",
+      ],
+      "Properties": {
+        "HealthCheckPath": "/ping",
+        "HealthCheckProtocol": "HTTP",
+        "Port": 80,
+        "Protocol": "TCP",
+        "TargetType": "alb",
+        "Targets": [
+          {
+            "Id": {
+              "Ref": "MtgServiceLB727DC4CB",
+            },
+            "Port": 80,
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+    },
+    "MtgNlbNlbListenerD4B5C9FA": {
+      "Properties": {
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "MtgNlbNlbListenerAlbTargetGroup2BEADC38",
+            },
+            "Type": "forward",
+          },
+        ],
+        "LoadBalancerArn": {
+          "Ref": "MtgNlbFC396503",
+        },
+        "Port": 80,
+        "Protocol": "TCP",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+    },
     "MtgServerprodMtgDatabaseSecret34704DEE3fdaad7efa858a3daf9490cf0a702aeb": {
       "DeletionPolicy": "Delete",
       "Properties": {
@@ -2065,6 +4062,7 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
       "DependsOn": [
         "MtgServiceLBPublicListenerECSGroup351BEA4C",
         "MtgServiceLBPublicListener6EB1F6FB",
+        "MtgServiceTaskDefTaskRoleDefaultPolicy29053150",
         "MtgServiceTaskDefTaskRole0D4FCAB0",
       ],
       "Properties": {
@@ -2121,12 +4119,6 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
       "Type": "AWS::ECS::Service",
     },
     "MtgServiceLB727DC4CB": {
-      "DependsOn": [
-        "MtgVpcPublicSubnet1DefaultRoute177F3219",
-        "MtgVpcPublicSubnet1RouteTableAssociation6BB0F351",
-        "MtgVpcPublicSubnet2DefaultRoute81A3E0FF",
-        "MtgVpcPublicSubnet2RouteTableAssociation19ECDFD9",
-      ],
       "Properties": {
         "LoadBalancerAttributes": [
           {
@@ -2134,7 +4126,7 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
             "Value": "false",
           },
         ],
-        "Scheme": "internet-facing",
+        "Scheme": "internal",
         "SecurityGroups": [
           {
             "Fn::GetAtt": [
@@ -2145,10 +4137,10 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
         ],
         "Subnets": [
           {
-            "Ref": "MtgVpcPublicSubnet1Subnet5289BC50",
+            "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
           },
           {
-            "Ref": "MtgVpcPublicSubnet2SubnetC2F18AE7",
+            "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
           },
         ],
         "Type": "application",
@@ -2235,6 +4227,7 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
     },
     "MtgServiceSecurityGroup42D3C015": {
       "DependsOn": [
+        "MtgServiceTaskDefTaskRoleDefaultPolicy29053150",
         "MtgServiceTaskDefTaskRole0D4FCAB0",
       ],
       "Properties": {
@@ -2254,6 +4247,7 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
     },
     "MtgServiceSecurityGroupfromMtgServerprodMtgServiceLBSecurityGroup6266E8D9137343F1FF5CD": {
       "DependsOn": [
+        "MtgServiceTaskDefTaskRoleDefaultPolicy29053150",
         "MtgServiceTaskDefTaskRole0D4FCAB0",
       ],
       "Properties": {
@@ -2289,9 +4283,17 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
                 "Name": "STAGE",
                 "Value": "prod",
               },
+              {
+                "Name": "CARD_IMAGES_BUCKET",
+                "Value": {
+                  "Ref": "CardImagesBucketE37ABA68",
+                },
+              },
             ],
             "Essential": true,
-            "Image": "public.ecr.aws/docker/library/hello-world:latest",
+            "Image": {
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:142dfd6c30a20adfd63d6b3755fa8d6033f4b7918cda9bf13667dee686705adb",
+            },
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -2364,6 +4366,31 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
           "Statement": [
             {
               "Action": [
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":ecr:us-east-1:123456789012:repository/cdk-hnb659fds-container-assets-123456789012-us-east-1",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": "ecr:GetAuthorizationToken",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
                 "logs:CreateLogStream",
                 "logs:PutLogEvents",
               ],
@@ -2413,6 +4440,59 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
         },
       },
       "Type": "AWS::IAM::Role",
+    },
+    "MtgServiceTaskDefTaskRoleDefaultPolicy29053150": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+                "s3:PutObject",
+                "s3:PutObjectLegalHold",
+                "s3:PutObjectRetention",
+                "s3:PutObjectTagging",
+                "s3:PutObjectVersionTagging",
+                "s3:Abort*",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "CardImagesBucketE37ABA68",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "CardImagesBucketE37ABA68",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "MtgServiceTaskDefTaskRoleDefaultPolicy29053150",
+        "Roles": [
+          {
+            "Ref": "MtgServiceTaskDefTaskRole0D4FCAB0",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
     },
     "MtgServiceTaskDefwebLogGroupE8036CF3": {
       "DeletionPolicy": "Retain",
@@ -2782,6 +4862,17 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
       },
       "Type": "AWS::EC2::VPCGatewayAttachment",
     },
+    "VpcLink42ED6FF0": {
+      "Properties": {
+        "Name": "MtgServerprodVpcLinkBF1A0B02",
+        "TargetArns": [
+          {
+            "Ref": "MtgNlbFC396503",
+          },
+        ],
+      },
+      "Type": "AWS::ApiGateway::VpcLink",
+    },
   },
   "Rules": {
     "CheckBootstrapVersion": {
@@ -2816,6 +4907,41 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
 exports[`MtgServerStack (test) matches snapshot 1`] = `
 {
   "Outputs": {
+    "ApiKeyId": {
+      "Description": "API Key ID (retrieve value with: aws apigateway get-api-key --api-key <id> --include-value)",
+      "Value": {
+        "Ref": "MtgApiMtgApiKey50FAE616",
+      },
+    },
+    "ApiUrl": {
+      "Description": "API Gateway URL for the MTG server",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "MtgApi521633AE",
+            },
+            ".execute-api.us-east-1.",
+            {
+              "Ref": "AWS::URLSuffix",
+            },
+            "/",
+            {
+              "Ref": "MtgApiDeploymentStagetest5A029424",
+            },
+            "/",
+          ],
+        ],
+      },
+    },
+    "CardImagesBucketName": {
+      "Description": "S3 bucket for card images",
+      "Value": {
+        "Ref": "CardImagesBucketE37ABA68",
+      },
+    },
     "DbEndpoint": {
       "Description": "RDS PostgreSQL endpoint",
       "Value": {
@@ -2831,12 +4957,40 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
         "Ref": "MtgDatabaseSecretAttachment81454F84",
       },
     },
+    "IntegTestApiKeyId": {
+      "Description": "Integration test API Key ID",
+      "Value": {
+        "Ref": "MtgApiIntegTestApiKey790A917F",
+      },
+    },
     "LoadBalancerDns": {
-      "Description": "ALB DNS name for the MTG server",
+      "Description": "Internal ALB DNS name (not publicly accessible)",
       "Value": {
         "Fn::GetAtt": [
           "MtgServiceLB727DC4CB",
           "DNSName",
+        ],
+      },
+    },
+    "MtgApiEndpoint5E694A79": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "MtgApi521633AE",
+            },
+            ".execute-api.us-east-1.",
+            {
+              "Ref": "AWS::URLSuffix",
+            },
+            "/",
+            {
+              "Ref": "MtgApiDeploymentStagetest5A029424",
+            },
+            "/",
+          ],
         ],
       },
     },
@@ -2873,6 +5027,196 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
     },
   },
   "Resources": {
+    "CardImagesBucketAutoDeleteObjectsCustomResourceEE3C3AC6": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "CardImagesBucketPolicy72C2DA5E",
+      ],
+      "Properties": {
+        "BucketName": {
+          "Ref": "CardImagesBucketE37ABA68",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::S3AutoDeleteObjects",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "CardImagesBucketE37ABA68": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "BucketName": "mtg-card-images-test-123456789012",
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "Tags": [
+          {
+            "Key": "aws-cdk:auto-delete-objects",
+            "Value": "true",
+          },
+        ],
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "CardImagesBucketPolicy72C2DA5E": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "CardImagesBucketE37ABA68",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "CardImagesBucketE37ABA68",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "CardImagesBucketE37ABA68",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "s3:PutBucketPolicy",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": [
+                    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+                    "Arn",
+                  ],
+                },
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "CardImagesBucketE37ABA68",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "CardImagesBucketE37ABA68",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+      "DependsOn": [
+        "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip",
+        },
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Lambda function for auto-deleting objects in ",
+              {
+                "Ref": "CardImagesBucketE37ABA68",
+              },
+              " S3 bucket.",
+            ],
+          ],
+        },
+        "Handler": "index.handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:\${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
     "DbSecurityGroupE9D701AD": {
       "Properties": {
         "GroupDescription": "Security group for MTG Server RDS instance (test)",
@@ -2911,6 +5255,292 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
         "ToPort": 5432,
       },
       "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "MtgApi521633AE": {
+      "Properties": {
+        "Name": "mtg-server-test",
+      },
+      "Type": "AWS::ApiGateway::RestApi",
+    },
+    "MtgApiAccount3CFB526A": {
+      "DeletionPolicy": "Retain",
+      "DependsOn": [
+        "MtgApi521633AE",
+      ],
+      "Properties": {
+        "CloudWatchRoleArn": {
+          "Fn::GetAtt": [
+            "MtgApiCloudWatchRole2D7195D7",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::ApiGateway::Account",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "MtgApiCloudWatchRole2D7195D7": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "apigateway.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "MtgApiDeploymentC718C16A3b5705d4447701a5a5285f196cb9904c": {
+      "DependsOn": [
+        "MtgApiproxyANY6946CC1C",
+        "MtgApiproxyF237E1E6",
+        "MtgApipingGETAE177988",
+        "MtgApiping2582AE19",
+      ],
+      "Metadata": {
+        "aws:cdk:do-not-refactor": true,
+      },
+      "Properties": {
+        "Description": "Automatically created by the RestApi construct",
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Deployment",
+    },
+    "MtgApiDeploymentStagetest5A029424": {
+      "DependsOn": [
+        "MtgApiAccount3CFB526A",
+      ],
+      "Properties": {
+        "DeploymentId": {
+          "Ref": "MtgApiDeploymentC718C16A3b5705d4447701a5a5285f196cb9904c",
+        },
+        "MethodSettings": [
+          {
+            "DataTraceEnabled": false,
+            "HttpMethod": "*",
+            "ResourcePath": "/*",
+            "ThrottlingBurstLimit": 40,
+            "ThrottlingRateLimit": 20,
+          },
+        ],
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+        "StageName": "test",
+      },
+      "Type": "AWS::ApiGateway::Stage",
+    },
+    "MtgApiIntegTestApiKey790A917F": {
+      "Properties": {
+        "Enabled": true,
+        "Name": "mtg-server-test-integ-test-key",
+        "StageKeys": [
+          {
+            "RestApiId": {
+              "Ref": "MtgApi521633AE",
+            },
+            "StageName": {
+              "Ref": "MtgApiDeploymentStagetest5A029424",
+            },
+          },
+        ],
+      },
+      "Type": "AWS::ApiGateway::ApiKey",
+    },
+    "MtgApiMtgApiKey50FAE616": {
+      "Properties": {
+        "Enabled": true,
+        "Name": "mtg-server-test-key",
+        "StageKeys": [
+          {
+            "RestApiId": {
+              "Ref": "MtgApi521633AE",
+            },
+            "StageName": {
+              "Ref": "MtgApiDeploymentStagetest5A029424",
+            },
+          },
+        ],
+      },
+      "Type": "AWS::ApiGateway::ApiKey",
+    },
+    "MtgApiMtgUsagePlanF24DE3D3": {
+      "Properties": {
+        "ApiStages": [
+          {
+            "ApiId": {
+              "Ref": "MtgApi521633AE",
+            },
+            "Stage": {
+              "Ref": "MtgApiDeploymentStagetest5A029424",
+            },
+            "Throttle": {},
+          },
+        ],
+        "Throttle": {
+          "BurstLimit": 40,
+          "RateLimit": 20,
+        },
+        "UsagePlanName": "mtg-server-test-usage-plan",
+      },
+      "Type": "AWS::ApiGateway::UsagePlan",
+    },
+    "MtgApiMtgUsagePlanUsagePlanKeyResourceMtgServertestMtgApiIntegTestApiKey0455A8608187A439": {
+      "Properties": {
+        "KeyId": {
+          "Ref": "MtgApiIntegTestApiKey790A917F",
+        },
+        "KeyType": "API_KEY",
+        "UsagePlanId": {
+          "Ref": "MtgApiMtgUsagePlanF24DE3D3",
+        },
+      },
+      "Type": "AWS::ApiGateway::UsagePlanKey",
+    },
+    "MtgApiMtgUsagePlanUsagePlanKeyResourceMtgServertestMtgApiMtgApiKey4FD6511DBB8D7C57": {
+      "Properties": {
+        "KeyId": {
+          "Ref": "MtgApiMtgApiKey50FAE616",
+        },
+        "KeyType": "API_KEY",
+        "UsagePlanId": {
+          "Ref": "MtgApiMtgUsagePlanF24DE3D3",
+        },
+      },
+      "Type": "AWS::ApiGateway::UsagePlanKey",
+    },
+    "MtgApiping2582AE19": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "MtgApi521633AE",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "ping",
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "MtgApipingGETAE177988": {
+      "Properties": {
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "GET",
+        "Integration": {
+          "ConnectionId": {
+            "Ref": "VpcLink42ED6FF0",
+          },
+          "ConnectionType": "VPC_LINK",
+          "IntegrationHttpMethod": "GET",
+          "Type": "HTTP_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "http://",
+                {
+                  "Fn::GetAtt": [
+                    "MtgNlbFC396503",
+                    "DNSName",
+                  ],
+                },
+                "/ping",
+              ],
+            ],
+          },
+        },
+        "ResourceId": {
+          "Ref": "MtgApiping2582AE19",
+        },
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "MtgApiproxyANY6946CC1C": {
+      "Properties": {
+        "ApiKeyRequired": true,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "ANY",
+        "Integration": {
+          "ConnectionId": {
+            "Ref": "VpcLink42ED6FF0",
+          },
+          "ConnectionType": "VPC_LINK",
+          "IntegrationHttpMethod": "ANY",
+          "RequestParameters": {
+            "integration.request.path.proxy": "method.request.path.proxy",
+          },
+          "Type": "HTTP_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "http://",
+                {
+                  "Fn::GetAtt": [
+                    "MtgNlbFC396503",
+                    "DNSName",
+                  ],
+                },
+                "/{proxy}",
+              ],
+            ],
+          },
+        },
+        "RequestParameters": {
+          "method.request.path.proxy": true,
+        },
+        "ResourceId": {
+          "Ref": "MtgApiproxyF237E1E6",
+        },
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "MtgApiproxyF237E1E6": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "MtgApi521633AE",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "{proxy+}",
+        "RestApiId": {
+          "Ref": "MtgApi521633AE",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
     },
     "MtgClusterDD54BADF": {
       "Type": "AWS::ECS::Cluster",
@@ -2985,6 +5615,70 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
       },
       "Type": "AWS::RDS::DBSubnetGroup",
     },
+    "MtgNlbFC396503": {
+      "Properties": {
+        "LoadBalancerAttributes": [
+          {
+            "Key": "deletion_protection.enabled",
+            "Value": "false",
+          },
+        ],
+        "Scheme": "internal",
+        "Subnets": [
+          {
+            "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
+          },
+          {
+            "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
+          },
+        ],
+        "Type": "network",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+    },
+    "MtgNlbNlbListenerAlbTargetGroup2BEADC38": {
+      "DependsOn": [
+        "MtgServiceLBPublicListenerECSGroup351BEA4C",
+        "MtgServiceLBPublicListener6EB1F6FB",
+      ],
+      "Properties": {
+        "HealthCheckPath": "/ping",
+        "HealthCheckProtocol": "HTTP",
+        "Port": 80,
+        "Protocol": "TCP",
+        "TargetType": "alb",
+        "Targets": [
+          {
+            "Id": {
+              "Ref": "MtgServiceLB727DC4CB",
+            },
+            "Port": 80,
+          },
+        ],
+        "VpcId": {
+          "Ref": "MtgVpc2242639D",
+        },
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+    },
+    "MtgNlbNlbListenerD4B5C9FA": {
+      "Properties": {
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "MtgNlbNlbListenerAlbTargetGroup2BEADC38",
+            },
+            "Type": "forward",
+          },
+        ],
+        "LoadBalancerArn": {
+          "Ref": "MtgNlbFC396503",
+        },
+        "Port": 80,
+        "Protocol": "TCP",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+    },
     "MtgServertestMtgDatabaseSecret4606343C3fdaad7efa858a3daf9490cf0a702aeb": {
       "DeletionPolicy": "Delete",
       "Properties": {
@@ -3014,6 +5708,7 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
       "DependsOn": [
         "MtgServiceLBPublicListenerECSGroup351BEA4C",
         "MtgServiceLBPublicListener6EB1F6FB",
+        "MtgServiceTaskDefTaskRoleDefaultPolicy29053150",
         "MtgServiceTaskDefTaskRole0D4FCAB0",
       ],
       "Properties": {
@@ -3070,12 +5765,6 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
       "Type": "AWS::ECS::Service",
     },
     "MtgServiceLB727DC4CB": {
-      "DependsOn": [
-        "MtgVpcPublicSubnet1DefaultRoute177F3219",
-        "MtgVpcPublicSubnet1RouteTableAssociation6BB0F351",
-        "MtgVpcPublicSubnet2DefaultRoute81A3E0FF",
-        "MtgVpcPublicSubnet2RouteTableAssociation19ECDFD9",
-      ],
       "Properties": {
         "LoadBalancerAttributes": [
           {
@@ -3083,7 +5772,7 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
             "Value": "false",
           },
         ],
-        "Scheme": "internet-facing",
+        "Scheme": "internal",
         "SecurityGroups": [
           {
             "Fn::GetAtt": [
@@ -3094,10 +5783,10 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
         ],
         "Subnets": [
           {
-            "Ref": "MtgVpcPublicSubnet1Subnet5289BC50",
+            "Ref": "MtgVpcPrivateSubnet1Subnet419C8450",
           },
           {
-            "Ref": "MtgVpcPublicSubnet2SubnetC2F18AE7",
+            "Ref": "MtgVpcPrivateSubnet2SubnetB7A4FF12",
           },
         ],
         "Type": "application",
@@ -3184,6 +5873,7 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
     },
     "MtgServiceSecurityGroup42D3C015": {
       "DependsOn": [
+        "MtgServiceTaskDefTaskRoleDefaultPolicy29053150",
         "MtgServiceTaskDefTaskRole0D4FCAB0",
       ],
       "Properties": {
@@ -3203,6 +5893,7 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
     },
     "MtgServiceSecurityGroupfromMtgServertestMtgServiceLBSecurityGroup00A6B5FB13734515F1DE5": {
       "DependsOn": [
+        "MtgServiceTaskDefTaskRoleDefaultPolicy29053150",
         "MtgServiceTaskDefTaskRole0D4FCAB0",
       ],
       "Properties": {
@@ -3238,9 +5929,17 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
                 "Name": "STAGE",
                 "Value": "test",
               },
+              {
+                "Name": "CARD_IMAGES_BUCKET",
+                "Value": {
+                  "Ref": "CardImagesBucketE37ABA68",
+                },
+              },
             ],
             "Essential": true,
-            "Image": "public.ecr.aws/docker/library/hello-world:latest",
+            "Image": {
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:142dfd6c30a20adfd63d6b3755fa8d6033f4b7918cda9bf13667dee686705adb",
+            },
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -3313,6 +6012,31 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
           "Statement": [
             {
               "Action": [
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":ecr:us-east-1:123456789012:repository/cdk-hnb659fds-container-assets-123456789012-us-east-1",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": "ecr:GetAuthorizationToken",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
                 "logs:CreateLogStream",
                 "logs:PutLogEvents",
               ],
@@ -3362,6 +6086,59 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
         },
       },
       "Type": "AWS::IAM::Role",
+    },
+    "MtgServiceTaskDefTaskRoleDefaultPolicy29053150": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+                "s3:PutObject",
+                "s3:PutObjectLegalHold",
+                "s3:PutObjectRetention",
+                "s3:PutObjectTagging",
+                "s3:PutObjectVersionTagging",
+                "s3:Abort*",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "CardImagesBucketE37ABA68",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "CardImagesBucketE37ABA68",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "MtgServiceTaskDefTaskRoleDefaultPolicy29053150",
+        "Roles": [
+          {
+            "Ref": "MtgServiceTaskDefTaskRole0D4FCAB0",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
     },
     "MtgServiceTaskDefwebLogGroupE8036CF3": {
       "DeletionPolicy": "Retain",
@@ -3694,6 +6471,17 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
         },
       },
       "Type": "AWS::EC2::VPCGatewayAttachment",
+    },
+    "VpcLink42ED6FF0": {
+      "Properties": {
+        "Name": "MtgServertestVpcLink50036EA0",
+        "TargetArns": [
+          {
+            "Ref": "MtgNlbFC396503",
+          },
+        ],
+      },
+      "Type": "AWS::ApiGateway::VpcLink",
     },
   },
   "Rules": {

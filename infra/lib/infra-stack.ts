@@ -142,7 +142,7 @@ export class MtgServerStack extends cdk.Stack {
 
 		nlbListener.addTargets('AlbTarget', {
 			port: 80,
-			targets: [new elbv2_targets.AlbTarget(this.fargateService.loadBalancer, 80)],
+			targets: [new elbv2_targets.AlbListenerTarget(this.fargateService.listener)],
 			healthCheck: {
 				protocol: elbv2.Protocol.HTTP,
 				path: '/ping',
