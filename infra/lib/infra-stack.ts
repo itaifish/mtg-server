@@ -130,6 +130,13 @@ export class MtgServerStack extends cdk.Stack {
 			healthyHttpCodes: '200',
 		});
 
+		// Allow NLB to reach the ALB (NLBs have no security groups; traffic originates from VPC CIDR)
+		this.fargateService.loadBalancer.connections.allowFrom(
+			ec2.Peer.ipv4(this.vpc.vpcCidrBlock),
+			ec2.Port.tcp(80),
+			'Allow NLB traffic to ALB',
+		);
+
 		// --- API Gateway ---
 
 		// NLB in front of ALB (REST API VpcLink requires NLB)

@@ -15,16 +15,16 @@ if [ "$STAGE" = "local" ]; then
   # No API key needed — local server has no API Gateway in front
   unset INTEG_TEST_API_KEY 2>/dev/null || true
 else
-  STACK_NAME="MtgServer-${STAGE}"
+  STACK_NAME="Deploy-${STAGE}-MtgServer-${STAGE}"
 
   API_URL=$(aws cloudformation describe-stacks \
     --stack-name "$STACK_NAME" \
-    --query "Stacks[0].Outputs[?OutputKey=='IntegApiUrl'].OutputValue" \
+    --query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" \
     --output text)
 
   API_KEY_ID=$(aws cloudformation describe-stacks \
     --stack-name "$STACK_NAME" \
-    --query "Stacks[0].Outputs[?OutputKey=='IntegTestKeyId'].OutputValue" \
+    --query "Stacks[0].Outputs[?OutputKey=='IntegTestApiKeyId'].OutputValue" \
     --output text)
 
   export API_URL
