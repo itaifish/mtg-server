@@ -19,6 +19,7 @@ fn bare_creature(id: ObjectId, power: i32, toughness: i32) -> CardInstance {
             loyalty: None,
             defense: None,
             rules_text: String::new(),
+            abilities: vec![],
         },
         tapped: false,
         damage_marked: 0,

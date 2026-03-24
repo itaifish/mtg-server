@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use super::ability::Ability;
 use super::counter::{CounterEntry, CounterType, PtModifier};
 use super::mana::{Color, ManaCost};
 
@@ -59,6 +60,10 @@ pub struct CardDefinition {
     /// CR 310.4 — Defense (battles).
     pub defense: Option<u32>,
     pub rules_text: String,
+    /// CR 113 — Abilities explicitly printed on the card.
+    /// Intrinsic abilities (e.g., basic land mana abilities) are added at
+    /// runtime via `ability::all_abilities()`.
+    pub abilities: Vec<Ability>,
 }
 
 /// A card instance in a game — a specific object with a definition and

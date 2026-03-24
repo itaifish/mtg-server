@@ -41,7 +41,10 @@ impl GameStore {
                 &[&state.game_id, &json],
             )
             .await?;
-        self.games.write().await.insert(state.game_id.clone(), state);
+        self.games
+            .write()
+            .await
+            .insert(state.game_id.clone(), state);
         Ok(())
     }
 
@@ -59,7 +62,10 @@ impl GameStore {
         if let Some(row) = row {
             let json: serde_json::Value = row.get(0);
             let state: GameState = serde_json::from_value(json)?;
-            self.games.write().await.insert(game_id.to_string(), state.clone());
+            self.games
+                .write()
+                .await
+                .insert(game_id.to_string(), state.clone());
             Ok(Some(state))
         } else {
             Ok(None)
@@ -75,7 +81,10 @@ impl GameStore {
                 &[&state.game_id, &json],
             )
             .await?;
-        self.games.write().await.insert(state.game_id.clone(), state);
+        self.games
+            .write()
+            .await
+            .insert(state.game_id.clone(), state);
         Ok(())
     }
 }

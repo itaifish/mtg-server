@@ -47,7 +47,11 @@ pub fn pass_priority(state: &mut GameState, player_id: &str) -> Result<(), Actio
 /// TODO: Some cards allow playing lands from zones other than the hand
 /// (e.g., Crucible of Worlds for graveyard, Vivien for exile). This will
 /// need a check against all zones the player is allowed to play from.
-pub fn play_land(state: &mut GameState, player_id: &str, object_id: u64) -> Result<(), ActionError> {
+pub fn play_land(
+    state: &mut GameState,
+    player_id: &str,
+    object_id: u64,
+) -> Result<(), ActionError> {
     validate_player(state, player_id)?;
 
     if !can_play_at_sorcery_speed(state, player_id) {
@@ -59,7 +63,9 @@ pub fn play_land(state: &mut GameState, player_id: &str, object_id: u64) -> Resu
     // CR 305.2 — One land per turn (base rule)
     // TODO: account for effects that increase this limit
     if state.lands_played_this_turn >= 1 {
-        return Err(ActionError::Illegal("already played a land this turn".into()));
+        return Err(ActionError::Illegal(
+            "already played a land this turn".into(),
+        ));
     }
 
     // TODO: check all zones the player is allowed to play lands from,

@@ -9,20 +9,25 @@ pub fn two_player_game() -> GameState {
     let mut player_zones = HashMap::new();
     player_zones.insert(
         p1.clone(),
-        PlayerZones { library: vec![], hand: HashSet::new(), graveyard: vec![] },
+        PlayerZones {
+            library: vec![],
+            hand: HashSet::new(),
+            graveyard: vec![],
+        },
     );
     player_zones.insert(
         p2.clone(),
-        PlayerZones { library: vec![], hand: HashSet::new(), graveyard: vec![] },
+        PlayerZones {
+            library: vec![],
+            hand: HashSet::new(),
+            graveyard: vec![],
+        },
     );
 
     GameState {
         game_id: "game1".into(),
         status: GameStatus::InProgress,
-        players: vec![
-            Player { id: p1, name: "Alice".into(), life_total: 20, has_lost: false, poison_counters: 0 },
-            Player { id: p2, name: "Bob".into(), life_total: 20, has_lost: false, poison_counters: 0 },
-        ],
+        players: vec![Player::new(p1, "Alice"), Player::new(p2, "Bob")],
         turn_order: vec![0, 1],
         active_player_index: 0,
         turn_number: 1,

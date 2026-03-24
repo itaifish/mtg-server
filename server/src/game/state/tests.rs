@@ -1,5 +1,5 @@
-use super::*;
 use super::tests_helper::two_player_game;
+use super::*;
 use crate::game::card::{CardDefinition, CardInstance, CardType};
 use crate::game::mana::Color;
 use crate::game::zone::ZoneType;
@@ -21,6 +21,7 @@ fn test_card(id: u64, owner: &str) -> CardInstance {
             loyalty: None,
             defense: None,
             rules_text: String::new(),
+            abilities: vec![],
         },
         tapped: false,
         damage_marked: 0,

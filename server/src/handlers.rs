@@ -43,13 +43,7 @@ pub async fn create_game(
     let state = GameState {
         game_id: game_id.clone(),
         status: GameStatus::WaitingForPlayers,
-        players: vec![Player {
-            id: player_id.clone(),
-            name: input.player_name.clone(),
-            life_total: 20,
-            has_lost: false,
-            poison_counters: 0,
-        }],
+        players: vec![Player::new(player_id.clone(), input.player_name.clone())],
         turn_order: vec![0],
         active_player_index: 0,
         turn_number: 0,
@@ -66,7 +60,10 @@ pub async fn create_game(
         lands_played_this_turn: 0,
     };
 
-    store.create(state).await.map_err(server_err::<CreateGameError>)?;
+    store
+        .create(state)
+        .await
+        .map_err(server_err::<CreateGameError>)?;
 
     tracing::info!(%game_id, %player_id, format = ?input.format, "game created");
     Ok(output::CreateGameOutput { game_id, player_id })
@@ -86,13 +83,9 @@ pub async fn join_game(
 
     let player_id = uuid::Uuid::new_v4().to_string();
 
-    state.players.push(Player {
-        id: player_id.clone(),
-        name: input.player_name.clone(),
-        life_total: 20,
-        has_lost: false,
-        poison_counters: 0,
-    });
+    state
+        .players
+        .push(Player::new(player_id.clone(), input.player_name.clone()));
     state.turn_order.push(state.players.len() - 1);
     state.player_zones.insert(
         player_id.clone(),
@@ -103,7 +96,10 @@ pub async fn join_game(
         },
     );
 
-    store.update(state).await.map_err(server_err::<JoinGameError>)?;
+    store
+        .update(state)
+        .await
+        .map_err(server_err::<JoinGameError>)?;
 
     tracing::info!(game_id = %input.game_id, %player_id, "player joined");
     Ok(output::JoinGameOutput { player_id })

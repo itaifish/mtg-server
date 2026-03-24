@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::game::phases_and_steps::BeginningStep;
 
 use super::card::{CardInstance, ObjectId, PlayerId};
+use super::mana::ManaType;
 use super::phases_and_steps::Phase;
 use super::zone::ZoneType;
 
@@ -53,6 +54,21 @@ pub struct Player {
     pub has_lost: bool,
     /// Poison counters. CR 704.5c
     pub poison_counters: u32,
+    /// CR 106.4 — Mana pool. Empties at the end of each step and phase.
+    pub mana_pool: Vec<ManaType>,
+}
+
+impl Player {
+    pub fn new(id: impl Into<PlayerId>, name: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            name: name.into(),
+            life_total: 20,
+            has_lost: false,
+            poison_counters: 0,
+            mana_pool: vec![],
+        }
+    }
 }
 
 /// Per-player zones. CR 400.1 — Each player has their own library, hand, and

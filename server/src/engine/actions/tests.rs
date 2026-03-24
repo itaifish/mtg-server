@@ -15,7 +15,14 @@ fn pass_priority_advances_phase() {
 fn concede_eliminates_player() {
     let mut state = two_player_game();
     concede(&mut state, "alice").unwrap();
-    assert!(state.players.iter().find(|p| p.id == "alice").unwrap().has_lost);
+    assert!(
+        state
+            .players
+            .iter()
+            .find(|p| p.id == "alice")
+            .unwrap()
+            .has_lost
+    );
     assert_eq!(state.status, GameStatus::Finished);
 }
 
