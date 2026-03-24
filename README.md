@@ -36,9 +36,23 @@ This generates the `mtg-server-sdk/` crate. You only need to re-run this when th
 
 ### 3. Build and run
 
+The server requires a PostgreSQL database. For local development, a helper script starts a Postgres Docker container and runs the server:
+
+```bash
+./dev.sh
+```
+
+This will:
+1. Start a local Postgres 16 container (or reuse an existing one)
+2. Wait for it to be ready
+3. Run the server on `http://localhost:13734`
+
+**Requirements:** Docker must be installed and running.
+
+To build without running:
+
 ```bash
 cargo build
-cargo run
 ```
 
 ## Project Structure

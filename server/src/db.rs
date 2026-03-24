@@ -1,4 +1,7 @@
-use tokio_postgres::{Client, NoTls};
+use std::sync::Arc;
+
+use tokio_postgres::Client;
+use tokio_postgres_rustls::MakeRustlsConnect;
 
 /// Connect to Postgres using DB_SECRET (Secrets Manager JSON) or DATABASE_URL (local dev).
 pub async fn connect() -> Result<Client, anyhow::Error> {
@@ -6,10 +9,12 @@ pub async fn connect() -> Result<Client, anyhow::Error> {
         .or_else(|_| std::env::var("DATABASE_URL"))
         .expect("DB_SECRET or DATABASE_URL must be set");
 
-    let conn_string = if secret.starts_with('{') {
+    let is_secrets_manager = secret.starts_with('{');
+
+    let conn_string = if is_secrets_manager {
         let v: serde_json::Value = serde_json::from_str(&secret)?;
         format!(
-            "host={} port={} user={} password={} dbname={}",
+            "host={} port={} user={} password={} dbname={} sslmode=require",
             v["host"].as_str().unwrap_or("localhost"),
             v["port"].as_u64().unwrap_or(5432),
             v["username"].as_str().unwrap_or("mtg_admin"),
@@ -20,11 +25,27 @@ pub async fn connect() -> Result<Client, anyhow::Error> {
         secret
     };
 
-    let (client, conn) = tokio_postgres::connect(&conn_string, NoTls).await?;
-    tokio::spawn(async move {
-        if let Err(e) = conn.await {
-            tracing::error!("postgres connection error: {e}");
-        }
-    });
-    Ok(client)
+    if is_secrets_manager || conn_string.contains("sslmode=require") {
+        let mut root_store = rustls::RootCertStore::empty();
+        root_store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
+        let config = rustls::ClientConfig::builder()
+            .with_root_certificates(root_store)
+            .with_no_client_auth();
+        let tls = MakeRustlsConnect::new(config);
+        let (client, conn) = tokio_postgres::connect(&conn_string, tls).await?;
+        tokio::spawn(async move {
+            if let Err(e) = conn.await {
+                tracing::error!("postgres connection error: {e}");
+            }
+        });
+        Ok(client)
+    } else {
+        let (client, conn) = tokio_postgres::connect(&conn_string, tokio_postgres::NoTls).await?;
+        tokio::spawn(async move {
+            if let Err(e) = conn.await {
+                tracing::error!("postgres connection error: {e}");
+            }
+        });
+        Ok(client)
+    }
 }
