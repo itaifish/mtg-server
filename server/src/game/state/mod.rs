@@ -2,6 +2,8 @@ use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
+use crate::game::phases_and_steps::BeginningStep;
+
 use super::card::{CardInstance, ObjectId, PlayerId};
 use super::phases_and_steps::Phase;
 use super::zone::ZoneType;
@@ -168,7 +170,84 @@ impl GameState {
         self.next_object_id += 1;
         id
     }
+
+    /// Returns true if the given player has priority (i.e., is the active player).
+    pub fn has_priority(&self, player_id: &str) -> bool {
+        self.active_player().id == player_id
+    }
+
+    /// Returns true if the given player exists in this game.
+    pub fn has_player(&self, player_id: &str) -> bool {
+        self.players.iter().any(|p| p.id == player_id)
+    }
+
+    /// Returns true if the card is in the given player's hand.
+    pub fn is_in_hand(&self, player_id: &str, object_id: ObjectId) -> bool {
+        self.player_zones
+            .get(player_id)
+            .map(|z| z.hand.contains(&object_id))
+            .unwrap_or(false)
+    }
+
+    /// Mark a player as having lost and remove all objects they own/control
+    /// from the game. CR 800.4a — When a player leaves the game, all objects
+    /// owned by that player leave the game, all spells and abilities controlled
+    /// by that player on the stack cease to exist, and all emblems controlled
+    /// by that player cease to exist.
+    pub fn eliminate_player(&mut self, player_id: &str) {
+        if let Some(player) = self.players.iter_mut().find(|p| p.id == player_id) {
+            player.has_lost = true;
+        }
+
+        // Remove all objects owned by this player from every zone
+        let owned_ids: Vec<ObjectId> = self
+            .objects
+            .iter()
+            .filter(|(_, card)| card.owner == player_id)
+            .map(|(&id, _)| id)
+            .collect();
+
+        for id in &owned_ids {
+            self.remove_from_current_zone(*id);
+            self.objects.remove(id);
+        }
+
+        // Remove objects controlled (but not owned) by this player from the
+        // stack — CR 800.4a spells/abilities controlled by the player cease
+        // to exist. Permanents they control but don't own return to their
+        // owner (handled by state-based actions).
+        // TODO: handle controlled-but-not-owned permanents via SBA
+
+        self.player_zones.remove(player_id);
+    }
+
+    /// Count players who have not lost.
+    pub fn alive_count(&self) -> usize {
+        self.players.iter().filter(|p| !p.has_lost).count()
+    }
+
+    /// Advance to the next player's turn. Resets per-turn state.
+    pub fn advance_turn(&mut self) {
+        // Skip eliminated players
+        loop {
+            self.active_player_index = (self.active_player_index + 1) % self.turn_order.len();
+            if !self.active_player().has_lost {
+                break;
+            }
+        }
+        self.turn_number += 1;
+        self.phase = Phase::Beginning(BeginningStep::Untap);
+        self.lands_played_this_turn = 0;
+    }
+
+    /// Record that an action was taken.
+    pub fn record_action(&mut self) {
+        self.action_count += 1;
+    }
 }
+
+#[cfg(test)]
+pub mod tests_helper;
 
 #[cfg(test)]
 mod tests;

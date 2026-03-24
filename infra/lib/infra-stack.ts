@@ -130,6 +130,10 @@ export class MtgServerStack extends cdk.Stack {
 			healthyHttpCodes: '200',
 		});
 
+		// Sticky sessions — keep the same requester on the same server
+		// so games stay in memory; DB is the fallback on cache miss
+		this.fargateService.targetGroup.enableCookieStickiness(cdk.Duration.hours(1));
+
 		// --- API Gateway ---
 
 		// NLB security group — must allow health check and forwarding traffic to the ALB

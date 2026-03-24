@@ -1,7 +1,7 @@
 use tokio_postgres::{Client, NoTls};
 
 /// Connect to Postgres using DB_SECRET (Secrets Manager JSON) or DATABASE_URL (local dev).
-pub async fn connect() -> Result<Client, Box<dyn std::error::Error>> {
+pub async fn connect() -> Result<Client, anyhow::Error> {
     let secret = std::env::var("DB_SECRET")
         .or_else(|_| std::env::var("DATABASE_URL"))
         .expect("DB_SECRET or DATABASE_URL must be set");

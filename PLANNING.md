@@ -190,19 +190,19 @@ A Rust-based server that emulates the rules of Magic: The Gathering, using the c
 - [x] Implement card definitions (mana cost with all symbol types, card types including Battle, counters with keyword/P-T/special variants)
 - [x] Implement game state struct with serialization (phases, turns, zones as HashSet/Vec per ordering rules)
 - [x] Implement action types with full replay data (targets, choices, mana payments, multi-block, planeswalker attacks)
-- [ ] Implement basic persistence (save/load game state to PostgreSQL)
+- [x] Implement basic persistence (save/load game state to PostgreSQL)
 - [x] CDK infrastructure: VPC, RDS PostgreSQL, ECS Fargate behind ALB, Secrets Manager for DB credentials, S3 bucket for card images (private, service-only access)
 - [x] Dockerfile for Rust server
 
 ### Phase 3: Turn Structure & Priority
 
-- [ ] Implement turn phases and steps (CR 500-514)
-- [ ] Implement priority system (CR 117)
+- [x] Implement turn phases and steps (CR 500-514)
+- [x] Implement priority system (CR 117) — simplified: active player has priority, pass advances phase
 - [ ] Implement the stack (CR 405)
 
 ### Phase 4: Basic Card Types & Actions
 
-- [ ] Implement land playing (CR 305)
+- [x] Implement land playing (CR 305)
 - [ ] Implement creature casting and combat (CR 302, 506-511)
 - [ ] Implement instant and sorcery casting (CR 303, 304)
 - [ ] Implement basic artifacts and enchantments (CR 301, 306)
@@ -215,9 +215,9 @@ A Rust-based server that emulates the rules of Magic: The Gathering, using the c
 
 ### Phase 6: State-Based Actions & Win Conditions
 
-- [ ] Implement state-based actions (CR 704)
-- [ ] Implement win/loss conditions (CR 104)
-- [ ] Implement life total tracking (CR 119)
+- [x] Implement state-based actions (CR 704) — life ≤ 0, poison ≥ 10, game over check; loops until stable
+- [x] Implement win/loss conditions (CR 104) — concede, last player standing
+- [x] Implement life total tracking (CR 119)
 - [ ] Implement damage (CR 120)
 
 ### Phase 7: Mana System
@@ -227,8 +227,8 @@ A Rust-based server that emulates the rules of Magic: The Gathering, using the c
 
 ### Phase 8: Lobby & Multiplayer
 
-- [ ] Implement lobby creation/joining
-- [ ] Support 2+ player games
+- [x] Implement lobby creation/joining
+- [x] Support 2+ player games
 - [ ] Hidden information (each player sees only what they should)
 
 ### Phase 9: Card Database & Scryfall Integration
@@ -247,3 +247,5 @@ A Rust-based server that emulates the rules of Magic: The Gathering, using the c
 - **2026-03-22**: Card seeding infrastructure added. `seed-cards` binary fetches Scryfall oracle_cards bulk data (~37k cards), downloads normal-size images to a private S3 bucket, and upserts card data into PostgreSQL `cards` table (indexed columns + full Scryfall JSON). CDK stack updated with S3 bucket (private, encrypted, service-only read/write). Added `tokio-postgres`, `aws-sdk-s3`, `reqwest`, `serde_json` dependencies. DB connection helper parses Secrets Manager JSON or plain connection string for local dev.
 - **2026-03-23**: CI/CD pipeline fixes. Dockerfile switched from Docker Hub base images to ECR Public Gallery mirrors (`public.ecr.aws/docker/library/...`) to avoid 429 rate limits in CodeBuild. Pipeline synth step updated to shallow-clone the pinned smithy-rs tag (read from `.gitmodules` `branch` field) and run `./gradlew assemble` before `cdk synth`, since generated `mtg-server-sdk/src/` files are gitignored and unavailable in pipeline checkouts. `.gitmodules` is now the single source of truth for the smithy-rs version.
 - **2026-03-23**: API Gateway + auth + integration tests. ALB switched to internal (`publicLoadBalancer: false`). API Gateway REST API added with VPC Link through an NLB in front of the ALB (REST API VpcLink requires NLB). `/ping` is open (no API key); all other routes (`/{proxy+}`) require an API key via `x-api-key` header. Two API keys per stage: one for general use, one for integration tests. Usage plan with throttling (20 req/s dev, 100 req/s prod). Smithy TypeScript client codegen added (`typescript-client-codegen` plugin, `smithy-typescript-codegen:0.47.0` + `smithy-aws-typescript-codegen:0.47.0`). Generated TS client output to `integration-tests/mtg-client/` via Gradle copy task. Integration test project (`integration-tests/`) uses generated Smithy TS client with Jest. Pipeline runs integ tests as a post-deploy step for each stage, retrieving the integ test API key at runtime.
+- **2026-03-23**: Rust codebase refactored. Split `card.rs` into `card/`, `mana/`, `counter/` modules. Split `state.rs` into `state/`, `phases_and_steps/`, `action/` modules. Each module in its own directory with `mod.rs` + `tests.rs`. Added `Phase::next()` for turn progression. 53 unit tests across all game modules.
+- **2026-03-23**: Game engine and persistence. Added `GameStore` (in-memory `RwLock<HashMap>` cache backed by Postgres `games` table with JSONB state). ALB sticky sessions (1hr cookie) keep players on the same server; DB is fallback on cache miss. Handlers wired to real game state via `Extension<Arc<GameStore>>`. Added `engine/` module: `actions/` (pass_priority, play_land, concede + `can_play_at_sorcery_speed` helper), `legal_actions/` (computes legal actions per player, early-returns for non-priority players), `state_based/` (CR 704 loop: life ≤ 0, poison ≥ 10, game over). Added `SubmitAction` and `GetLegalActions` to Smithy model with `ActionInput` union, `IllegalActionError`. Domain-to-SDK conversions via `From`/`Into` impls in `conversions.rs`. Handler helpers extracted to `handler_helpers.rs` with generic `get_game` + turbofish pattern. Player elimination removes all owned objects (CR 800.4a). `advance_turn` skips eliminated players. Dependencies added: `rand`, `anyhow`, `thiserror`. All `Box<dyn Error>` replaced with `anyhow::Error`.

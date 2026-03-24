@@ -930,7 +930,15 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
         "TargetGroupAttributes": [
           {
             "Key": "stickiness.enabled",
-            "Value": "false",
+            "Value": "true",
+          },
+          {
+            "Key": "stickiness.type",
+            "Value": "lb_cookie",
+          },
+          {
+            "Key": "stickiness.lb_cookie.duration_seconds",
+            "Value": "3600",
           },
         ],
         "TargetType": "ip",
@@ -1046,7 +1054,7 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:c36a5329267c8769dc08bb7b4095b2bcc989a9ce5ae7b58e5ef4cf0807fbe3d9",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:61576b64faee1dffa8ece5c39f6c4dcc66c97c0046582352a898a1c58959f2f3",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",
@@ -2577,7 +2585,15 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
         "TargetGroupAttributes": [
           {
             "Key": "stickiness.enabled",
-            "Value": "false",
+            "Value": "true",
+          },
+          {
+            "Key": "stickiness.type",
+            "Value": "lb_cookie",
+          },
+          {
+            "Key": "stickiness.lb_cookie.duration_seconds",
+            "Value": "3600",
           },
         ],
         "TargetType": "ip",
@@ -2693,7 +2709,7 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:c36a5329267c8769dc08bb7b4095b2bcc989a9ce5ae7b58e5ef4cf0807fbe3d9",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:61576b64faee1dffa8ece5c39f6c4dcc66c97c0046582352a898a1c58959f2f3",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",
@@ -4262,7 +4278,15 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
         "TargetGroupAttributes": [
           {
             "Key": "stickiness.enabled",
-            "Value": "false",
+            "Value": "true",
+          },
+          {
+            "Key": "stickiness.type",
+            "Value": "lb_cookie",
+          },
+          {
+            "Key": "stickiness.lb_cookie.duration_seconds",
+            "Value": "3600",
           },
         ],
         "TargetType": "ip",
@@ -4378,7 +4402,7 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:c36a5329267c8769dc08bb7b4095b2bcc989a9ce5ae7b58e5ef4cf0807fbe3d9",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:61576b64faee1dffa8ece5c39f6c4dcc66c97c0046582352a898a1c58959f2f3",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",
@@ -5945,7 +5969,15 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
         "TargetGroupAttributes": [
           {
             "Key": "stickiness.enabled",
-            "Value": "false",
+            "Value": "true",
+          },
+          {
+            "Key": "stickiness.type",
+            "Value": "lb_cookie",
+          },
+          {
+            "Key": "stickiness.lb_cookie.duration_seconds",
+            "Value": "3600",
           },
         ],
         "TargetType": "ip",
@@ -6061,7 +6093,7 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:c36a5329267c8769dc08bb7b4095b2bcc989a9ce5ae7b58e5ef4cf0807fbe3d9",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:61576b64faee1dffa8ece5c39f6c4dcc66c97c0046582352a898a1c58959f2f3",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",
