@@ -1,7 +1,4 @@
-use std::sync::Arc;
-
 use tokio_postgres::Client;
-use tokio_postgres_rustls::MakeRustlsConnect;
 
 /// Connect to Postgres using DB_SECRET (Secrets Manager JSON) or DATABASE_URL (local dev).
 pub async fn connect() -> Result<Client, anyhow::Error> {
@@ -25,13 +22,9 @@ pub async fn connect() -> Result<Client, anyhow::Error> {
         secret
     };
 
-    if is_secrets_manager || conn_string.contains("sslmode=require") {
-        let mut root_store = rustls::RootCertStore::empty();
-        root_store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
-        let config = rustls::ClientConfig::builder()
-            .with_root_certificates(root_store)
-            .with_no_client_auth();
-        let tls = MakeRustlsConnect::new(config);
+    if is_secrets_manager {
+        let tls_connector = native_tls::TlsConnector::new()?;
+        let tls = postgres_native_tls::MakeTlsConnector::new(tls_connector);
         let (client, conn) = tokio_postgres::connect(&conn_string, tls).await?;
         tokio::spawn(async move {
             if let Err(e) = conn.await {
