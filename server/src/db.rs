@@ -14,7 +14,7 @@ pub async fn connect() -> Result<Client, anyhow::Error> {
     let conn_string = if is_secrets_manager {
         let v: serde_json::Value = serde_json::from_str(&secret)?;
         format!(
-            "host={} port={} user={} password={} dbname={} sslmode=require",
+            "host={} port={} user={} password={} dbname={}",
             v["host"].as_str().unwrap_or("localhost"),
             v["port"].as_u64().unwrap_or(5432),
             v["username"].as_str().unwrap_or("mtg_admin"),
