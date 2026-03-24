@@ -80,9 +80,8 @@ describe('Game lifecycle', () => {
 		);
 		expect(getResponse.gameId).toBe(createResponse.gameId);
 		expect(getResponse.players).not.toBeNull();
-		// TODO once we're not just stubbing
-		//expect(getResponse.players).toHaveLength(1);
-		//expect(getResponse.players![0].name).toBe('Alice');
+		expect(getResponse.players).toHaveLength(1);
+		expect(getResponse.players![0].name).toBe('Alice');
 	});
 
 	it('can join an existing game', async () => {
@@ -99,8 +98,6 @@ describe('Game lifecycle', () => {
 			new GetGameStateCommand({ gameId: createResponse.gameId }),
 		);
 		expect(getResponse.players).not.toBeNull();
-		// TODO once we're not just stubbing
-
-		//expect(getResponse.players).toHaveLength(2);
+		expect(getResponse.players).toHaveLength(2);
 	});
 });
