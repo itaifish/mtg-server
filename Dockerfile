@@ -6,7 +6,7 @@ COPY server/ server/
 COPY mtg-server-sdk/ mtg-server-sdk/
 RUN cargo build --release --manifest-path server/Cargo.toml --bin mtg-server
 
-FROM public.ecr.aws/docker/library/debian:trixie-slim
+FROM public.ecr.aws/docker/library/rust:1.94-slim
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/target/release/mtg-server /usr/local/bin/mtg-server
 EXPOSE 13734
