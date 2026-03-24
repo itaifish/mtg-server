@@ -111,6 +111,7 @@ export class MtgServerStack extends cdk.Stack {
 					},
 				},
 				publicLoadBalancer: false,
+				circuitBreaker: { rollback: true },
 			},
 		);
 

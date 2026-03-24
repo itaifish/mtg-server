@@ -829,8 +829,15 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
             "Enable": false,
             "Rollback": false,
           },
+          "DeploymentCircuitBreaker": {
+            "Enable": true,
+            "Rollback": true,
+          },
           "MaximumPercent": 200,
           "MinimumHealthyPercent": 50,
+        },
+        "DeploymentController": {
+          "Type": "ECS",
         },
         "DesiredCount": 1,
         "EnableECSManagedTags": false,
@@ -1054,7 +1061,7 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:61576b64faee1dffa8ece5c39f6c4dcc66c97c0046582352a898a1c58959f2f3",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:5a299a2136720278dbc96d5901485481a1fee10bbcb19cc3827f8164078d1b1d",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",
@@ -2484,8 +2491,15 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
             "Enable": false,
             "Rollback": false,
           },
+          "DeploymentCircuitBreaker": {
+            "Enable": true,
+            "Rollback": true,
+          },
           "MaximumPercent": 200,
           "MinimumHealthyPercent": 50,
+        },
+        "DeploymentController": {
+          "Type": "ECS",
         },
         "DesiredCount": 2,
         "EnableECSManagedTags": false,
@@ -2709,7 +2723,7 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:61576b64faee1dffa8ece5c39f6c4dcc66c97c0046582352a898a1c58959f2f3",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:5a299a2136720278dbc96d5901485481a1fee10bbcb19cc3827f8164078d1b1d",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",
@@ -4177,8 +4191,15 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
             "Enable": false,
             "Rollback": false,
           },
+          "DeploymentCircuitBreaker": {
+            "Enable": true,
+            "Rollback": true,
+          },
           "MaximumPercent": 200,
           "MinimumHealthyPercent": 50,
+        },
+        "DeploymentController": {
+          "Type": "ECS",
         },
         "DesiredCount": 2,
         "EnableECSManagedTags": false,
@@ -4402,7 +4423,7 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:61576b64faee1dffa8ece5c39f6c4dcc66c97c0046582352a898a1c58959f2f3",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:5a299a2136720278dbc96d5901485481a1fee10bbcb19cc3827f8164078d1b1d",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",
@@ -5868,8 +5889,15 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
             "Enable": false,
             "Rollback": false,
           },
+          "DeploymentCircuitBreaker": {
+            "Enable": true,
+            "Rollback": true,
+          },
           "MaximumPercent": 200,
           "MinimumHealthyPercent": 50,
+        },
+        "DeploymentController": {
+          "Type": "ECS",
         },
         "DesiredCount": 1,
         "EnableECSManagedTags": false,
@@ -6093,7 +6121,7 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:61576b64faee1dffa8ece5c39f6c4dcc66c97c0046582352a898a1c58959f2f3",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:5a299a2136720278dbc96d5901485481a1fee10bbcb19cc3827f8164078d1b1d",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",
