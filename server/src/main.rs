@@ -4,6 +4,7 @@ use mtg_server_sdk::server::AddExtensionLayer;
 use mtg_server_sdk::{MtgService, MtgServiceConfig};
 use tracing::info;
 
+mod cards;
 mod conversions;
 mod db;
 mod engine;
