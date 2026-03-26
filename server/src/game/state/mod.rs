@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
+use crate::game::card::CardType;
 use crate::game::phases_and_steps::BeginningStep;
 
 use super::card::{CardInstance, ObjectId, PlayerId};
@@ -42,6 +43,39 @@ pub struct GameState {
     pub action_count: u64,
     /// Number of lands the active player has played this turn. CR 305.2
     pub lands_played_this_turn: u32,
+    /// Current combat state, if in a combat phase.
+    pub combat: Option<CombatState>,
+}
+
+/// Tracks the state of an ongoing combat.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CombatState {
+    /// CR 508 — Each attacker and what it's attacking.
+    pub attackers: Vec<AttackerInfo>,
+    /// CR 509 — Each blocker and which attacker it's blocking.
+    pub blockers: Vec<BlockerInfo>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AttackerInfo {
+    pub object_id: ObjectId,
+    pub target: AttackTarget,
+}
+
+/// CR 508.1b — What an attacker is attacking.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum AttackTarget {
+    Player(PlayerId),
+    /// CR 306 — Planeswalkers can be attacked.
+    Planeswalker(ObjectId),
+    /// CR 310.5 — Battles can be attacked.
+    Battle(ObjectId),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BlockerInfo {
+    pub object_id: ObjectId,
+    pub blocking: ObjectId,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -91,6 +125,41 @@ pub enum GameStatus {
 }
 
 impl GameState {
+    /// Create a new game with the given players.
+    pub fn new(game_id: impl Into<String>, players: Vec<Player>, rng_seed: u64) -> Self {
+        let turn_order: Vec<usize> = (0..players.len()).collect();
+        let mut player_zones = HashMap::new();
+        for player in &players {
+            player_zones.insert(
+                player.id.clone(),
+                PlayerZones {
+                    library: vec![],
+                    hand: HashSet::new(),
+                    graveyard: vec![],
+                },
+            );
+        }
+        Self {
+            game_id: game_id.into(),
+            status: GameStatus::WaitingForPlayers,
+            players,
+            turn_order,
+            active_player_index: 0,
+            turn_number: 0,
+            phase: Phase::Beginning(BeginningStep::Untap),
+            player_zones,
+            battlefield: HashSet::new(),
+            stack: vec![],
+            exile: HashSet::new(),
+            command: HashSet::new(),
+            objects: HashMap::new(),
+            next_object_id: 1,
+            rng_seed,
+            action_count: 0,
+            lands_played_this_turn: 0,
+            combat: None,
+        }
+    }
     /// Get the active player. CR 102.1
     pub fn active_player(&self) -> &Player {
         &self.players[self.turn_order[self.active_player_index]]
@@ -101,7 +170,7 @@ impl GameState {
         if self.battlefield.contains(&object_id) {
             return Some((ZoneType::Battlefield, None));
         }
-        if self.stack.iter().any(|&id| id == object_id) {
+        if self.stack.contains(&object_id) {
             return Some((ZoneType::Stack, None));
         }
         if self.exile.contains(&object_id) {
@@ -111,13 +180,13 @@ impl GameState {
             return Some((ZoneType::Command, None));
         }
         for (player_id, zones) in &self.player_zones {
-            if zones.library.iter().any(|&id| id == object_id) {
+            if zones.library.contains(&object_id) {
                 return Some((ZoneType::Library, Some(player_id)));
             }
             if zones.hand.contains(&object_id) {
                 return Some((ZoneType::Hand, Some(player_id)));
             }
-            if zones.graveyard.iter().any(|&id| id == object_id) {
+            if zones.graveyard.contains(&object_id) {
                 return Some((ZoneType::Graveyard, Some(player_id)));
             }
         }
@@ -341,6 +410,20 @@ impl GameState {
     /// TODO: triggered abilities (e.g., Blood Artist)
     pub fn send_to_graveyard(&mut self, object_id: ObjectId) {
         self.move_object(object_id, ZoneType::Graveyard);
+    }
+
+    /// Get all object IDs on the battlefield with a given card type.
+    pub fn battlefield_of_type(&self, card_type: CardType) -> Vec<ObjectId> {
+        self.battlefield
+            .iter()
+            .filter(|id| {
+                self.objects
+                    .get(id)
+                    .map(|c| c.definition.card_types.contains(&card_type))
+                    .unwrap_or(false)
+            })
+            .copied()
+            .collect()
     }
 }
 

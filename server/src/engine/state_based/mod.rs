@@ -1,3 +1,4 @@
+use crate::game::card::CardType;
 use crate::game::state::{GameState, GameStatus};
 
 /// CR 704 — State-based actions are checked whenever a player would receive
@@ -34,7 +35,29 @@ fn check_once(state: &mut GameState) -> bool {
 
     // CR 704.5f — A creature with toughness 0 or less is put into its
     // owner's graveyard.
-    // TODO: implement once we track effective toughness on the battlefield
+    // CR 704.5g — A creature with lethal damage (damage >= toughness) is
+    // destroyed (put into its owner's graveyard).
+    let lethal: Vec<u64> = state
+        .battlefield_of_type(CardType::Creature)
+        .into_iter()
+        .filter(|&id| {
+            state
+                .objects
+                .get(&id)
+                .map(|card| {
+                    let toughness = card.effective_toughness().unwrap_or(0);
+                    toughness <= 0 || card.damage_marked >= toughness as u32
+                })
+                .unwrap_or(false)
+        })
+        .collect();
+
+    for id in lethal {
+        // TODO: replacement effects (e.g., indestructible, regenerate)
+        // TODO: triggered abilities (e.g., dies triggers)
+        state.send_to_graveyard(id);
+        changed = true;
+    }
 
     // CR 704.5i — A planeswalker with 0 or less loyalty is put into its
     // owner's graveyard.

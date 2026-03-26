@@ -1,11 +1,13 @@
 use crate::game::ability::{all_abilities, AbilityCost, AbilityEffect};
 use crate::game::card::CardType;
-use crate::game::mana::{ManaType, SymbolPayment};
+use crate::game::mana::SymbolPayment;
 use crate::game::phases_and_steps::Phase;
 use crate::game::state::{GameState, GameStatus};
 use crate::game::zone::ZoneType;
 
 use super::state_based;
+
+pub mod combat;
 
 /// Errors from action execution.
 #[derive(Debug, thiserror::Error)]
@@ -278,7 +280,7 @@ pub fn concede(state: &mut GameState, player_id: &str) -> Result<(), ActionError
     Ok(())
 }
 
-fn validate_player(state: &GameState, player_id: &str) -> Result<(), ActionError> {
+pub(crate) fn validate_player(state: &GameState, player_id: &str) -> Result<(), ActionError> {
     if !state.has_player(player_id) {
         return Err(ActionError::PlayerNotFound(player_id.to_string()));
     }

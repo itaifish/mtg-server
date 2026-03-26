@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use mtg_server_sdk::error::{
@@ -9,7 +9,6 @@ use mtg_server_sdk::server::request::extension::Extension;
 use mtg_server_sdk::{input, output};
 
 use crate::engine;
-use crate::game::phases_and_steps::{BeginningStep, Phase};
 use crate::game::state::{GameState, GameStatus, Player, PlayerZones};
 use crate::handler_helpers::{get_game, server_err};
 use crate::store::GameStore;
@@ -30,35 +29,11 @@ pub async fn create_game(
     let game_id = uuid::Uuid::new_v4().to_string();
     let player_id = uuid::Uuid::new_v4().to_string();
 
-    let mut player_zones = HashMap::new();
-    player_zones.insert(
-        player_id.clone(),
-        PlayerZones {
-            library: vec![],
-            hand: HashSet::new(),
-            graveyard: vec![],
-        },
+    let state = GameState::new(
+        game_id.clone(),
+        vec![Player::new(player_id.clone(), input.player_name.clone())],
+        rand::random(),
     );
-
-    let state = GameState {
-        game_id: game_id.clone(),
-        status: GameStatus::WaitingForPlayers,
-        players: vec![Player::new(player_id.clone(), input.player_name.clone())],
-        turn_order: vec![0],
-        active_player_index: 0,
-        turn_number: 0,
-        phase: Phase::Beginning(BeginningStep::Untap),
-        player_zones,
-        battlefield: HashSet::new(),
-        stack: vec![],
-        exile: HashSet::new(),
-        command: HashSet::new(),
-        objects: HashMap::new(),
-        next_object_id: 1,
-        rng_seed: rand::random(),
-        action_count: 0,
-        lands_played_this_turn: 0,
-    };
 
     store
         .create(state)

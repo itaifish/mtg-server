@@ -203,22 +203,23 @@ A Rust-based server that emulates the rules of Magic: The Gathering, using the c
 ### Phase 4: Basic Card Types & Actions
 
 - [x] Implement land playing (CR 305)
-- [ ] Implement creature casting and combat (CR 302, 506-511)
-- [ ] Implement instant and sorcery casting (CR 303, 304)
+- [x] Implement creature casting (CR 302) — simplified: resolves immediately, no stack
+- [ ] Implement instant and sorcery casting (CR 303, 304) — framework exists, needs spell effects
 - [ ] Implement basic artifacts and enchantments (CR 301, 306)
 
 ### Phase 5: Combat
 
-- [ ] Declare attackers (CR 508)
-- [ ] Declare blockers (CR 509)
-- [ ] Combat damage (CR 510)
+- [x] Declare attackers (CR 508) — validates creatures, taps attackers, supports player/planeswalker/battle targets
+- [x] Declare blockers (CR 509) — validates defending player, assigns blockers to attackers
+- [x] Combat damage (CR 510) — unblocked deals to player, blocked creatures exchange damage
+- [ ] First strike, double strike, trample, deathtouch
 
 ### Phase 6: State-Based Actions & Win Conditions
 
-- [x] Implement state-based actions (CR 704) — life ≤ 0, poison ≥ 10, game over check; loops until stable
+- [x] Implement state-based actions (CR 704) — life ≤ 0, poison ≥ 10, lethal damage, zero toughness, game over check; loops until stable
 - [x] Implement win/loss conditions (CR 104) — concede, last player standing
 - [x] Implement life total tracking (CR 119)
-- [ ] Implement damage (CR 120)
+- [x] Implement damage (CR 120) — combat damage to players and creatures
 
 ### Phase 7: Mana System
 
