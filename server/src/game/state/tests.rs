@@ -52,7 +52,7 @@ fn move_object_to_battlefield() {
     gs.objects.insert(1, card);
     gs.player_zones.get_mut("alice").unwrap().hand.insert(1);
 
-    gs.move_object(1, ZoneType::Battlefield, None);
+    gs.move_object(1, ZoneType::Battlefield);
 
     assert!(gs.battlefield.contains(&1));
     assert!(!gs.player_zones["alice"].hand.contains(&1));
@@ -65,7 +65,7 @@ fn move_object_to_graveyard_defaults_to_owner() {
     gs.objects.insert(1, card);
     gs.battlefield.insert(1);
 
-    gs.move_object(1, ZoneType::Graveyard, None);
+    gs.move_object(1, ZoneType::Graveyard);
 
     assert!(!gs.battlefield.contains(&1));
     assert!(gs.player_zones["alice"].graveyard.contains(&1));
@@ -100,7 +100,7 @@ fn move_object_to_stack() {
     gs.objects.insert(1, card);
     gs.player_zones.get_mut("alice").unwrap().hand.insert(1);
 
-    gs.move_object(1, ZoneType::Stack, None);
+    gs.move_object(1, ZoneType::Stack);
 
     assert_eq!(gs.stack, vec![1]);
     assert!(!gs.player_zones["alice"].hand.contains(&1));
@@ -112,7 +112,7 @@ fn move_object_to_exile() {
     gs.battlefield.insert(1);
     gs.objects.insert(1, test_card(1, "alice"));
 
-    gs.move_object(1, ZoneType::Exile, None);
+    gs.move_object(1, ZoneType::Exile);
 
     assert!(!gs.battlefield.contains(&1));
     assert!(gs.exile.contains(&1));

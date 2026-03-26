@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 
 use super::card::{ObjectId, PlayerId};
-use super::mana::ManaPayment;
 
 /// An action recorded in the action log for deterministic replay.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,6 +21,7 @@ pub enum ActionType {
     PlayLand { object_id: ObjectId },
 
     /// Cast a spell. CR 601
+    /// TODO: mana payment model for replay (needs to handle hybrid, phyrexian, etc.)
     CastSpell {
         object_id: ObjectId,
         /// CR 601.2b — Targets chosen for the spell.
@@ -30,20 +30,18 @@ pub enum ActionType {
         mode_choices: Vec<u32>,
         /// CR 601.2f — Value of X if the spell has {X} in its cost.
         x_value: Option<u32>,
-        /// CR 601.2g — How the mana cost is being paid.
-        mana_payment: Vec<ManaPayment>,
         /// CR 601.2b — Any additional costs paid (e.g., kicker, buyback).
         additional_costs_paid: Vec<AdditionalCost>,
     },
 
     /// Activate an ability. CR 602
+    /// TODO: mana payment model for replay
     ActivateAbility {
         source_id: ObjectId,
         /// Which ability on the object (index).
         ability_index: u32,
         targets: Vec<Target>,
         x_value: Option<u32>,
-        mana_payment: Vec<ManaPayment>,
     },
 
     /// Declare attackers. CR 508
@@ -61,15 +59,12 @@ pub enum ActionType {
     /// Order blockers for combat damage assignment. CR 510.1c
     OrderBlockers {
         attacker_id: ObjectId,
-        /// Blocker ids in the order the attacker's controller chooses.
         blocker_order: Vec<ObjectId>,
     },
 
-    /// Order attackers for combat damage assignment (when a creature blocks
-    /// multiple attackers). CR 510.1d
+    /// Order attackers for combat damage assignment. CR 510.1d
     OrderAttackers {
         blocker_id: ObjectId,
-        /// Attacker ids in the order the blocking player chooses.
         attacker_order: Vec<ObjectId>,
     },
 
@@ -88,22 +83,15 @@ pub enum Target {
 }
 
 /// Additional costs beyond the mana cost. CR 118.8
+/// TODO: kicker needs mana payment model
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AdditionalCost {
-    /// Sacrifice a permanent.
     Sacrifice(ObjectId),
-    /// Discard a card.
     Discard(ObjectId),
-    /// Pay life.
     PayLife(u32),
-    /// Pay with Phyrexian mana (2 life instead of colored). CR 107.4f
     PhyrexianLife,
-    /// Tap a permanent.
     Tap(ObjectId),
-    /// Exile a card.
     ExileFromZone(ObjectId),
-    /// Kicker or other optional additional cost.
-    Kicker { mana_payment: Vec<ManaPayment> },
 }
 
 /// CR 508.1b — An attacker attacks a player, planeswalker, or battle.
@@ -117,9 +105,7 @@ pub struct AttackAssignment {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AttackTarget {
     Player(PlayerId),
-    /// CR 306 — Planeswalkers can be attacked.
     Planeswalker(ObjectId),
-    /// CR 310.5 — Battles can be attacked.
     Battle(ObjectId),
 }
 
@@ -133,16 +119,10 @@ pub struct BlockAssignment {
 /// Choices a player makes in response to spells, abilities, or game rules.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PlayerChoice {
-    /// Choose one or more objects (e.g., "choose a creature").
     ChooseObjects(Vec<ObjectId>),
-    /// Choose one or more players.
     ChoosePlayers(Vec<PlayerId>),
-    /// Choose a number (e.g., for X, or "choose a number").
     ChooseNumber(u32),
-    /// Choose from a list of options (e.g., modal spells, voting).
     ChooseOption(u32),
-    /// Order objects (e.g., Scry ordering, Collected Company).
     OrderObjects(Vec<ObjectId>),
-    /// Yes/No decision (e.g., "you may" effects).
     YesNo(bool),
 }

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::game::phases_and_steps::BeginningStep;
 
 use super::card::{CardInstance, ObjectId, PlayerId};
-use super::mana::ManaType;
+use super::mana::{ManaPool, ManaRestriction, ManaType};
 use super::phases_and_steps::Phase;
 use super::zone::ZoneType;
 
@@ -55,7 +55,7 @@ pub struct Player {
     /// Poison counters. CR 704.5c
     pub poison_counters: u32,
     /// CR 106.4 — Mana pool. Empties at the end of each step and phase.
-    pub mana_pool: Vec<ManaType>,
+    pub mana_pool: ManaPool,
 }
 
 impl Player {
@@ -66,7 +66,7 @@ impl Player {
             life_total: 20,
             has_lost: false,
             poison_counters: 0,
-            mana_pool: vec![],
+            mana_pool: ManaPool::default(),
         }
     }
 }
@@ -125,14 +125,10 @@ impl GameState {
     }
 
     /// Move an object between zones.
+    /// CR 400.3 — Per-player zones always use the object's owner.
     /// CR 400.7 — An object that moves from one zone to another becomes a new
     /// object with no memory of its previous existence.
-    pub fn move_object(
-        &mut self,
-        object_id: ObjectId,
-        to_zone: ZoneType,
-        to_player: Option<&PlayerId>,
-    ) {
+    pub fn move_object(&mut self, object_id: ObjectId, to_zone: ZoneType) {
         self.remove_from_current_zone(object_id);
 
         match to_zone {
@@ -147,10 +143,10 @@ impl GameState {
                 self.command.insert(object_id);
             }
             ZoneType::Library | ZoneType::Hand | ZoneType::Graveyard => {
-                // CR 400.3 — Goes to owner's zone if no player specified
-                let player_id = to_player
-                    .cloned()
-                    .or_else(|| self.objects.get(&object_id).map(|o| o.owner.clone()))
+                let player_id = self
+                    .objects
+                    .get(&object_id)
+                    .map(|o| o.owner.clone())
                     .expect("object must have an owner");
                 let zones = self
                     .player_zones
@@ -259,6 +255,92 @@ impl GameState {
     /// Record that an action was taken.
     pub fn record_action(&mut self) {
         self.action_count += 1;
+    }
+
+    /// Get a reference to a player by ID.
+    pub fn get_player(&self, player_id: &str) -> Option<&Player> {
+        self.players.iter().find(|p| p.id == player_id)
+    }
+
+    /// Get a mutable reference to a player by ID.
+    pub fn get_player_mut(&mut self, player_id: &str) -> Option<&mut Player> {
+        self.players.iter_mut().find(|p| p.id == player_id)
+    }
+
+    /// CR 106.4 — Empty all players' mana pools. Called on phase/step transitions.
+    pub fn empty_mana_pools(&mut self) {
+        for player in &mut self.players {
+            player.mana_pool.clear();
+        }
+    }
+
+    /// CR 106 — Add mana to a player's pool.
+    /// TODO: replacement effects (e.g., Mana Reflection doubles mana)
+    /// TODO: triggered abilities on mana production
+    pub fn add_mana(&mut self, player_id: &str, mana_type: ManaType, amount: u32) {
+        if let Some(player) = self.get_player_mut(player_id) {
+            player.mana_pool.add(mana_type, amount);
+        }
+    }
+
+    /// Add restricted mana to a player's pool.
+    pub fn add_mana_restricted(
+        &mut self,
+        player_id: &str,
+        mana_type: ManaType,
+        amount: u32,
+        restriction: ManaRestriction,
+    ) {
+        if let Some(player) = self.get_player_mut(player_id) {
+            player
+                .mana_pool
+                .add_restricted(mana_type, amount, restriction);
+        }
+    }
+
+    // --- Game action helpers ---
+    // Wrapped in helpers for future replacement effect and triggered ability support.
+
+    /// CR 120 — Deal damage to a player.
+    /// TODO: replacement/prevention effects (e.g., Fog, damage doublers)
+    /// TODO: triggered abilities (e.g., Lifelink, Curiosity)
+    pub fn deal_damage_to_player(&mut self, player_id: &str, amount: u32) {
+        if let Some(player) = self.get_player_mut(player_id) {
+            player.life_total -= amount as i32;
+        }
+    }
+
+    /// CR 121 — A player draws a card (moves top of library to hand).
+    /// TODO: replacement effects (e.g., Notion Thief, Alms Collector)
+    /// TODO: triggered abilities (e.g., Consecrated Sphinx)
+    pub fn draw_card(&mut self, player_id: &str) -> bool {
+        let zones = match self.player_zones.get_mut(player_id) {
+            Some(z) => z,
+            None => return false,
+        };
+        match zones.library.pop() {
+            Some(id) => {
+                zones.hand.insert(id);
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// CR 119.3 — A player gains life.
+    /// TODO: replacement effects (e.g., Tainted Remedy)
+    /// TODO: triggered abilities (e.g., Ajani's Pridemate)
+    pub fn gain_life(&mut self, player_id: &str, amount: u32) {
+        if let Some(player) = self.get_player_mut(player_id) {
+            player.life_total += amount as i32;
+        }
+    }
+
+    /// Move an object to its owner's graveyard.
+    /// TODO: replacement effects (e.g., Rest in Peace exiles instead)
+    /// TODO: triggered abilities (e.g., Blood Artist)
+    pub fn send_to_graveyard(&mut self, object_id: ObjectId) {
+        self.move_object(object_id, ZoneType::Graveyard);
     }
 }
 

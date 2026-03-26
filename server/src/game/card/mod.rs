@@ -33,6 +33,22 @@ pub enum CardType {
     Tribal,
 }
 
+impl CardType {
+    /// CR 110.4 — Permanents are artifacts, battles, creatures, enchantments,
+    /// lands, and planeswalkers.
+    pub fn is_permanent(self) -> bool {
+        matches!(
+            self,
+            Self::Artifact
+                | Self::Battle
+                | Self::Creature
+                | Self::Enchantment
+                | Self::Land
+                | Self::Planeswalker
+        )
+    }
+}
+
 /// CR 205.4 — Supertypes
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Supertype {

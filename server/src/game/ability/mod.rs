@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::card::ObjectId;
-use super::mana::ManaType;
+use super::mana::{ManaProduction, ManaType};
 
 /// An ability on a card or permanent.
 /// CR 113 — Abilities can be activated, triggered, or static.
@@ -36,7 +36,7 @@ pub enum AbilityCost {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AbilityEffect {
     /// Add mana to the controller's mana pool.
-    AddMana(Vec<ManaType>),
+    AddMana(Vec<ManaProduction>),
     /// Deal damage to a target.
     DealDamage { amount: u32 },
     /// Draw cards.
@@ -63,7 +63,7 @@ pub fn intrinsic_land_ability(subtype: &str) -> Option<Ability> {
 
     Some(Ability {
         costs: vec![AbilityCost::TapSelf],
-        effect: AbilityEffect::AddMana(vec![mana_type]),
+        effect: AbilityEffect::AddMana(vec![ManaProduction::new(mana_type, 1)]),
         is_mana_ability: true,
     })
 }

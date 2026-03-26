@@ -98,3 +98,64 @@ fn hybrid_phyrexian_mana() {
     };
     assert_eq!(cost.mana_value(), 1);
 }
+
+// --- ManaPool tests ---
+
+#[test]
+fn empty_pool() {
+    let pool = ManaPool::default();
+    assert!(pool.is_empty());
+    assert_eq!(pool.available(ManaType::Green), 0);
+}
+
+#[test]
+fn add_unrestricted_mana() {
+    let mut pool = ManaPool::default();
+    pool.add(ManaType::Green, 3);
+    assert_eq!(pool.available(ManaType::Green), 3);
+    assert_eq!(pool.available(ManaType::Red), 0);
+}
+
+#[test]
+fn spend_succeeds_when_available() {
+    let mut pool = ManaPool::default();
+    pool.add(ManaType::Blue, 2);
+    assert!(pool.spend(ManaType::Blue, 1));
+    assert_eq!(pool.available(ManaType::Blue), 1);
+}
+
+#[test]
+fn spend_fails_when_insufficient() {
+    let mut pool = ManaPool::default();
+    pool.add(ManaType::Red, 1);
+    assert!(!pool.spend(ManaType::Red, 2));
+    assert_eq!(pool.available(ManaType::Red), 1); // unchanged
+}
+
+#[test]
+fn clear_empties_all() {
+    let mut pool = ManaPool::default();
+    pool.add(ManaType::White, 3);
+    pool.add(ManaType::Black, 2);
+    pool.add_restricted(ManaType::Green, 1, ManaRestriction::CreatureSpell);
+    pool.clear();
+    assert!(pool.is_empty());
+}
+
+#[test]
+fn add_restricted_mana() {
+    let mut pool = ManaPool::default();
+    pool.add_restricted(ManaType::Red, 2, ManaRestriction::CreatureSpell);
+    assert_eq!(pool.available(ManaType::Red), 0); // restricted doesn't count as unrestricted
+    assert_eq!(pool.red.restricted.len(), 1);
+    assert_eq!(pool.red.restricted[0].amount, 2);
+}
+
+#[test]
+fn add_restricted_stacks_same_restriction() {
+    let mut pool = ManaPool::default();
+    pool.add_restricted(ManaType::Blue, 1, ManaRestriction::CreatureSpell);
+    pool.add_restricted(ManaType::Blue, 2, ManaRestriction::CreatureSpell);
+    assert_eq!(pool.blue.restricted.len(), 1);
+    assert_eq!(pool.blue.restricted[0].amount, 3);
+}
