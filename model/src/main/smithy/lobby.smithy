@@ -67,6 +67,80 @@ structure JoinGameOutput {
     playerId: String
 }
 
+/// Leave a game lobby. Only allowed during WAITING_FOR_PLAYERS.
+/// If the last player leaves, the game is deleted.
+@http(method: "POST", uri: "/games/{gameId}/leave")
+operation LeaveGame {
+    input: LeaveGameInput
+    output: LeaveGameOutput
+    errors: [
+        ValidationException
+        NotFoundError
+        ServerError
+    ]
+}
+
+@input
+structure LeaveGameInput {
+    @required
+    @httpLabel
+    gameId: String
+
+    @required
+    playerId: String
+}
+
+@output
+structure LeaveGameOutput {
+    @required
+    gameId: String
+
+    @required
+    playersRemaining: Integer
+}
+
+/// List available game lobbies.
+@readonly
+@http(method: "GET", uri: "/games")
+operation ListGames {
+    input: ListGamesInput
+    output: ListGamesOutput
+    errors: [
+        ServerError
+    ]
+}
+
+@input
+structure ListGamesInput {
+    /// Filter by status. If not provided, returns all games.
+    @httpQuery("status")
+    status: GameStatus
+}
+
+@output
+structure ListGamesOutput {
+    @required
+    games: GameSummaryList
+}
+
+list GameSummaryList {
+    member: GameSummary
+}
+
+structure GameSummary {
+    @required
+    gameId: String
+
+    @required
+    status: GameStatus
+
+    @required
+    playerCount: Integer
+
+    @required
+    format: GameFormat
+}
+
 /// Mark a player as ready. When all players are ready, the game starts
 /// and transitions to the mulligan phase.
 @http(method: "POST", uri: "/games/{gameId}/ready")

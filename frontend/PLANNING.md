@@ -162,22 +162,49 @@ The `StorageService` interface provides platform-agnostic persistence:
 
 All commands use the platform-appropriate AppData directory and create directories on first use.
 
+### Getting Started (New Devs)
+
+```bash
+cd frontend
+npm install --legacy-peer-deps
+```
+
+**Connect to the test stage** (one-time setup):
+```bash
+# Refresh your AWS credentials first, then:
+./setup-test-env.sh
+```
+This fetches the API URL and API key from the `Deploy-test-MtgServer-test` CloudFormation stack and writes `.env.test`. Alternatively, copy `.env.test.example` to `.env.test` and fill in values manually.
+
+**`.env.test` is gitignored** — it contains an API key. Never commit it.
+
 ### Running
 
 ```bash
-# Web (browser)
+# Desktop app against test stage (default)
+npm run tauri:test
+
+# Desktop app against local server
+npm run tauri:local
+
+# Browser-only against test stage
 npm run dev
 
-# Desktop (Tauri)
-npm run tauri dev
+# Browser-only against local server
+npm run dev:local
 
 # Build desktop app
 npm run tauri build
-
-# Mobile (future)
-npx tauri ios init && npx tauri ios dev
-npx tauri android init && npx tauri android dev
 ```
+
+### Environment Files
+
+| File | Committed | Purpose |
+|------|-----------|---------|
+| `.env.local` | ✅ | Local server URL (`http://localhost:13734`) |
+| `.env.test` | ❌ | Test stage API URL + API key (secrets) |
+| `.env.test.example` | ✅ | Template for `.env.test` with instructions |
+
 
 ## API Surface
 

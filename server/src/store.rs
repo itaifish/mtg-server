@@ -4,7 +4,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio_postgres::Client;
 
-use crate::game::state::GameState;
+use crate::game::state::{GameState, GameStatus};
 
 /// In-memory game store backed by Postgres.
 /// Games live in memory for the sticky-session host; the DB is written on
@@ -61,12 +61,17 @@ impl GameStore {
 
         if let Some(row) = row {
             let json: serde_json::Value = row.get(0);
-            let state: GameState = serde_json::from_value(json)?;
-            self.games
-                .write()
-                .await
-                .insert(game_id.to_string(), state.clone());
-            Ok(Some(state))
+            match serde_json::from_value::<GameState>(json) {
+                Ok(state) => {
+                    self.games.write().await.insert(game_id.to_string(), state.clone());
+                    Ok(Some(state))
+                }
+                Err(e) => {
+                    tracing::warn!(game_id, %e, "stale game data, deleting");
+                    self.db.execute("DELETE FROM games WHERE game_id = $1", &[&game_id]).await?;
+                    Ok(None)
+                }
+            }
         } else {
             Ok(None)
         }
@@ -86,5 +91,39 @@ impl GameStore {
             .await
             .insert(state.game_id.clone(), state);
         Ok(())
+    }
+
+    /// Delete a game from memory and DB.
+    pub async fn delete(&self, game_id: &str) -> Result<(), anyhow::Error> {
+        self.db
+            .execute("DELETE FROM games WHERE game_id = $1", &[&game_id])
+            .await?;
+        self.games.write().await.remove(game_id);
+        Ok(())
+    }
+
+    /// List all games, optionally filtered by status.
+    pub async fn list(&self, status: Option<GameStatus>) -> Result<Vec<GameState>, anyhow::Error> {
+        let rows = self
+            .db
+            .query("SELECT state FROM games", &[])
+            .await?;
+
+        let mut games = Vec::new();
+        for row in rows {
+            let json: serde_json::Value = row.get(0);
+            let state: GameState = match serde_json::from_value(json) {
+                Ok(s) => s,
+                Err(_) => continue, // skip stale schema
+            };
+            if let Some(filter) = &status {
+                if state.status == *filter {
+                    games.push(state);
+                }
+            } else {
+                games.push(state);
+            }
+        }
+        Ok(games)
     }
 }

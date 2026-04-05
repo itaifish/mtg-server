@@ -31,12 +31,12 @@ describe('MtgApiClient', () => {
     expect(spy).toHaveBeenCalledWith('http://localhost:13734/ping', expect.objectContaining({ method: 'GET' }));
   });
 
-  it('sets Authorization header when apiKey provided', async () => {
+  it('sets x-api-key header when apiKey provided', async () => {
     const authed = new MtgApiClient({ baseUrl: 'http://localhost:13734', apiKey: 'secret' });
     const spy = mockFetchOk({ status: 'ok' });
     await authed.ping();
     expect(spy).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-      headers: expect.objectContaining({ Authorization: 'Bearer secret' }),
+      headers: expect.objectContaining({ 'x-api-key': 'secret' }),
     }));
   });
 

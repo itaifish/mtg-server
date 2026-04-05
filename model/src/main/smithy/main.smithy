@@ -14,6 +14,8 @@ service MtgService {
         // Lobby
         CreateGame
         JoinGame
+        LeaveGame
+        ListGames
         SetReady
         // Gameplay
         GetGameState

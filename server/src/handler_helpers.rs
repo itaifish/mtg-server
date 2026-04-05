@@ -1,6 +1,6 @@
 use mtg_server_sdk::error::{
-    CreateGameError, GetGameStateError, GetLegalActionsError, JoinGameError, NotFoundError,
-    ServerError, SetReadyError, SubmitActionError,
+    CreateGameError, GetGameStateError, GetLegalActionsError, JoinGameError, LeaveGameError,
+    ListGamesError, NotFoundError, ServerError, SetReadyError, SubmitActionError,
 };
 
 use crate::game::state::GameState;
@@ -53,6 +53,16 @@ impl_lookup_errors!(GetGameStateError, NotFoundError, ServerError);
 impl_lookup_errors!(SubmitActionError, NotFoundError, ServerError);
 impl_lookup_errors!(GetLegalActionsError, NotFoundError, ServerError);
 impl_lookup_errors!(SetReadyError, NotFoundError, ServerError);
+impl_lookup_errors!(LeaveGameError, NotFoundError, ServerError);
+
+// These errors have no NotFoundError variant, only ServerErr
+impl From<ServerErr> for ListGamesError {
+    fn from(_: ServerErr) -> Self {
+        Self::ServerError(ServerError {
+            message: "internal error".into(),
+        })
+    }
+}
 
 // CreateGameError has no NotFoundError variant, only needs ServerErr
 impl From<ServerErr> for CreateGameError {

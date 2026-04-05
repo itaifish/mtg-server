@@ -12,15 +12,27 @@ import './styles/global.css';
 
 const SETTINGS_KEY = 'mtg-settings';
 
+const ENV_API_URL = import.meta.env.VITE_API_URL as string | undefined;
+const ENV_API_KEY = import.meta.env.VITE_API_KEY as string | undefined;
+const FALLBACK_URL = 'http://localhost:13734';
+
 function getConfig(): { baseUrl: string; apiKey?: string } {
+  // Env vars (from .env.local / .env.test) take priority.
+  // localStorage only overrides if no env var is set.
+  if (ENV_API_URL) {
+    return { baseUrl: ENV_API_URL, apiKey: ENV_API_KEY };
+  }
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (raw) {
       const s = JSON.parse(raw) as { serverUrl?: string; apiKey?: string };
-      return { baseUrl: s.serverUrl || 'http://localhost:13734', apiKey: s.apiKey || undefined };
+      return {
+        baseUrl: s.serverUrl || FALLBACK_URL,
+        apiKey: s.apiKey || undefined,
+      };
     }
   } catch { /* use defaults */ }
-  return { baseUrl: 'http://localhost:13734' };
+  return { baseUrl: FALLBACK_URL };
 }
 
 function Nav() {

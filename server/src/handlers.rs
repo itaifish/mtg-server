@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use mtg_server_sdk::error::{
     CreateGameError, GameFullError, GetGameStateError, GetLegalActionsError, JoinGameError,
-    NotFoundError, SetReadyError, SubmitActionError,
+    LeaveGameError, ListGamesError, NotFoundError, SetReadyError, SubmitActionError,
 };
 use mtg_server_sdk::server::request::extension::Extension;
 use mtg_server_sdk::{input, output};
@@ -96,6 +96,58 @@ pub async fn join_game(
 
     tracing::info!(game_id = %input.game_id, %player_id, "player joined");
     Ok(output::JoinGameOutput { player_id })
+}
+
+pub async fn leave_game(
+    input: input::LeaveGameInput,
+    Extension(store): Extension<Arc<GameStore>>,
+) -> Result<output::LeaveGameOutput, LeaveGameError> {
+    let mut state = get_game::<LeaveGameError>(&store, &input.game_id).await?;
+
+    if state.status != GameStatus::WaitingForPlayers {
+        return Err(LeaveGameError::ServerError(mtg_server_sdk::error::ServerError {
+            message: "can only leave during lobby phase".into(),
+        }));
+    }
+
+    state.players.retain(|p| p.id != input.player_id);
+    state.living_turn_order.retain(|id| id != &input.player_id);
+    state.starting_turn_order.retain(|id| id != &input.player_id);
+    state.player_zones.remove(&input.player_id);
+
+    let remaining = state.players.len() as i32;
+
+    if remaining == 0 {
+        store.delete(&input.game_id).await.map_err(server_err::<LeaveGameError>)?;
+    } else {
+        store.update(state).await.map_err(server_err::<LeaveGameError>)?;
+    }
+
+    tracing::info!(game_id = %input.game_id, player_id = %input.player_id, "player left");
+    Ok(output::LeaveGameOutput {
+        game_id: input.game_id,
+        players_remaining: remaining,
+    })
+}
+
+pub async fn list_games(
+    input: input::ListGamesInput,
+    Extension(store): Extension<Arc<GameStore>>,
+) -> Result<output::ListGamesOutput, ListGamesError> {
+    let status_filter: Option<GameStatus> = input.status.map(Into::into);
+    let games = store.list(status_filter).await.map_err(server_err::<ListGamesError>)?;
+
+    let summaries = games
+        .iter()
+        .map(|g| mtg_server_sdk::model::GameSummary {
+            game_id: g.game_id.clone(),
+            status: g.status.into(),
+            player_count: g.players.len() as i32,
+            format: mtg_server_sdk::model::GameFormat::Standard, // TODO: store format on GameState
+        })
+        .collect();
+
+    Ok(output::ListGamesOutput { games: summaries })
 }
 
 pub async fn set_ready(

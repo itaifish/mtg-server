@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "identifier": "com.mtg.arena",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": "vite --mode ${VITE_MODE:-test}",
     "beforeBuildCommand": "npm run build",
     "devUrl": "http://localhost:5173",
     "frontendDist": "../dist"

@@ -14,6 +14,19 @@ import type {
   SubmitActionResponse,
 } from '../types/api';
 
+import { isTauri } from '../services/storage';
+
+/** Resolves the fetch function — uses Tauri HTTP plugin (no CORS) when in Tauri, browser fetch otherwise. */
+let tauriFetch: typeof globalThis.fetch | null = null;
+async function getFetch(): Promise<typeof globalThis.fetch> {
+  if (!isTauri()) return globalThis.fetch;
+  if (!tauriFetch) {
+    const mod = await import('@tauri-apps/plugin-http');
+    tauriFetch = mod.fetch;
+  }
+  return tauriFetch;
+}
+
 export interface ApiClientConfig {
   baseUrl: string;
   apiKey?: string;
@@ -64,7 +77,7 @@ export class MtgApiClient {
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.headers = { 'Content-Type': 'application/json' };
     if (config.apiKey) {
-      this.headers['Authorization'] = `Bearer ${config.apiKey}`;
+      this.headers['x-api-key'] = config.apiKey;
     }
   }
 
@@ -73,7 +86,8 @@ export class MtgApiClient {
     path: string,
     body?: unknown,
   ): Promise<T> {
-    const res = await fetch(`${this.baseUrl}${path}`, {
+    const fetchFn = await getFetch();
+    const res = await fetchFn(`${this.baseUrl}${path}`, {
       method,
       headers: this.headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,

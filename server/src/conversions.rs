@@ -165,3 +165,16 @@ impl TryFrom<&crate::game::card::CardInstance> for mtg_server_sdk::model::Perman
         })
     }
 }
+
+impl From<mtg_server_sdk::model::GameStatus> for crate::game::state::GameStatus {
+    fn from(status: mtg_server_sdk::model::GameStatus) -> Self {
+        match status {
+            mtg_server_sdk::model::GameStatus::WaitingForPlayers => Self::WaitingForPlayers,
+            mtg_server_sdk::model::GameStatus::ChoosingPlayOrder => Self::ChoosingPlayOrder,
+            mtg_server_sdk::model::GameStatus::Mulligan => Self::ResolvingMulligans,
+            mtg_server_sdk::model::GameStatus::InProgress => Self::InProgress,
+            mtg_server_sdk::model::GameStatus::Finished => Self::Finished,
+            _ => Self::WaitingForPlayers,
+        }
+    }
+}

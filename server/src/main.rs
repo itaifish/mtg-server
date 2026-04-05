@@ -33,6 +33,8 @@ async fn main() {
         .ping(handlers::ping)
         .create_game(handlers::create_game)
         .join_game(handlers::join_game)
+        .leave_game(handlers::leave_game)
+        .list_games(handlers::list_games)
         .set_ready(handlers::set_ready)
         .get_game_state(handlers::get_game_state)
         .submit_action(handlers::submit_action)
