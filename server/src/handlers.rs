@@ -150,11 +150,22 @@ pub async fn get_game_state(
     let state = get_game::<GetGameStateError>(&store, &input.game_id).await?;
 
     Ok(output::GetGameStateOutput {
-        game_id: state.game_id,
+        game_id: state.game_id.clone(),
         status: state.status.into(),
         players: state.players.iter().map(Into::into).collect(),
         turn_number: state.turn_number as i32,
         action_count: state.action_count as i32,
+        priority_player_id: if state.status == GameStatus::InProgress {
+            Some(state.priority_player().id.clone())
+        } else {
+            None
+        },
+        active_player_id: if state.status == GameStatus::InProgress {
+            Some(state.active_player().id.clone())
+        } else {
+            None
+        },
+        play_order_chooser_id: state.play_order_chooser.clone(),
     })
 }
 
@@ -200,19 +211,11 @@ pub async fn submit_action(
         }
         ActionInput::DeclareAttackers(decl) => {
             let attackers = decl.attackers.iter().map(Into::into).collect();
-            engine::actions::combat::declare_attackers(
-                &mut state,
-                &input.player_id,
-                attackers,
-            )?;
+            engine::actions::combat::declare_attackers(&mut state, &input.player_id, attackers)?;
         }
         ActionInput::DeclareBlockers(decl) => {
             let blockers = decl.blockers.iter().map(Into::into).collect();
-            engine::actions::combat::declare_blockers(
-                &mut state,
-                &input.player_id,
-                blockers,
-            )?;
+            engine::actions::combat::declare_blockers(&mut state, &input.player_id, blockers)?;
         }
         ActionInput::ChooseFirstPlayer(choose) => {
             engine::actions::pregame::choose_first_player(
@@ -243,9 +246,13 @@ pub async fn submit_action(
     };
 
     // CR 117.3c — Auto-pass priority unless the player explicitly holds it.
-    // PassPriority already handles its own priority passing.
+    // Mana abilities and playing lands don't use the stack, so the player
+    // retains priority. PassPriority handles its own passing.
     let hold = input.hold_priority.unwrap_or(false);
-    if !is_pass && !hold && state.has_priority(&input.player_id) {
+    let no_auto_pass = is_pass
+        || matches!(&input.action, ActionInput::ActivateManaAbility(_))
+        || matches!(&input.action, ActionInput::PlayLand(_));
+    if !no_auto_pass && !hold && state.has_priority(&input.player_id) {
         engine::actions::pass_priority(&mut state, &input.player_id)?;
     }
 

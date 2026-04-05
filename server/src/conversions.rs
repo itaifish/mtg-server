@@ -25,17 +25,35 @@ impl From<&crate::game::state::Player> for mtg_server_sdk::model::PlayerInfo {
 
 impl From<crate::engine::legal_actions::LegalAction> for mtg_server_sdk::model::LegalAction {
     fn from(a: crate::engine::legal_actions::LegalAction) -> Self {
+        use crate::engine::legal_actions::LegalAction as LA;
+        use mtg_server_sdk::model::LegalActionType as T;
         match a {
-            crate::engine::legal_actions::LegalAction::PassPriority => Self {
-                action_type: mtg_server_sdk::model::LegalActionType::PassPriority,
+            LA::PassPriority => Self {
+                action_type: T::PassPriority,
                 object_id: None,
             },
-            crate::engine::legal_actions::LegalAction::PlayLand { object_id } => Self {
-                action_type: mtg_server_sdk::model::LegalActionType::PlayLand,
+            LA::PlayLand { object_id } => Self {
+                action_type: T::PlayLand,
                 object_id: Some(object_id as i64),
             },
-            crate::engine::legal_actions::LegalAction::Concede => Self {
-                action_type: mtg_server_sdk::model::LegalActionType::Concede,
+            LA::CastSpell { object_id } => Self {
+                action_type: T::CastSpell,
+                object_id: Some(object_id as i64),
+            },
+            LA::ActivateManaAbility { object_id, .. } => Self {
+                action_type: T::ActivateManaAbility,
+                object_id: Some(object_id as i64),
+            },
+            LA::DeclareAttackers => Self {
+                action_type: T::DeclareAttackers,
+                object_id: None,
+            },
+            LA::DeclareBlockers => Self {
+                action_type: T::DeclareBlockers,
+                object_id: None,
+            },
+            LA::Concede => Self {
+                action_type: T::Concede,
                 object_id: None,
             },
         }
@@ -107,12 +125,8 @@ impl From<&mtg_server_sdk::model::BlockerEntry> for crate::game::state::BlockerI
 impl From<&mtg_server_sdk::model::SpellTarget> for crate::game::stack::SpellTarget {
     fn from(t: &mtg_server_sdk::model::SpellTarget) -> Self {
         match t {
-            mtg_server_sdk::model::SpellTarget::Player(p) => {
-                Self::Player(p.player_id.clone())
-            }
-            mtg_server_sdk::model::SpellTarget::Object(o) => {
-                Self::Object(o.object_id as u64)
-            }
+            mtg_server_sdk::model::SpellTarget::Player(p) => Self::Player(p.player_id.clone()),
+            mtg_server_sdk::model::SpellTarget::Object(o) => Self::Object(o.object_id as u64),
             _ => Self::Player("unknown".into()),
         }
     }

@@ -1,4 +1,6 @@
+use crate::game::ability::{all_abilities, AbilityCost};
 use crate::game::card::CardType;
+use crate::game::phases_and_steps::{CombatStep, Phase};
 use crate::game::state::GameState;
 
 use super::actions::can_play_at_sorcery_speed;
@@ -7,29 +9,66 @@ use super::actions::can_play_at_sorcery_speed;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LegalAction {
     PassPriority,
-    PlayLand { object_id: u64 },
+    PlayLand {
+        object_id: u64,
+    },
+    CastSpell {
+        object_id: u64,
+    },
+    ActivateManaAbility {
+        object_id: u64,
+        ability_index: usize,
+    },
+    DeclareAttackers,
+    DeclareBlockers,
     Concede,
 }
 
 /// Compute all legal actions for a player in the current game state.
 pub fn for_player(state: &GameState, player_id: &str) -> Vec<LegalAction> {
-    let mut actions = vec![];
+    let mut actions = vec![LegalAction::Concede];
 
-    // Everyone can always concede
-    actions.push(LegalAction::Concede);
-
-    // CR 117.1 — Only the player with priority can take actions
     if !state.has_priority(player_id) {
         return actions;
     }
 
-    // Can always pass priority
     actions.push(LegalAction::PassPriority);
 
-    // CR 305 — Can play a land at sorcery speed if haven't exceeded limit
-    // TODO: account for effects that increase the land-per-turn limit
-    // TODO: check all zones the player is allowed to play lands from
-    if can_play_at_sorcery_speed(state, player_id) && state.lands_played_this_turn < 1 {
+    let sorcery_speed = can_play_at_sorcery_speed(state, player_id);
+    let is_active = state.active_player().id == player_id;
+
+    // Mana abilities — can activate anytime you have priority
+    for &obj_id in &state.battlefield {
+        let card = match state.objects.get(&obj_id) {
+            Some(c) => c,
+            None => continue,
+        };
+        if card.controller.as_deref() != Some(player_id) {
+            continue;
+        }
+        for (idx, ability) in all_abilities(&card.definition).iter().enumerate() {
+            if !ability.is_mana_ability {
+                continue;
+            }
+            let can_pay = ability.costs.iter().all(|cost| match cost {
+                AbilityCost::TapSelf => {
+                    !card.tapped
+                        && !(card.is_summoning_sick()
+                            && card.definition.card_types.contains(&CardType::Creature))
+                }
+                _ => false,
+            });
+            if can_pay {
+                actions.push(LegalAction::ActivateManaAbility {
+                    object_id: obj_id,
+                    ability_index: idx,
+                });
+            }
+        }
+    }
+
+    // Play a land
+    if sorcery_speed && state.lands_played_this_turn < 1 {
         if let Some(zones) = state.player_zones.get(player_id) {
             for &obj_id in &zones.hand {
                 if let Some(card) = state.objects.get(&obj_id) {
@@ -37,6 +76,40 @@ pub fn for_player(state: &GameState, player_id: &str) -> Vec<LegalAction> {
                         actions.push(LegalAction::PlayLand { object_id: obj_id });
                     }
                 }
+            }
+        }
+    }
+
+    // Cast spells
+    if let Some(zones) = state.player_zones.get(player_id) {
+        for &obj_id in &zones.hand {
+            let card = match state.objects.get(&obj_id) {
+                Some(c) => c,
+                None => continue,
+            };
+            if card.definition.mana_cost.is_none() {
+                continue;
+            }
+            let is_instant = card.definition.card_types.contains(&CardType::Instant);
+            if is_instant || sorcery_speed {
+                actions.push(LegalAction::CastSpell { object_id: obj_id });
+            }
+        }
+    }
+
+    // Declare attackers — active player during declare attackers step
+    if is_active && matches!(state.phase, Phase::Combat(CombatStep::DeclareAttackers)) {
+        actions.push(LegalAction::DeclareAttackers);
+    }
+
+    // Declare blockers — defending player during declare blockers step
+    if matches!(state.phase, Phase::Combat(CombatStep::DeclareBlockers)) {
+        if let Some(combat) = &state.combat {
+            let is_defending = combat.attackers.iter().any(|a| {
+                matches!(&a.target, crate::game::state::AttackTarget::Player(pid) if pid == player_id)
+            });
+            if is_defending {
+                actions.push(LegalAction::DeclareBlockers);
             }
         }
     }

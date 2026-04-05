@@ -43,6 +43,15 @@ structure GetGameStateOutput {
 
     @required
     actionCount: Integer
+
+    /// The player who currently has priority (whose action we're waiting on).
+    priorityPlayerId: String
+
+    /// The active player (whose turn it is).
+    activePlayerId: String
+
+    /// The player who gets to choose play order (only during CHOOSING_PLAY_ORDER).
+    playOrderChooserId: String
 }
 
 /// Submit a game action.
@@ -288,6 +297,10 @@ structure LegalAction {
 enum LegalActionType {
     PASS_PRIORITY
     PLAY_LAND
+    CAST_SPELL
+    ACTIVATE_MANA_ABILITY
+    DECLARE_ATTACKERS
+    DECLARE_BLOCKERS
     CHOOSE_FIRST_PLAYER
     KEEP_HAND
     MULLIGAN

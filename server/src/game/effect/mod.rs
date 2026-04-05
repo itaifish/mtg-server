@@ -7,45 +7,103 @@ use super::mana::ManaType;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Effect {
     // --- Damage ---
-    DealDamage { amount: Value, target: TargetSpec },
+    DealDamage {
+        amount: Value,
+        target: TargetSpec,
+    },
 
     // --- Life ---
-    GainLife { amount: Value, player: PlayerSpec },
-    LoseLife { amount: Value, player: PlayerSpec },
+    GainLife {
+        amount: Value,
+        player: PlayerSpec,
+    },
+    LoseLife {
+        amount: Value,
+        player: PlayerSpec,
+    },
 
     // --- Cards ---
-    DrawCards { count: Value, player: PlayerSpec },
-    Discard { count: Value, player: PlayerSpec },
-    Mill { count: Value, player: PlayerSpec },
+    DrawCards {
+        count: Value,
+        player: PlayerSpec,
+    },
+    Discard {
+        count: Value,
+        player: PlayerSpec,
+    },
+    Mill {
+        count: Value,
+        player: PlayerSpec,
+    },
 
     // --- Mana ---
-    AddMana { mana_type: ManaType, amount: Value, player: PlayerSpec },
+    AddMana {
+        mana_type: ManaType,
+        amount: Value,
+        player: PlayerSpec,
+    },
 
     // --- Permanents ---
-    Destroy { target: TargetSpec },
-    Exile { target: TargetSpec },
-    Bounce { target: TargetSpec },
-    Tap { target: TargetSpec },
-    Untap { target: TargetSpec },
+    Destroy {
+        target: TargetSpec,
+    },
+    Exile {
+        target: TargetSpec,
+    },
+    Bounce {
+        target: TargetSpec,
+    },
+    Tap {
+        target: TargetSpec,
+    },
+    Untap {
+        target: TargetSpec,
+    },
 
     // --- Counters ---
-    AddCounters { target: TargetSpec, counter: CounterSpec, count: Value },
-    RemoveCounters { target: TargetSpec, counter: CounterSpec, count: Value },
+    AddCounters {
+        target: TargetSpec,
+        counter: CounterSpec,
+        count: Value,
+    },
+    RemoveCounters {
+        target: TargetSpec,
+        counter: CounterSpec,
+        count: Value,
+    },
 
     // --- Stat modification ---
-    ModifyPowerToughness { target: TargetSpec, power: i32, toughness: i32 },
+    ModifyPowerToughness {
+        target: TargetSpec,
+        power: i32,
+        toughness: i32,
+    },
 
     // --- Stack interaction ---
-    Counter { target: TargetSpec },
+    Counter {
+        target: TargetSpec,
+    },
 
     // --- Composability ---
     Sequence(Vec<Effect>),
-    ForEach { selector: Selector, effect: Box<Effect> },
-    Conditional { condition: Condition, then_effect: Box<Effect>, else_effect: Option<Box<Effect>> },
-    Choose { count: u32, options: Vec<Effect> },
+    ForEach {
+        selector: Selector,
+        effect: Box<Effect>,
+    },
+    Conditional {
+        condition: Condition,
+        then_effect: Box<Effect>,
+        else_effect: Option<Box<Effect>>,
+    },
+    Choose {
+        count: u32,
+        options: Vec<Effect>,
+    },
 
     // --- Fallback for truly unique cards ---
-    Custom { name: String },
+    Custom {
+        name: String,
+    },
 }
 
 /// A value that can be constant or derived from game state.
@@ -79,9 +137,17 @@ pub enum PlayerSpec {
 /// Selects a set of objects or players from the game.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Selector {
-    Creatures { controller: ControllerFilter, filters: Vec<Filter> },
-    Permanents { controller: ControllerFilter, filters: Vec<Filter> },
-    Players { filters: Vec<Filter> },
+    Creatures {
+        controller: ControllerFilter,
+        filters: Vec<Filter>,
+    },
+    Permanents {
+        controller: ControllerFilter,
+        filters: Vec<Filter>,
+    },
+    Players {
+        filters: Vec<Filter>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

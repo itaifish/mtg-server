@@ -74,6 +74,7 @@ A Rust-based server that emulates the rules of Magic: The Gathering, using the c
 - **Card registry**: Maps card names to `CardDefinition` builders. Hand-authored for initial set, eventually auto-generated from Scryfall data + effect mappings.
 - **Incremental**: Cards not yet implemented return an error when used. New effect primitives added as needed.
 - **Storage**: Scryfall JSONB in Postgres for card data/images. Runtime `CardDefinition` built from registry at game start.
+- **Future: Rules text parser**: An ANTLR4 formal grammar for MTG rules text exists (https://github.com/Soothsilver/mtg-grammar, Unlicense). Magic Arena uses a similar parser internally to generate code from oracle text. The grammar covers keywords, activated/triggered/static abilities, modal spells, targeting, zones, and more (~400 lines). Plan: port to Rust (via `pest` PEG parser) as a batch tool that parses Scryfall oracle text → `Effect` DSL nodes. Would auto-generate ~80% of card registry entries. Remaining ~20% hand-authored or custom. Not blocking for initial playable game.
 
 ## Future Features (Out of Scope)
 
