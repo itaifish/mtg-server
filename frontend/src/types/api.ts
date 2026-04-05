@@ -84,3 +84,28 @@ export interface GetLegalActionsResponse {
 export interface PingResponse {
   status: string;
 }
+
+export interface ListGamesRequest {
+  status?: GameStatus;
+}
+
+export interface ListGamesResponse {
+  games: GameSummaryResponse[];
+}
+
+export interface GameSummaryResponse {
+  gameId: string;
+  status: GameStatus;
+  playerCount: number;
+  format: GameFormat;
+}
+
+export interface LeaveGameRequest {
+  gameId: string;
+  playerId: string;
+}
+
+export interface LeaveGameResponse {
+  gameId: string;
+  playersRemaining: number;
+}

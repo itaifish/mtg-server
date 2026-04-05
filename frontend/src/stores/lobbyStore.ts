@@ -21,6 +21,7 @@ export interface LobbyState {
 }
 
 export interface LobbyActions {
+  fetchGames: (client: MtgApiClient) => Promise<void>;
   createGame: (
     client: MtgApiClient,
     format: GameFormat,
@@ -33,6 +34,7 @@ export interface LobbyActions {
     playerName: string,
     decklist: DecklistEntry[],
   ) => Promise<void>;
+  leaveGame: (client: MtgApiClient) => Promise<void>;
   setReady: (client: MtgApiClient, ready: boolean) => Promise<void>;
   setPlayerName: (name: string) => void;
   reset: () => void;
@@ -52,6 +54,15 @@ const initialState: LobbyState = {
 export const useLobbyStore = create<LobbyState & LobbyActions>()((set, get) => ({
   ...initialState,
 
+  fetchGames: async (client) => {
+    try {
+      const res = await client.listGames();
+      set({ games: res.games });
+    } catch {
+      // Silently fail — polling will retry
+    }
+  },
+
   createGame: async (client, format, playerName, decklist) => {
     set({ isCreating: true, error: null });
     try {
@@ -69,6 +80,17 @@ export const useLobbyStore = create<LobbyState & LobbyActions>()((set, get) => (
       set({ gameId, playerId: res.playerId, playerName, isJoining: false });
     } catch (e) {
       set({ isJoining: false, error: e instanceof Error ? e.message : 'Failed to join game' });
+    }
+  },
+
+  leaveGame: async (client) => {
+    const { gameId, playerId } = get();
+    if (!gameId || !playerId) return;
+    try {
+      await client.leaveGame({ gameId, playerId });
+      set({ gameId: null, playerId: null });
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : 'Failed to leave game' });
     }
   },
 

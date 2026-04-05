@@ -7,6 +7,10 @@ import type {
   GetLegalActionsResponse,
   JoinGameRequest,
   JoinGameResponse,
+  LeaveGameRequest,
+  LeaveGameResponse,
+  ListGamesRequest,
+  ListGamesResponse,
   PingResponse,
   SetReadyRequest,
   SetReadyResponse,
@@ -163,5 +167,18 @@ export class MtgApiClient {
       'GET',
       `/games/${encodeURIComponent(req.gameId)}/legal-actions?${params.toString()}`,
     );
+  }
+
+  async listGames(req?: ListGamesRequest): Promise<ListGamesResponse> {
+    const params = new URLSearchParams();
+    if (req?.status) params.set('status', req.status);
+    const qs = params.toString();
+    return this.request('GET', `/games${qs ? `?${qs}` : ''}`);
+  }
+
+  async leaveGame(req: LeaveGameRequest): Promise<LeaveGameResponse> {
+    return this.request('POST', `/games/${encodeURIComponent(req.gameId)}/leave`, {
+      playerId: req.playerId,
+    });
   }
 }

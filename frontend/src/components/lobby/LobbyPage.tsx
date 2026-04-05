@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLobbyStore } from '@/stores/lobbyStore';
+import { useApiClient } from '@/api/hooks';
 import { APP_NAME } from '@/constants';
 import { ErrorBanner } from '@/components/shared';
 import { CreateGameForm } from './CreateGameForm';
@@ -8,8 +9,16 @@ import { JoinGameDialog } from './JoinGameDialog';
 import { WaitingRoom } from './WaitingRoom';
 
 export function LobbyPage() {
-  const { gameId, games, error, clearError } = useLobbyStore();
+  const { gameId, games, error, clearError, fetchGames } = useLobbyStore();
+  const client = useApiClient();
   const [joiningGameId, setJoiningGameId] = useState<string | null>(null);
+
+  // Poll for available games every 3 seconds
+  useEffect(() => {
+    fetchGames(client);
+    const interval = setInterval(() => fetchGames(client), 3000);
+    return () => clearInterval(interval);
+  }, [client, fetchGames]);
 
   if (gameId) return <WaitingRoom />;
 
