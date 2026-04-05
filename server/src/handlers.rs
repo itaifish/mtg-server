@@ -3,11 +3,14 @@ use std::sync::Arc;
 
 use mtg_server_sdk::error::{
     CreateGameError, GameFullError, GetGameStateError, GetLegalActionsError, JoinGameError,
-    NotFoundError, SubmitActionError,
+    NotFoundError, SetReadyError, SubmitActionError,
 };
 use mtg_server_sdk::server::request::extension::Extension;
 use mtg_server_sdk::{input, output};
 
+use mtg_server_sdk::model::ActionInput;
+
+use crate::deck::loader::{load_deck, DeckEntry};
 use crate::engine;
 use crate::game::state::{GameState, GameStatus, Player, PlayerZones};
 use crate::handler_helpers::{get_game, server_err};
@@ -29,11 +32,18 @@ pub async fn create_game(
     let game_id = uuid::Uuid::new_v4().to_string();
     let player_id = uuid::Uuid::new_v4().to_string();
 
-    let state = GameState::new(
+    let mut state = GameState::new(
         game_id.clone(),
         vec![Player::new(player_id.clone(), input.player_name.clone())],
         rand::random(),
     );
+
+    let entries: Vec<DeckEntry> = input.decklist.iter().map(Into::into).collect();
+
+    load_deck(&mut state, &player_id, &entries).map_err(|e| {
+        tracing::error!(%e, "invalid decklist");
+        CreateGameError::ServerError(mtg_server_sdk::error::ServerError { message: e })
+    })?;
 
     store
         .create(state)
@@ -61,7 +71,8 @@ pub async fn join_game(
     state
         .players
         .push(Player::new(player_id.clone(), input.player_name.clone()));
-    state.turn_order.push(state.players.len() - 1);
+    state.starting_turn_order.push(player_id.clone());
+    state.living_turn_order.push(player_id.clone());
     state.player_zones.insert(
         player_id.clone(),
         PlayerZones {
@@ -71,6 +82,13 @@ pub async fn join_game(
         },
     );
 
+    let entries: Vec<DeckEntry> = input.decklist.iter().map(Into::into).collect();
+
+    load_deck(&mut state, &player_id, &entries).map_err(|e| {
+        tracing::error!(%e, "invalid decklist");
+        JoinGameError::ServerError(mtg_server_sdk::error::ServerError { message: e })
+    })?;
+
     store
         .update(state)
         .await
@@ -78,6 +96,51 @@ pub async fn join_game(
 
     tracing::info!(game_id = %input.game_id, %player_id, "player joined");
     Ok(output::JoinGameOutput { player_id })
+}
+
+pub async fn set_ready(
+    input: input::SetReadyInput,
+    Extension(store): Extension<Arc<GameStore>>,
+) -> Result<output::SetReadyOutput, SetReadyError> {
+    let mut state = get_game::<SetReadyError>(&store, &input.game_id).await?;
+
+    if state.status != GameStatus::WaitingForPlayers {
+        return Err(SetReadyError::ServerError(
+            mtg_server_sdk::error::ServerError {
+                message: "game is not in lobby phase".into(),
+            },
+        ));
+    }
+
+    let player = state.get_player_mut(&input.player_id).ok_or_else(|| {
+        SetReadyError::NotFoundError(NotFoundError {
+            message: format!("player {} not found", input.player_id),
+        })
+    })?;
+    player.pregame.ready = input.ready;
+
+    let all_ready = state.players.len() >= 2 && state.players.iter().all(|p| p.pregame.ready);
+
+    if all_ready {
+        // CR 103.1 — Randomly choose who gets to pick the starting player
+        use rand::Rng;
+        let chooser_idx = state.rng.gen_range(0..state.players.len());
+        let chooser_id = state.players[chooser_idx].id.clone();
+        state.play_order_chooser = Some(chooser_id);
+        state.status = GameStatus::ChoosingPlayOrder;
+    }
+
+    let status = state.status;
+    store
+        .update(state)
+        .await
+        .map_err(server_err::<SetReadyError>)?;
+
+    Ok(output::SetReadyOutput {
+        game_id: input.game_id,
+        all_ready,
+        status: status.into(),
+    })
 }
 
 pub async fn get_game_state(
@@ -101,20 +164,49 @@ pub async fn submit_action(
 ) -> Result<output::SubmitActionOutput, SubmitActionError> {
     let mut state = get_game::<SubmitActionError>(&store, &input.game_id).await?;
 
+    let is_pass = matches!(&input.action, ActionInput::PassPriority(_));
+
     match &input.action {
-        mtg_server_sdk::model::ActionInput::PassPriority(_) => {
+        ActionInput::PassPriority(_) => {
             engine::actions::pass_priority(&mut state, &input.player_id)?;
         }
-        mtg_server_sdk::model::ActionInput::PlayLand(play) => {
+        ActionInput::PlayLand(play) => {
             engine::actions::play_land(&mut state, &input.player_id, play.object_id as u64)?;
         }
-        mtg_server_sdk::model::ActionInput::Concede(_) => {
+        ActionInput::ChooseFirstPlayer(choose) => {
+            engine::actions::pregame::choose_first_player(
+                &mut state,
+                &input.player_id,
+                &choose.first_player_id,
+            )?;
+        }
+        ActionInput::Mulligan(_) => {
+            engine::actions::pregame::mulligan(&mut state, &input.player_id)?;
+        }
+        ActionInput::KeepHand(keep) => {
+            let cards: Vec<u64> = keep
+                .cards_to_bottom
+                .as_deref()
+                .unwrap_or_default()
+                .iter()
+                .map(|&id| id as u64)
+                .collect();
+            engine::actions::pregame::keep_hand(&mut state, &input.player_id, &cards)?;
+        }
+        ActionInput::Concede(_) => {
             engine::actions::concede(&mut state, &input.player_id)?;
         }
         _ => {
             return Err(engine::actions::ActionError::Illegal("unsupported action".into()).into());
         }
     };
+
+    // CR 117.3c — Auto-pass priority unless the player explicitly holds it.
+    // PassPriority already handles its own priority passing.
+    let hold = input.hold_priority.unwrap_or(false);
+    if !is_pass && !hold && state.has_priority(&input.player_id) {
+        engine::actions::pass_priority(&mut state, &input.player_id)?;
+    }
 
     store
         .update(state.clone())

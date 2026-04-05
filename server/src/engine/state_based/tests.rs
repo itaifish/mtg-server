@@ -30,29 +30,18 @@ use crate::game::card::{CardDefinition, CardInstance, CardType};
 use crate::game::mana::Color;
 
 fn make_creature(id: u64, owner: &str, power: i32, toughness: i32) -> CardInstance {
-    CardInstance {
+    CardInstance::new(
         id,
-        owner: owner.into(),
-        controller: Some(owner.into()),
-        definition: CardDefinition {
+        owner,
+        CardDefinition {
             name: "Test".into(),
-            mana_cost: None,
             colors: vec![Color::Green],
             card_types: vec![CardType::Creature],
-            subtypes: vec![],
-            supertypes: vec![],
             power: Some(power),
             toughness: Some(toughness),
-            loyalty: None,
-            defense: None,
-            rules_text: String::new(),
-            abilities: vec![],
+            ..Default::default()
         },
-        tapped: false,
-        damage_marked: 0,
-        counters: vec![],
-        protector: None,
-    }
+    )
 }
 
 #[test]

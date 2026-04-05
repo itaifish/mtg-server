@@ -8,6 +8,7 @@ use crate::game::zone::ZoneType;
 use super::state_based;
 
 pub mod combat;
+pub mod pregame;
 
 /// Errors from action execution.
 #[derive(Debug, thiserror::Error)]
@@ -27,27 +28,56 @@ pub fn can_play_at_sorcery_speed(state: &GameState, player_id: &str) -> bool {
 
 /// Pass priority. CR 117.4
 ///
-/// Simplified for now: if the stack is empty and it's the active player
-/// passing, advance the phase (and empty mana pools on transition).
-/// TODO: track priority passing per player; only advance when all pass
-/// in succession. Resolve top of stack when all pass with a non-empty stack.
+/// When a player passes, priority moves to the next player. If all living
+/// players pass in succession:
+/// - If the stack is non-empty, resolve the top item.
+/// - If the stack is empty, advance to the next phase/step.
 pub fn pass_priority(state: &mut GameState, player_id: &str) -> Result<(), ActionError> {
     validate_player(state, player_id)?;
+
+    if !state.has_priority(player_id) {
+        return Err(ActionError::Illegal("you don't have priority".into()));
+    }
+
     state.record_action();
 
-    // Only advance phase/turn when stack is empty
-    if state.stack.is_empty() && state.has_priority(player_id) {
-        // CR 106.4 — Mana pools empty on phase/step transitions
-        state.empty_mana_pools();
-        if let Some(next) = state.phase.next() {
-            state.phase = next;
+    let all_passed = state.pass_priority_to_next(player_id);
+
+    if all_passed {
+        if state.stack.is_empty() {
+            state.advance_phase();
         } else {
-            state.advance_turn();
+            resolve_top_of_stack(state)?;
+            state.reset_priority_to_active();
         }
     }
-    // TODO: when stack is non-empty and all players pass, resolve top of stack
 
     state_based::check(state);
+    Ok(())
+}
+
+/// Resolve the top item on the stack. CR 608
+/// TODO: support abilities on the stack (not just spells)
+fn resolve_top_of_stack(state: &mut GameState) -> Result<(), ActionError> {
+    let object_id = state
+        .stack
+        .pop()
+        .ok_or_else(|| ActionError::Illegal("stack is empty".into()))?;
+
+    let card = state
+        .objects
+        .get(&object_id)
+        .ok_or_else(|| ActionError::Illegal("object not found".into()))?;
+
+    let card_types = card.definition.card_types.clone();
+
+    if card_types.iter().any(|t| t.is_permanent()) {
+        state.move_object(object_id, ZoneType::Battlefield);
+    } else {
+        // TODO: resolve the spell's effect before sending to graveyard
+        state.send_to_graveyard(object_id);
+    }
+
     Ok(())
 }
 
@@ -99,12 +129,12 @@ pub fn activate_mana_ability(
                 if card.tapped {
                     return Err(ActionError::Illegal("permanent is already tapped".into()));
                 }
-                // CR 302.6 / 502.1 — Creatures can't tap unless they've been
-                // under your control since the start of your most recent turn
-                // (summoning sickness), unless they have haste.
-                // TODO: track "entered battlefield this turn" and haste
-                if card.definition.card_types.contains(&CardType::Creature) {
-                    // For now, allow it — summoning sickness tracking comes later
+                if card.is_summoning_sick()
+                    && card.definition.card_types.contains(&CardType::Creature)
+                {
+                    return Err(ActionError::Illegal(
+                        "creature has summoning sickness".into(),
+                    ));
                 }
             }
             _ => return Err(ActionError::Illegal("unsupported ability cost".into())),
@@ -149,8 +179,8 @@ pub fn activate_mana_ability(
 
 /// Cast a spell. CR 601
 ///
-/// Simplified for now: spells resolve immediately (no stack interaction).
-/// TODO: put spell on stack, allow responses, then resolve
+/// Puts the spell on the stack after paying costs. It resolves when all
+/// players pass priority (handled by `pass_priority` → `resolve_top_of_stack`).
 /// TODO: targets, modal choices, X costs, additional costs
 pub fn cast_spell(
     state: &mut GameState,
@@ -159,6 +189,10 @@ pub fn cast_spell(
     mana_payment: &[SymbolPayment],
 ) -> Result<(), ActionError> {
     validate_player(state, player_id)?;
+
+    if !state.has_priority(player_id) {
+        return Err(ActionError::Illegal("you don't have priority".into()));
+    }
 
     if !state.is_in_hand(player_id, object_id) {
         return Err(ActionError::Illegal("card is not in your hand".into()));
@@ -184,9 +218,6 @@ pub fn cast_spell(
             "can only cast this spell at sorcery speed".into(),
         ));
     }
-    if is_instant && !state.has_priority(player_id) {
-        return Err(ActionError::Illegal("you don't have priority".into()));
-    }
 
     // Pay mana cost
     let player = state
@@ -198,15 +229,11 @@ pub fn cast_spell(
         .try_pay(&mana_cost, mana_payment)
         .map_err(|e| ActionError::Illegal(e.to_string()))?;
 
-    // Resolve immediately (simplified — no stack)
-    // TODO: put on stack, allow responses, then resolve
-    if card_types.iter().any(|t| t.is_permanent()) {
-        state.move_object(object_id, ZoneType::Battlefield);
-    } else {
-        // TODO: resolve the spell's effect before sending to graveyard
-        state.send_to_graveyard(object_id);
-    }
+    // CR 601.2a — Move the spell to the stack
+    state.move_object(object_id, ZoneType::Stack);
 
+    // Caster gets priority back after casting. CR 117.3b
+    state.reset_priority_to_active();
     state.record_action();
     state_based::check(state);
     Ok(())

@@ -7,6 +7,7 @@ use tracing::info;
 mod cards;
 mod conversions;
 mod db;
+mod deck;
 mod engine;
 mod game;
 mod handler_helpers;
@@ -32,6 +33,7 @@ async fn main() {
         .ping(handlers::ping)
         .create_game(handlers::create_game)
         .join_game(handlers::join_game)
+        .set_ready(handlers::set_ready)
         .get_game_state(handlers::get_game_state)
         .submit_action(handlers::submit_action)
         .get_legal_actions(handlers::get_legal_actions)

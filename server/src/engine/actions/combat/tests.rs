@@ -4,29 +4,20 @@ use crate::game::mana::Color;
 use crate::game::state::tests_helper::two_player_game;
 
 fn make_creature(id: u64, owner: &str, power: i32, toughness: i32) -> CardInstance {
-    CardInstance {
+    let mut card = CardInstance::new(
         id,
-        owner: owner.into(),
-        controller: Some(owner.into()),
-        definition: CardDefinition {
+        owner,
+        CardDefinition {
             name: format!("Creature {}", id),
-            mana_cost: None,
             colors: vec![Color::Green],
             card_types: vec![CardType::Creature],
-            subtypes: vec![],
-            supertypes: vec![],
             power: Some(power),
             toughness: Some(toughness),
-            loyalty: None,
-            defense: None,
-            rules_text: String::new(),
-            abilities: vec![],
+            ..Default::default()
         },
-        tapped: false,
-        damage_marked: 0,
-        counters: vec![],
-        protector: None,
-    }
+    );
+    card.summoning_sick = false;
+    card
 }
 
 fn setup_combat(state: &mut GameState) {

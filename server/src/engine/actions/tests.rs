@@ -4,11 +4,11 @@ use crate::game::state::tests_helper::two_player_game;
 #[test]
 fn pass_priority_advances_phase() {
     let mut state = two_player_game();
-    let player_id = state.active_player().id.clone();
     let old_phase = state.phase;
-    pass_priority(&mut state, &player_id).unwrap();
+    // Both players must pass for the phase to advance
+    pass_priority(&mut state, "alice").unwrap();
+    pass_priority(&mut state, "bob").unwrap();
     assert_ne!(state.phase, old_phase);
-    assert_eq!(state.action_count, 1);
 }
 
 #[test]
@@ -39,57 +39,35 @@ use crate::game::mana::{Color, ManaCost, ManaSymbol, ManaType, SymbolPayment};
 use crate::game::phases_and_steps::Phase;
 
 fn make_creature(id: u64, owner: &str) -> CardInstance {
-    CardInstance {
+    CardInstance::new(
         id,
-        owner: owner.into(),
-        controller: Some(owner.into()),
-        definition: CardDefinition {
+        owner,
+        CardDefinition {
             name: "Grizzly Bears".into(),
             mana_cost: Some(ManaCost {
                 symbols: vec![ManaSymbol::Generic(1), ManaSymbol::Colored(Color::Green)],
             }),
             colors: vec![Color::Green],
             card_types: vec![CardType::Creature],
-            subtypes: vec![],
-            supertypes: vec![],
             power: Some(2),
             toughness: Some(2),
-            loyalty: None,
-            defense: None,
-            rules_text: String::new(),
-            abilities: vec![],
+            ..Default::default()
         },
-        tapped: false,
-        damage_marked: 0,
-        counters: vec![],
-        protector: None,
-    }
+    )
 }
 
 fn make_forest(id: u64, owner: &str) -> CardInstance {
-    CardInstance {
+    CardInstance::new(
         id,
-        owner: owner.into(),
-        controller: Some(owner.into()),
-        definition: CardDefinition {
+        owner,
+        CardDefinition {
             name: "Forest".into(),
-            mana_cost: None,
-            colors: vec![],
             card_types: vec![CardType::Land],
             subtypes: vec!["Forest".into()],
             supertypes: vec![Supertype::Basic],
-            power: None,
-            toughness: None,
-            loyalty: None,
-            defense: None,
-            rules_text: String::new(),
-            abilities: vec![],
+            ..Default::default()
         },
-        tapped: false,
-        damage_marked: 0,
-        counters: vec![],
-        protector: None,
-    }
+    )
 }
 
 #[test]
@@ -124,7 +102,15 @@ fn cast_creature_with_mana() {
     ];
     cast_spell(&mut state, "alice", 20, &payment).unwrap();
 
-    // Creature should be on battlefield, mana pool empty
+    // Spell is on the stack, not yet on battlefield
+    assert!(state.stack.contains(&20));
+    assert!(!state.battlefield.contains(&20));
+
+    // Both players pass priority — spell resolves
+    pass_priority(&mut state, "alice").unwrap();
+    pass_priority(&mut state, "bob").unwrap();
+
+    // Now creature should be on battlefield
     assert!(state.battlefield.contains(&20));
     assert!(!state.player_zones["alice"].hand.contains(&20));
     assert_eq!(

@@ -1,3 +1,3 @@
 mod registry;
 
-pub use registry::{card_by_name, all_card_names};
+pub use registry::{all_card_names, card_by_name};

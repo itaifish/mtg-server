@@ -1,7 +1,10 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
 use super::ability::Ability;
 use super::counter::{CounterEntry, CounterType, PtModifier};
+use super::keyword::Keyword;
 use super::mana::{Color, ManaCost};
 
 /// Unique identifier for a card instance within a game.
@@ -61,7 +64,7 @@ pub enum Supertype {
 /// CR 109.3 — An object's characteristics are name, mana cost, color, color
 /// indicator, card type, subtype, supertype, rules text, abilities, power,
 /// toughness, loyalty, defense, hand modifier, and life modifier.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CardDefinition {
     pub name: String,
     pub mana_cost: Option<ManaCost>,
@@ -80,6 +83,9 @@ pub struct CardDefinition {
     /// Intrinsic abilities (e.g., basic land mana abilities) are added at
     /// runtime via `ability::all_abilities()`.
     pub abilities: Vec<Ability>,
+    /// CR 702 — Keyword abilities printed on the card.
+    /// Map of keyword → count (e.g., cascade×2).
+    pub keywords: HashMap<Keyword, u32>,
 }
 
 /// A card instance in a game — a specific object with a definition and
@@ -96,16 +102,50 @@ pub struct CardInstance {
     pub controller: Option<PlayerId>,
     pub definition: CardDefinition,
     pub tapped: bool,
+    /// CR 302.6 — A creature can't attack or use {T} abilities unless it has
+    /// been under its controller's control since the start of their most
+    /// recent turn. Cleared at start of controller's turn.
+    pub summoning_sick: bool,
     /// Damage marked on this permanent (creatures only). Resets each cleanup.
     /// CR 120.3
     pub damage_marked: u32,
     /// CR 122 — Counters on this object, stored as type → count.
     pub counters: Vec<CounterEntry>,
+    /// CR 702 — Current keyword abilities. Starts as a copy of the
+    /// definition's keywords but can be modified by effects.
+    pub keywords: HashMap<Keyword, u32>,
     /// CR 310.8 — Protector of this battle, if it is a battle.
     pub protector: Option<PlayerId>,
 }
 
 impl CardInstance {
+    pub fn new(id: ObjectId, owner: impl Into<PlayerId>, definition: CardDefinition) -> Self {
+        let owner = owner.into();
+        let keywords = definition.keywords.clone();
+        Self {
+            id,
+            controller: Some(owner.clone()),
+            owner,
+            definition,
+            tapped: false,
+            summoning_sick: true,
+            damage_marked: 0,
+            counters: vec![],
+            keywords,
+            protector: None,
+        }
+    }
+
+    /// CR 302.6 — A creature has summoning sickness unless it has haste.
+    pub fn is_summoning_sick(&self) -> bool {
+        self.summoning_sick && !self.has_keyword(&Keyword::Haste)
+    }
+
+    /// Check if this instance currently has a keyword.
+    pub fn has_keyword(&self, keyword: &Keyword) -> bool {
+        self.keywords.get(keyword).copied().unwrap_or(0) > 0
+    }
+
     /// CR 122.1a — Effective power after applying all P/T counter modifications.
     pub fn effective_power(&self) -> Option<i32> {
         self.definition

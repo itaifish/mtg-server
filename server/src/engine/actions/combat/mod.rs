@@ -47,6 +47,12 @@ pub fn declare_attackers(
         if card.tapped {
             return Err(ActionError::Illegal("tapped creatures can't attack".into()));
         }
+        // CR 302.6 — Summoning sickness (haste bypasses)
+        if card.is_summoning_sick() {
+            return Err(ActionError::Illegal(
+                "creature has summoning sickness".into(),
+            ));
+        }
     }
 
     // Tap all attackers

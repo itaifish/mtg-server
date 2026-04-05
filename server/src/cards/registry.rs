@@ -143,17 +143,10 @@ pub fn all_card_names() -> Vec<&'static str> {
 fn basic_land(name: &str) -> CardDefinition {
     CardDefinition {
         name: name.into(),
-        mana_cost: None,
-        colors: vec![],
         card_types: vec![CardType::Land],
         subtypes: vec![name.into()],
         supertypes: vec![Supertype::Basic],
-        power: None,
-        toughness: None,
-        loyalty: None,
-        defense: None,
-        rules_text: String::new(),
-        abilities: vec![], // intrinsic mana ability added at runtime
+        ..Default::default()
     }
 }
 
@@ -171,13 +164,9 @@ fn vanilla(
         colors: colors.to_vec(),
         card_types: vec![CardType::Creature],
         subtypes: subtypes.iter().map(|s| s.to_string()).collect(),
-        supertypes: vec![],
         power: Some(power),
         toughness: Some(toughness),
-        loyalty: None,
-        defense: None,
-        rules_text: String::new(),
-        abilities: vec![],
+        ..Default::default()
     }
 }
 
@@ -193,11 +182,8 @@ fn mana_dork(
         colors: vec![Color::Green],
         card_types: vec![CardType::Creature],
         subtypes: subtypes.iter().map(|s| s.to_string()).collect(),
-        supertypes: vec![],
         power: Some(1),
         toughness: Some(1),
-        loyalty: None,
-        defense: None,
         rules_text: format!(
             "{{T}}: Add {{{}}}.",
             match produces {
@@ -214,6 +200,7 @@ fn mana_dork(
             effect: AbilityEffect::AddMana(vec![ManaProduction::new(produces, 1)]),
             is_mana_ability: true,
         }],
+        ..Default::default()
     }
 }
 

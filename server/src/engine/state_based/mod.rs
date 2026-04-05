@@ -17,20 +17,17 @@ fn check_once(state: &mut GameState) -> bool {
     let mut changed = false;
 
     // CR 704.5a — A player with 0 or less life loses.
-    for player in &mut state.players {
-        if !player.has_lost && player.life_total <= 0 {
-            player.has_lost = true;
-            changed = true;
-            // TODO: call eliminate_player cleanup (remove owned objects)
-        }
-    }
-
     // CR 704.5c — A player with 10 or more poison counters loses.
-    for player in &mut state.players {
-        if !player.has_lost && player.poison_counters >= 10 {
-            player.has_lost = true;
-            changed = true;
-        }
+    let losers: Vec<String> = state
+        .players
+        .iter()
+        .filter(|p| !p.has_lost && (p.life_total <= 0 || p.poison_counters >= 10))
+        .map(|p| p.id.clone())
+        .collect();
+
+    for loser in losers {
+        state.eliminate_player(&loser);
+        changed = true;
     }
 
     // CR 704.5f — A creature with toughness 0 or less is put into its

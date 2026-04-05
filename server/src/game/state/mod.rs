@@ -1,9 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
+use rand::SeedableRng;
+use rand_chacha::ChaCha8Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::game::card::CardType;
-use crate::game::phases_and_steps::BeginningStep;
+use crate::game::phases_and_steps::{BeginningStep, EndingStep};
 
 use super::card::{CardInstance, ObjectId, PlayerId};
 use super::mana::{ManaPool, ManaRestriction, ManaType};
@@ -17,10 +19,18 @@ pub struct GameState {
     pub game_id: String,
     pub status: GameStatus,
     pub players: Vec<Player>,
-    /// Turn order — indices into `players`. CR 103.1
-    pub turn_order: Vec<usize>,
-    /// Index into `turn_order` for the active player. CR 102.1
+    /// The original turn order set at game start. Never changes.
+    pub starting_turn_order: Vec<PlayerId>,
+    /// Living players in turn order. Updated when a player is eliminated.
+    pub living_turn_order: Vec<PlayerId>,
+    /// Index into `living_turn_order` for the active player. CR 102.1
     pub active_player_index: usize,
+    /// Index into `living_turn_order` for the player with priority. CR 117
+    pub priority_index: usize,
+    /// Players who have passed priority in succession since the last action
+    /// or stack change. When all living players pass, the top of the stack
+    /// resolves (or the phase advances if stack is empty).
+    pub players_passed: HashSet<PlayerId>,
     pub turn_number: u32,
     pub phase: Phase,
     /// CR 400.1 — Per-player zones (library, hand, graveyard) keyed by player id.
@@ -37,14 +47,16 @@ pub struct GameState {
     pub objects: HashMap<ObjectId, CardInstance>,
     /// Monotonically increasing counter for generating unique ObjectIds.
     pub next_object_id: ObjectId,
-    /// The RNG seed for deterministic replay (design decision D8).
-    pub rng_seed: u64,
+    /// The RNG for deterministic replay
+    pub rng: ChaCha8Rng,
     /// Number of actions applied to this game state.
     pub action_count: u64,
     /// Number of lands the active player has played this turn. CR 305.2
     pub lands_played_this_turn: u32,
     /// Current combat state, if in a combat phase.
     pub combat: Option<CombatState>,
+    /// CR 103.1 — The player randomly chosen to decide who goes first.
+    pub play_order_chooser: Option<PlayerId>,
 }
 
 /// Tracks the state of an ongoing combat.
@@ -88,8 +100,17 @@ pub struct Player {
     pub has_lost: bool,
     /// Poison counters. CR 704.5c
     pub poison_counters: u32,
+    /// Lobby and mulligan state.
+    pub pregame: PregameInfo,
     /// CR 106.4 — Mana pool. Empties at the end of each step and phase.
     pub mana_pool: ManaPool,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct PregameInfo {
+    pub ready: bool,
+    pub mulligan_count: u32,
+    pub has_kept: bool,
 }
 
 impl Player {
@@ -100,6 +121,7 @@ impl Player {
             life_total: 20,
             has_lost: false,
             poison_counters: 0,
+            pregame: PregameInfo::default(),
             mana_pool: ManaPool::default(),
         }
     }
@@ -120,6 +142,9 @@ pub struct PlayerZones {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum GameStatus {
     WaitingForPlayers,
+    /// A randomly chosen player is deciding play order.
+    ChoosingPlayOrder,
+    ResolvingMulligans,
     InProgress,
     Finished,
 }
@@ -127,7 +152,7 @@ pub enum GameStatus {
 impl GameState {
     /// Create a new game with the given players.
     pub fn new(game_id: impl Into<String>, players: Vec<Player>, rng_seed: u64) -> Self {
-        let turn_order: Vec<usize> = (0..players.len()).collect();
+        let player_ids: Vec<PlayerId> = players.iter().map(|p| p.id.clone()).collect();
         let mut player_zones = HashMap::new();
         for player in &players {
             player_zones.insert(
@@ -143,8 +168,11 @@ impl GameState {
             game_id: game_id.into(),
             status: GameStatus::WaitingForPlayers,
             players,
-            turn_order,
+            starting_turn_order: player_ids.clone(),
+            living_turn_order: player_ids,
             active_player_index: 0,
+            priority_index: 0,
+            players_passed: HashSet::new(),
             turn_number: 0,
             phase: Phase::Beginning(BeginningStep::Untap),
             player_zones,
@@ -154,15 +182,52 @@ impl GameState {
             command: HashSet::new(),
             objects: HashMap::new(),
             next_object_id: 1,
-            rng_seed,
+            rng: ChaCha8Rng::seed_from_u64(rng_seed),
             action_count: 0,
             lands_played_this_turn: 0,
             combat: None,
+            play_order_chooser: None,
         }
     }
     /// Get the active player. CR 102.1
     pub fn active_player(&self) -> &Player {
-        &self.players[self.turn_order[self.active_player_index]]
+        let id = &self.living_turn_order[self.active_player_index];
+        self.get_player(id).expect("active player must exist")
+    }
+
+    /// Get the player who currently has priority. CR 117
+    pub fn priority_player(&self) -> &Player {
+        let id = &self.living_turn_order[self.priority_index];
+        self.get_player(id).expect("priority player must exist")
+    }
+
+    /// Returns true if the given player has priority.
+    pub fn has_priority(&self, player_id: &str) -> bool {
+        self.priority_player().id == player_id
+    }
+
+    /// CR 117.3b — After a player takes an action, they receive priority again.
+    /// Resets the passed set so the round of passing starts over.
+    pub fn reset_priority_to_active(&mut self) {
+        self.priority_index = self.active_player_index;
+        self.players_passed.clear();
+    }
+
+    /// CR 117.4 — Pass priority to the next living player in turn order.
+    /// Returns true if all living players have now passed (round complete).
+    pub fn pass_priority_to_next(&mut self, player_id: &str) -> bool {
+        self.players_passed.insert(player_id.to_string());
+
+        let all_passed = self
+            .living_turn_order
+            .iter()
+            .all(|id| self.players_passed.contains(id));
+
+        if !all_passed {
+            self.priority_index = (self.priority_index + 1) % self.living_turn_order.len();
+        }
+
+        all_passed
     }
 
     /// Find which zone an object is in.
@@ -252,11 +317,6 @@ impl GameState {
         id
     }
 
-    /// Returns true if the given player has priority (i.e., is the active player).
-    pub fn has_priority(&self, player_id: &str) -> bool {
-        self.active_player().id == player_id
-    }
-
     /// Returns true if the given player exists in this game.
     pub fn has_player(&self, player_id: &str) -> bool {
         self.players.iter().any(|p| p.id == player_id)
@@ -280,6 +340,15 @@ impl GameState {
             player.has_lost = true;
         }
 
+        // Remove from living turn order
+        self.living_turn_order.retain(|id| id != player_id);
+
+        // Fix indices if they're now out of bounds
+        if !self.living_turn_order.is_empty() {
+            self.active_player_index = self.active_player_index % self.living_turn_order.len();
+            self.priority_index = self.priority_index % self.living_turn_order.len();
+        }
+
         // Remove all objects owned by this player from every zone
         let owned_ids: Vec<ObjectId> = self
             .objects
@@ -293,10 +362,6 @@ impl GameState {
             self.objects.remove(id);
         }
 
-        // Remove objects controlled (but not owned) by this player from the
-        // stack — CR 800.4a spells/abilities controlled by the player cease
-        // to exist. Permanents they control but don't own return to their
-        // owner (handled by state-based actions).
         // TODO: handle controlled-but-not-owned permanents via SBA
 
         self.player_zones.remove(player_id);
@@ -304,21 +369,76 @@ impl GameState {
 
     /// Count players who have not lost.
     pub fn alive_count(&self) -> usize {
-        self.players.iter().filter(|p| !p.has_lost).count()
+        self.living_turn_order.len()
+    }
+
+    /// Advance to the next phase/step, or the next turn if at end of turn.
+    /// Handles step-specific actions (untap, draw, cleanup). CR 500
+    pub fn advance_phase(&mut self) {
+        self.empty_mana_pools();
+        if let Some(next) = self.phase.next() {
+            self.phase = next;
+            self.on_phase_enter();
+        } else {
+            self.advance_turn();
+        }
+        self.reset_priority_to_active();
+    }
+
+    /// Perform automatic actions when entering a phase/step.
+    fn on_phase_enter(&mut self) {
+        let active_id = self.active_player().id.clone();
+        match self.phase {
+            // CR 502.3 — Untap all permanents the active player controls.
+            Phase::Beginning(BeginningStep::Untap) => {
+                let to_untap: Vec<ObjectId> = self
+                    .battlefield
+                    .iter()
+                    .filter(|id| {
+                        self.objects
+                            .get(id)
+                            .map(|c| c.controller.as_deref() == Some(&active_id))
+                            .unwrap_or(false)
+                    })
+                    .copied()
+                    .collect();
+                for id in to_untap {
+                    if let Some(card) = self.objects.get_mut(&id) {
+                        card.tapped = false;
+                        card.summoning_sick = false;
+                    }
+                }
+            }
+            // CR 504.1 — Active player draws a card.
+            // CR 103.8 — The player who goes first skips the draw step of
+            // their first turn.
+            Phase::Beginning(BeginningStep::Draw) => {
+                let skip = self.turn_number == 1 && self.active_player_index == 0;
+                if !skip {
+                    self.draw_card(&active_id);
+                }
+            }
+            // CR 514.2 — Remove all damage from permanents, end "until end
+            // of turn" and "this turn" effects.
+            Phase::Ending(EndingStep::Cleanup) => {
+                for id in self.battlefield.clone() {
+                    if let Some(card) = self.objects.get_mut(&id) {
+                        card.damage_marked = 0;
+                    }
+                }
+                // TODO: end "until end of turn" effects
+            }
+            _ => {}
+        }
     }
 
     /// Advance to the next player's turn. Resets per-turn state.
     pub fn advance_turn(&mut self) {
-        // Skip eliminated players
-        loop {
-            self.active_player_index = (self.active_player_index + 1) % self.turn_order.len();
-            if !self.active_player().has_lost {
-                break;
-            }
-        }
+        self.active_player_index = (self.active_player_index + 1) % self.living_turn_order.len();
         self.turn_number += 1;
         self.phase = Phase::Beginning(BeginningStep::Untap);
         self.lands_played_this_turn = 0;
+        self.reset_priority_to_active();
     }
 
     /// Record that an action was taken.

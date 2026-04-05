@@ -49,17 +49,10 @@ fn all_abilities_includes_intrinsic() {
 
     let def = CardDefinition {
         name: "Forest".into(),
-        mana_cost: None,
-        colors: vec![],
         card_types: vec![CardType::Land],
         subtypes: vec!["Forest".into()],
         supertypes: vec![Supertype::Basic],
-        power: None,
-        toughness: None,
-        loyalty: None,
-        defense: None,
-        rules_text: String::new(),
-        abilities: vec![],
+        ..Default::default()
     };
 
     let abilities = all_abilities(&def);

@@ -3,29 +3,18 @@ use crate::game::counter::{CounterEntry, CounterType, PtModifier};
 use crate::game::mana::Color;
 
 fn bare_creature(id: ObjectId, power: i32, toughness: i32) -> CardInstance {
-    CardInstance {
+    CardInstance::new(
         id,
-        owner: "player1".into(),
-        controller: Some("player1".into()),
-        definition: CardDefinition {
+        "player1",
+        CardDefinition {
             name: "Test Creature".into(),
-            mana_cost: None,
             colors: vec![Color::Green],
             card_types: vec![CardType::Creature],
-            subtypes: vec![],
-            supertypes: vec![],
             power: Some(power),
             toughness: Some(toughness),
-            loyalty: None,
-            defense: None,
-            rules_text: String::new(),
-            abilities: vec![],
+            ..Default::default()
         },
-        tapped: false,
-        damage_marked: 0,
-        counters: vec![],
-        protector: None,
-    }
+    )
 }
 
 #[test]

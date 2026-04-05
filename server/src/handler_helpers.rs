@@ -1,6 +1,6 @@
 use mtg_server_sdk::error::{
     CreateGameError, GetGameStateError, GetLegalActionsError, JoinGameError, NotFoundError,
-    ServerError, SubmitActionError,
+    ServerError, SetReadyError, SubmitActionError,
 };
 
 use crate::game::state::GameState;
@@ -52,6 +52,7 @@ impl_lookup_errors!(JoinGameError, NotFoundError, ServerError);
 impl_lookup_errors!(GetGameStateError, NotFoundError, ServerError);
 impl_lookup_errors!(SubmitActionError, NotFoundError, ServerError);
 impl_lookup_errors!(GetLegalActionsError, NotFoundError, ServerError);
+impl_lookup_errors!(SetReadyError, NotFoundError, ServerError);
 
 // CreateGameError has no NotFoundError variant, only needs ServerErr
 impl From<ServerErr> for CreateGameError {
