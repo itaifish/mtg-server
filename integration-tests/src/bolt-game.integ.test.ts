@@ -5,6 +5,7 @@ import {
 	submitAction,
 	passPriority,
 	findAction,
+	cleanupGame,
 } from './game-helpers';
 
 const BOLT_DECK = [
@@ -13,8 +14,19 @@ const BOLT_DECK = [
 ];
 
 describe('Bolt game', () => {
+	let gameId: string;
+	let aliceId: string;
+	let bobId: string;
+
+	afterAll(async () => {
+		if (gameId) await cleanupGame(gameId, [aliceId, bobId]);
+	});
+
 	it('two players bolt each other until someone dies', async () => {
-		const { gameId, aliceId, bobId } = await setupGame(BOLT_DECK);
+		const setup = await setupGame(BOLT_DECK);
+		gameId = setup.gameId;
+		aliceId = setup.aliceId;
+		bobId = setup.bobId;
 
 		const MAX_ITERATIONS = 1000;
 		let iterations = 0;

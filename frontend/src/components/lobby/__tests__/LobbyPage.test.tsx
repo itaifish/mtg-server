@@ -51,7 +51,7 @@ describe('LobbyPage', () => {
   it('opens JoinGameDialog when Join clicked', async () => {
     const user = userEvent.setup();
     useLobbyStore.setState({
-      games: [{ gameId: 'g1', format: 'STANDARD', playerCount: 1, status: 'WAITING_FOR_PLAYERS' }],
+      games: [{ gameId: 'g1', name: 'Test Game', format: 'STANDARD', playerCount: 1, status: 'WAITING_FOR_PLAYERS' }],
     });
     render(<MemoryRouter><LobbyPage /></MemoryRouter>);
     await user.click(screen.getByText('Join'));
@@ -61,7 +61,7 @@ describe('LobbyPage', () => {
   it('closes JoinGameDialog when close button clicked', async () => {
     const user = userEvent.setup();
     useLobbyStore.setState({
-      games: [{ gameId: 'g1', format: 'STANDARD', playerCount: 1, status: 'WAITING_FOR_PLAYERS' }],
+      games: [{ gameId: 'g1', name: 'Test Game', format: 'STANDARD', playerCount: 1, status: 'WAITING_FOR_PLAYERS' }],
     });
     render(<MemoryRouter><LobbyPage /></MemoryRouter>);
     await user.click(screen.getByText('Join'));

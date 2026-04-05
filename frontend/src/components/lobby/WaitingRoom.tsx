@@ -30,6 +30,10 @@ export function WaitingRoom() {
     useLobbyStore.getState().setReady(client, true);
   };
 
+  const handleLeave = () => {
+    useLobbyStore.getState().leaveGame(client);
+  };
+
   return (
     <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '24px', maxWidth: '500px', margin: '0 auto' }}>
       <h2>Waiting Room</h2>
@@ -47,7 +51,10 @@ export function WaitingRoom() {
       ) : (
         <LoadingSpinner />
       )}
-      <Button onClick={handleReady}>Ready</Button>
+      <div style={{ display: 'flex', gap: '12px' }}>
+        <Button onClick={handleReady}>Ready</Button>
+        <Button variant="danger" onClick={handleLeave}>Leave Game</Button>
+      </div>
     </div>
   );
 }

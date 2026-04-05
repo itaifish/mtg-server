@@ -53,8 +53,35 @@ structure GetGameStateOutput {
     /// The player who gets to choose play order (only during CHOOSING_PLAY_ORDER).
     playOrderChooserId: String
 
-    /// Permanents on the battlefield.
+    /// Permanents on the battlefield (visible to all).
     battlefield: PermanentList
+
+    /// Cards in the requesting player's hand (only if perspectivePlayerId is set).
+    hand: CardInfoList
+}
+
+list CardInfoList {
+    member: CardInfo
+}
+
+structure CardInfo {
+    @required
+    objectId: Long
+
+    @required
+    name: String
+
+    /// Scryfall oracle ID — used to look up card images from S3.
+    oracleId: String
+
+    @required
+    cardTypes: StringList
+
+    /// Mana cost symbols as strings (e.g., ["{1}", "{W}"]).
+    manaCost: StringList
+
+    @required
+    manaValue: Integer
 }
 
 list PermanentList {

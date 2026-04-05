@@ -28,20 +28,22 @@ fn cost(symbols: &[ManaSymbol]) -> ManaCost {
 static REGISTRY: LazyLock<HashMap<String, CardDefinition>> = LazyLock::new(|| {
     let cards = vec![
         // --- Basic Lands ---
-        basic_land("Plains"),
-        basic_land("Island"),
-        basic_land("Swamp"),
-        basic_land("Mountain"),
-        basic_land("Forest"),
+        basic_land("Plains", "bc71ebf6-2056-41f7-be35-b2e5c34afa99"),
+        basic_land("Island", "b2c6aa39-2d2a-459c-a555-fb48ba993373"),
+        basic_land("Swamp", "56719f6a-1a6c-4c0a-8d21-18f7d7350b68"),
+        basic_land("Mountain", "a3fb7228-e76b-4e96-a40e-20b5fed75685"),
+        basic_land("Forest", "b34bb2dc-c1af-4d77-b0b3-a0fb342a5fc6"),
         // --- Mana Creatures ---
         mana_dork(
             "Llanowar Elves",
+            "68954295-54e3-4303-a6bc-fc4547a4e3a3",
             cost(&[G]),
             &["Elf", "Druid"],
             ManaType::Green,
         ),
         mana_dork(
             "Elvish Mystic",
+            "3f3b2c10-21f8-4e13-be83-4ef3fa36e123",
             cost(&[G]),
             &["Elf", "Druid"],
             ManaType::Green,
@@ -49,6 +51,7 @@ static REGISTRY: LazyLock<HashMap<String, CardDefinition>> = LazyLock::new(|| {
         // --- Vanilla Creatures ---
         vanilla(
             "Savannah Lions",
+            "60ba93eb-39e6-4af2-9c66-cd38f72daff2",
             cost(&[W]),
             &[Color::White],
             2,
@@ -57,6 +60,7 @@ static REGISTRY: LazyLock<HashMap<String, CardDefinition>> = LazyLock::new(|| {
         ),
         vanilla(
             "Coral Merfolk",
+            "4ed27607-21a8-4bc3-997e-6d2242313f6d",
             cost(&[M1, U]),
             &[Color::Blue],
             2,
@@ -65,6 +69,7 @@ static REGISTRY: LazyLock<HashMap<String, CardDefinition>> = LazyLock::new(|| {
         ),
         vanilla(
             "Walking Corpse",
+            "fea95888-e16a-4209-9cd4-623f7f4d2f67",
             cost(&[M1, B]),
             &[Color::Black],
             2,
@@ -73,6 +78,7 @@ static REGISTRY: LazyLock<HashMap<String, CardDefinition>> = LazyLock::new(|| {
         ),
         vanilla(
             "Goblin Piker",
+            "50608184-90d3-43d2-a221-deb186c78323",
             cost(&[M1, R]),
             &[Color::Red],
             2,
@@ -81,6 +87,7 @@ static REGISTRY: LazyLock<HashMap<String, CardDefinition>> = LazyLock::new(|| {
         ),
         vanilla(
             "Grizzly Bears",
+            "14c8f55d-d177-4c25-a931-ebeb9e6062a0",
             cost(&[M1, G]),
             &[Color::Green],
             2,
@@ -89,15 +96,25 @@ static REGISTRY: LazyLock<HashMap<String, CardDefinition>> = LazyLock::new(|| {
         ),
         vanilla(
             "Runeclaw Bear",
+            "ec49dfcf-d16d-4621-af4b-4a6f09043221",
             cost(&[M1, G]),
             &[Color::Green],
             2,
             2,
             &["Bear"],
         ),
-        vanilla("Grey Ogre", cost(&[M2, R]), &[Color::Red], 2, 2, &["Ogre"]),
+        vanilla(
+            "Gray Ogre",
+            "83c8a3a6-2e1a-4e26-8847-6d066f42d906",
+            cost(&[M2, R]),
+            &[Color::Red],
+            2,
+            2,
+            &["Ogre"],
+        ),
         vanilla(
             "Centaur Courser",
+            "2f5bf099-2e01-4e1c-9ebf-0ce0ac66939e",
             cost(&[M2, G]),
             &[Color::Green],
             3,
@@ -106,6 +123,7 @@ static REGISTRY: LazyLock<HashMap<String, CardDefinition>> = LazyLock::new(|| {
         ),
         vanilla(
             "Hill Giant",
+            "342199e0-15b6-4824-83da-25caef2592b3",
             cost(&[M3, R]),
             &[Color::Red],
             3,
@@ -114,6 +132,7 @@ static REGISTRY: LazyLock<HashMap<String, CardDefinition>> = LazyLock::new(|| {
         ),
         vanilla(
             "Siege Mastodon",
+            "b4c404d8-9f2d-4429-ac36-449ae319abb7",
             cost(&[M4, W]),
             &[Color::White],
             3,
@@ -122,6 +141,7 @@ static REGISTRY: LazyLock<HashMap<String, CardDefinition>> = LazyLock::new(|| {
         ),
         vanilla(
             "Craw Wurm",
+            "6a462a69-3e42-41de-a3aa-a488d9f38d69",
             cost(&[M4, G, G]),
             &[Color::Green],
             6,
@@ -134,6 +154,7 @@ static REGISTRY: LazyLock<HashMap<String, CardDefinition>> = LazyLock::new(|| {
         // --- Instants ---
         instant(
             "Lightning Bolt",
+            "4457ed35-7c10-48c8-9776-456485fdf070",
             cost(&[R]),
             &[Color::Red],
             Effect::DealDamage {
@@ -143,6 +164,7 @@ static REGISTRY: LazyLock<HashMap<String, CardDefinition>> = LazyLock::new(|| {
         ),
         instant(
             "Healing Salve",
+            "8da8644c-75a1-4fe9-8e94-900d948d631c",
             cost(&[W]),
             &[Color::White],
             Effect::GainLife {
@@ -153,6 +175,7 @@ static REGISTRY: LazyLock<HashMap<String, CardDefinition>> = LazyLock::new(|| {
         // --- Sorceries ---
         sorcery(
             "Divination",
+            "273b339c-964b-4a18-8eb5-ceb8abcdfd9e",
             cost(&[M2, U]),
             &[Color::Blue],
             Effect::DrawCards {
@@ -175,9 +198,10 @@ pub fn all_card_names() -> Vec<&'static str> {
 
 // --- Card builders ---
 
-fn basic_land(name: &str) -> CardDefinition {
+fn basic_land(name: &str, oracle_id: &str) -> CardDefinition {
     CardDefinition {
         name: name.into(),
+        oracle_id: oracle_id.into(),
         card_types: vec![CardType::Land],
         subtypes: vec![name.into()],
         supertypes: vec![Supertype::Basic],
@@ -187,6 +211,7 @@ fn basic_land(name: &str) -> CardDefinition {
 
 fn vanilla(
     name: &str,
+    oracle_id: &str,
     mana_cost: ManaCost,
     colors: &[Color],
     power: i32,
@@ -195,6 +220,7 @@ fn vanilla(
 ) -> CardDefinition {
     CardDefinition {
         name: name.into(),
+        oracle_id: oracle_id.into(),
         mana_cost: Some(mana_cost),
         colors: colors.to_vec(),
         card_types: vec![CardType::Creature],
@@ -205,9 +231,16 @@ fn vanilla(
     }
 }
 
-fn instant(name: &str, mana_cost: ManaCost, colors: &[Color], effect: Effect) -> CardDefinition {
+fn instant(
+    name: &str,
+    oracle_id: &str,
+    mana_cost: ManaCost,
+    colors: &[Color],
+    effect: Effect,
+) -> CardDefinition {
     CardDefinition {
         name: name.into(),
+        oracle_id: oracle_id.into(),
         mana_cost: Some(mana_cost),
         colors: colors.to_vec(),
         card_types: vec![CardType::Instant],
@@ -216,9 +249,16 @@ fn instant(name: &str, mana_cost: ManaCost, colors: &[Color], effect: Effect) ->
     }
 }
 
-fn sorcery(name: &str, mana_cost: ManaCost, colors: &[Color], effect: Effect) -> CardDefinition {
+fn sorcery(
+    name: &str,
+    oracle_id: &str,
+    mana_cost: ManaCost,
+    colors: &[Color],
+    effect: Effect,
+) -> CardDefinition {
     CardDefinition {
         name: name.into(),
+        oracle_id: oracle_id.into(),
         mana_cost: Some(mana_cost),
         colors: colors.to_vec(),
         card_types: vec![CardType::Sorcery],
@@ -229,12 +269,14 @@ fn sorcery(name: &str, mana_cost: ManaCost, colors: &[Color], effect: Effect) ->
 
 fn mana_dork(
     name: &str,
+    oracle_id: &str,
     mana_cost: ManaCost,
     subtypes: &[&str],
     produces: ManaType,
 ) -> CardDefinition {
     CardDefinition {
         name: name.into(),
+        oracle_id: oracle_id.into(),
         mana_cost: Some(mana_cost),
         colors: vec![Color::Green],
         card_types: vec![CardType::Creature],
@@ -266,7 +308,9 @@ fn soul_warden() -> CardDefinition {
     triggers.insert(
         ZoneType::Battlefield,
         vec![TriggeredAbility {
-            trigger: TriggerEvent::EntersZone { zone: ZoneType::Battlefield },
+            trigger: TriggerEvent::EntersZone {
+                zone: ZoneType::Battlefield,
+            },
             filters: vec![
                 TriggerFilter::ObjectMatches(vec![Filter::HasType("Creature".into())]),
                 TriggerFilter::Not(Box::new(TriggerFilter::IsSelf)),
@@ -276,11 +320,13 @@ fn soul_warden() -> CardDefinition {
                 player: PlayerSpec::Controller,
             },
             needs_targets: false,
-            description: "Whenever another creature enters the battlefield, you gain 1 life.".into(),
+            description: "Whenever another creature enters the battlefield, you gain 1 life."
+                .into(),
         }],
     );
     CardDefinition {
         name: "Soul Warden".into(),
+        oracle_id: "f3fad295-1af2-4ecc-8546-b121ad6be27b".into(),
         mana_cost: Some(cost(&[W])),
         colors: vec![Color::White],
         card_types: vec![CardType::Creature],
@@ -310,6 +356,7 @@ fn ajanis_pridemate() -> CardDefinition {
     );
     CardDefinition {
         name: "Ajani's Pridemate".into(),
+        oracle_id: "95e94dea-5ac0-4d6f-adec-ca147aee861f".into(),
         mana_cost: Some(cost(&[M1, W])),
         colors: vec![Color::White],
         card_types: vec![CardType::Creature],

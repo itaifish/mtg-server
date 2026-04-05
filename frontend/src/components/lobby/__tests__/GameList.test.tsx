@@ -12,18 +12,18 @@ describe('GameList', () => {
 
   it('renders game entries', () => {
     const games: GameSummary[] = [
-      { gameId: 'g1', format: 'STANDARD', playerCount: 1, status: 'WAITING_FOR_PLAYERS' },
-      { gameId: 'g2', format: 'MODERN', playerCount: 2, status: 'IN_PROGRESS' },
+      { gameId: 'g1', name: 'Game One', format: 'STANDARD', playerCount: 1, status: 'WAITING_FOR_PLAYERS' },
+      { gameId: 'g2', name: 'Game Two', format: 'MODERN', playerCount: 2, status: 'IN_PROGRESS' },
     ];
     render(<GameList games={games} onJoin={vi.fn()} />);
-    expect(screen.getByText('STANDARD')).toBeInTheDocument();
-    expect(screen.getByText('MODERN')).toBeInTheDocument();
+    expect(screen.getByText('Game One')).toBeInTheDocument();
+    expect(screen.getByText('Game Two')).toBeInTheDocument();
   });
 
   it('shows Join button only for waiting games', () => {
     const games: GameSummary[] = [
-      { gameId: 'g1', format: 'STANDARD', playerCount: 1, status: 'WAITING_FOR_PLAYERS' },
-      { gameId: 'g2', format: 'MODERN', playerCount: 2, status: 'IN_PROGRESS' },
+      { gameId: 'g1', name: 'Game One', format: 'STANDARD', playerCount: 1, status: 'WAITING_FOR_PLAYERS' },
+      { gameId: 'g2', name: 'Game Two', format: 'MODERN', playerCount: 2, status: 'IN_PROGRESS' },
     ];
     render(<GameList games={games} onJoin={vi.fn()} />);
     const joinButtons = screen.getAllByText('Join');
@@ -34,7 +34,7 @@ describe('GameList', () => {
     const user = userEvent.setup();
     const onJoin = vi.fn();
     const games: GameSummary[] = [
-      { gameId: 'g1', format: 'STANDARD', playerCount: 1, status: 'WAITING_FOR_PLAYERS' },
+      { gameId: 'g1', name: 'Game One', format: 'STANDARD', playerCount: 1, status: 'WAITING_FOR_PLAYERS' },
     ];
     render(<GameList games={games} onJoin={onJoin} />);
     await user.click(screen.getByText('Join'));

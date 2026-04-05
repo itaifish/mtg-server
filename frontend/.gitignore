@@ -29,5 +29,5 @@ src-tauri/Cargo.lock
 .env
 .env.*
 !.env.example
-!.env.local
+!.env.localdev
 !.env.test.example

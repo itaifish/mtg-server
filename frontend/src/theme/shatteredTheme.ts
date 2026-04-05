@@ -123,13 +123,25 @@ export const shatteredTheme: Theme = {
       text-shadow: 0 0 12px #ff0066;
     }
 
-    /* Fracture-line background cracks */
+    /* Fracture-line background cracks + floating glass shards */
     [data-theme="shattered"] .page-container {
       background:
+        /* Diagonal fracture lines */
         linear-gradient(23deg, transparent 49.5%, #8b00ff22 49.5%, #8b00ff22 50.5%, transparent 50.5%),
         linear-gradient(156deg, transparent 49.5%, #ff006611 49.5%, #ff006611 50.5%, transparent 50.5%),
         linear-gradient(87deg, transparent 49.5%, #00fff208 49.5%, #00fff208 50.5%, transparent 50.5%),
-        linear-gradient(200deg, transparent 49.5%, #39ff1408 49.5%, #39ff1408 50.5%, transparent 50.5%);
+        linear-gradient(200deg, transparent 49.5%, #39ff1408 49.5%, #39ff1408 50.5%, transparent 50.5%),
+        /* Large triangular shards */
+        linear-gradient(215deg, transparent 10%, #8b00ff10 10%, #8b00ff10 30%, transparent 30%),
+        linear-gradient(320deg, transparent 35%, #00fff210 35%, #00fff210 60%, transparent 60%),
+        linear-gradient(140deg, transparent 50%, #ff006610 50%, #ff006610 80%, transparent 80%),
+        /* Medium angular fragments */
+        linear-gradient(65deg, transparent 5%, #8b00ff0c 5%, #8b00ff0c 20%, transparent 20%),
+        linear-gradient(280deg, transparent 25%, #00fff20c 25%, #00fff20c 45%, transparent 45%),
+        linear-gradient(170deg, transparent 65%, #39ff140c 65%, #39ff140c 85%, transparent 85%),
+        /* Broad prismatic washes */
+        linear-gradient(110deg, transparent 5%, #8b00ff0a 5%, transparent 45%),
+        linear-gradient(250deg, transparent 40%, #ff00660a 40%, transparent 80%);
     }
 
     /* Nav bar neon underline glow */
@@ -184,11 +196,15 @@ export const shatteredTheme: Theme = {
       box-shadow: 0 0 8px #8b00ff88, inset 0 0 8px #00fff211;
     }
 
-    /* Game page fracture overlay */
+    /* Game page fracture overlay with glass shards */
     [data-theme="shattered"] .game-page {
       background-image:
         linear-gradient(45deg, transparent 49%, #8b00ff11 49%, #8b00ff11 51%, transparent 51%),
-        linear-gradient(135deg, transparent 49%, #ff006609 49%, #ff006609 51%, transparent 51%);
+        linear-gradient(135deg, transparent 49%, #ff006609 49%, #ff006609 51%, transparent 51%),
+        linear-gradient(200deg, transparent 10%, #00fff20c 10%, #00fff20c 35%, transparent 35%),
+        linear-gradient(330deg, transparent 40%, #8b00ff0c 40%, #8b00ff0c 70%, transparent 70%),
+        linear-gradient(75deg, transparent 55%, #39ff140c 55%, #39ff140c 80%, transparent 80%),
+        linear-gradient(160deg, transparent 0%, #ff00660c 0%, #ff00660c 20%, transparent 20%);
     }
   `,
 };

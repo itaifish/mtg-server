@@ -1,6 +1,7 @@
 import {
 	CreateGameCommand,
 	JoinGameCommand,
+	LeaveGameCommand,
 	SetReadyCommand,
 	GetGameStateCommand,
 	GetLegalActionsCommand,
@@ -113,4 +114,31 @@ export async function passBothUntilChange(
 		}
 	}
 	return getState(gameId);
+}
+
+/// Clean up a game by having all players leave (if in lobby) or concede.
+export async function cleanupGame(gameId: string, playerIds: string[]): Promise<void> {
+	try {
+		const state = await getState(gameId);
+		if (state.status === 'WAITING_FOR_PLAYERS' || state.status === 'CHOOSING_PLAY_ORDER') {
+			for (const pid of playerIds) {
+				try {
+					await client.send(new LeaveGameCommand({ gameId, playerId: pid }));
+				} catch {
+					// already left or game deleted
+				}
+			}
+		} else {
+			// Game in progress — concede with first living player
+			for (const pid of playerIds) {
+				try {
+					await submitAction(gameId, pid, { concede: {} });
+				} catch {
+					// already lost or game over
+				}
+			}
+		}
+	} catch {
+		// game already deleted
+	}
 }

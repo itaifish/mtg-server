@@ -21,6 +21,9 @@ structure CreateGameInput {
     format: GameFormat
 
     @required
+    gameName: String
+
+    @required
     playerName: String
 
     @required
@@ -112,9 +115,17 @@ operation ListGames {
 
 @input
 structure ListGamesInput {
-    /// Filter by status. If not provided, returns all games.
     @httpQuery("status")
     status: GameStatus
+
+    @httpQuery("search")
+    search: String
+
+    @httpQuery("limit")
+    limit: Integer
+
+    @httpQuery("offset")
+    offset: Integer
 }
 
 @output
@@ -130,6 +141,9 @@ list GameSummaryList {
 structure GameSummary {
     @required
     gameId: String
+
+    @required
+    name: String
 
     @required
     status: GameStatus

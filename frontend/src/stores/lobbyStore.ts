@@ -5,6 +5,7 @@ import type { DecklistEntry } from '../types/models';
 
 export interface GameSummary {
   gameId: string;
+  name: string;
   format: GameFormat;
   playerCount: number;
   status: GameStatus;
@@ -21,10 +22,11 @@ export interface LobbyState {
 }
 
 export interface LobbyActions {
-  fetchGames: (client: MtgApiClient) => Promise<void>;
+  fetchGames: (client: MtgApiClient, params?: { search?: string; status?: GameStatus; limit?: number; offset?: number }) => Promise<void>;
   createGame: (
     client: MtgApiClient,
     format: GameFormat,
+    gameName: string,
     playerName: string,
     decklist: DecklistEntry[],
   ) => Promise<void>;
@@ -54,19 +56,19 @@ const initialState: LobbyState = {
 export const useLobbyStore = create<LobbyState & LobbyActions>()((set, get) => ({
   ...initialState,
 
-  fetchGames: async (client) => {
+  fetchGames: async (client, params) => {
     try {
-      const res = await client.listGames();
+      const res = await client.listGames(params);
       set({ games: res.games });
     } catch {
       // Silently fail — polling will retry
     }
   },
 
-  createGame: async (client, format, playerName, decklist) => {
+  createGame: async (client, format, gameName, playerName, decklist) => {
     set({ isCreating: true, error: null });
     try {
-      const res = await client.createGame({ format, playerName, decklist });
+      const res = await client.createGame({ format, gameName, playerName, decklist });
       set({ gameId: res.gameId, playerId: res.playerId, playerName, isCreating: false });
     } catch (e) {
       set({ isCreating: false, error: e instanceof Error ? e.message : 'Failed to create game' });

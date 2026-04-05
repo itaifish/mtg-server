@@ -18,21 +18,24 @@ export function CreateGameForm() {
   const client = useApiClient();
   const { createGame, isCreating, playerName, setPlayerName } = useLobbyStore();
   const [format, setFormat] = useState<GameFormat>(GameFormat.STANDARD);
+  const [gameName, setGameName] = useState('');
   const [deckText, setDeckText] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    if (!gameName.trim()) { setError('Game name is required'); return; }
     if (!playerName.trim()) { setError('Player name is required'); return; }
     const decklist = parseDeckList(deckText);
     if (decklist.length === 0) { setError('Decklist must have at least one card'); return; }
     setError('');
-    createGame(client, format, playerName.trim(), decklist);
+    createGame(client, format, gameName.trim(), playerName.trim(), decklist);
   };
 
   return (
     <form onSubmit={handleSubmit} className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <h3>Create Game</h3>
+      <Input label="Game Name" value={gameName} onChange={(e) => setGameName(e.target.value)} placeholder="Friday Night Magic" />
       <Input label="Player Name" value={playerName} onChange={(e) => setPlayerName(e.target.value)} placeholder="Your name" />
       <Select label="Format" options={formatOptions} value={format} onChange={(e) => setFormat(e.target.value as GameFormat)} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>

@@ -5,6 +5,7 @@ import type { DecklistEntry, LegalAction, PlayerInfo } from './models';
 // CreateGame
 export interface CreateGameRequest {
   format: GameFormat;
+  gameName: string;
   playerName: string;
   decklist: DecklistEntry[];
 }
@@ -87,6 +88,9 @@ export interface PingResponse {
 
 export interface ListGamesRequest {
   status?: GameStatus;
+  search?: string;
+  limit?: number;
+  offset?: number;
 }
 
 export interface ListGamesResponse {
@@ -95,6 +99,7 @@ export interface ListGamesResponse {
 
 export interface GameSummaryResponse {
   gameId: string;
+  name: string;
   status: GameStatus;
   playerCount: number;
   format: GameFormat;

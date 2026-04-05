@@ -118,6 +118,7 @@ export class MtgApiClient {
   async createGame(req: CreateGameRequest): Promise<CreateGameResponse> {
     return this.request('POST', '/games', {
       format: req.format,
+      gameName: req.gameName,
       playerName: req.playerName,
       decklist: req.decklist,
     });
@@ -172,6 +173,9 @@ export class MtgApiClient {
   async listGames(req?: ListGamesRequest): Promise<ListGamesResponse> {
     const params = new URLSearchParams();
     if (req?.status) params.set('status', req.status);
+    if (req?.search) params.set('search', req.search);
+    if (req?.limit != null) params.set('limit', String(req.limit));
+    if (req?.offset != null) params.set('offset', String(req.offset));
     const qs = params.toString();
     return this.request('GET', `/games${qs ? `?${qs}` : ''}`);
   }

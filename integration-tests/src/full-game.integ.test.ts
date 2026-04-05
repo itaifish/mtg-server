@@ -1,9 +1,4 @@
-import {
-	setupGame,
-	getState,
-	submitAction,
-	passPriority,
-} from './game-helpers';
+import { setupGame, getState, submitAction, passPriority, cleanupGame } from './game-helpers';
 
 const GREEN_DECK = [
 	{ cardName: 'Forest', count: 17 },
@@ -14,6 +9,10 @@ describe('Full game simulation', () => {
 	let gameId: string;
 	let aliceId: string;
 	let bobId: string;
+
+	afterAll(async () => {
+		if (gameId) await cleanupGame(gameId, [aliceId, bobId]);
+	});
 
 	it('sets up a game through mulligan phase', async () => {
 		const setup = await setupGame(GREEN_DECK);

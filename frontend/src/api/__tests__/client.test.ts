@@ -50,7 +50,7 @@ describe('MtgApiClient', () => {
   describe('createGame', () => {
     it('sends POST with body', async () => {
       const spy = mockFetchOk({ gameId: 'g1', playerId: 'p1' });
-      const res = await client.createGame({ format: 'STANDARD', playerName: 'Alice', decklist: [{ count: 4, cardName: 'Bolt' }] });
+      const res = await client.createGame({ format: 'STANDARD', gameName: 'Test Game', playerName: 'Alice', decklist: [{ count: 4, cardName: 'Bolt' }] });
       expect(res.gameId).toBe('g1');
       expect(spy).toHaveBeenCalledWith('http://localhost:13734/games', expect.objectContaining({ method: 'POST' }));
     });

@@ -40,7 +40,7 @@ function Nav() {
   return (
     <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 24px', background: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border)' }}>
       <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-        <Link to="/" style={{ fontWeight: 700, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '6px' }}><img src="/lasagna.svg" alt="" width="22" height="22" />{APP_NAME}</Link>
+        <Link to="/" style={{ fontWeight: 700, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '6px' }}><img src="/lasagna.svg" alt="" width="32" height="32" />{APP_NAME}</Link>
         <Link to="/deckbuilder" style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>Deck Builder</Link>
       </div>
       <button onClick={toggleSettings} style={{ background: 'none', border: 'none', color: 'var(--color-text)', cursor: 'pointer', fontSize: '1.2rem' }} aria-label="Settings">⚙</button>

@@ -40,7 +40,7 @@ describe('lobbyStore', () => {
       const client = mockClient({
         createGame: vi.fn().mockResolvedValue({ gameId: 'g1', playerId: 'p1' }),
       });
-      await useLobbyStore.getState().createGame(client, GameFormat.STANDARD, 'Alice', decklist);
+      await useLobbyStore.getState().createGame(client, GameFormat.STANDARD, 'Test Game', 'Alice', decklist);
       const state = useLobbyStore.getState();
       expect(state.gameId).toBe('g1');
       expect(state.playerId).toBe('p1');
@@ -53,7 +53,7 @@ describe('lobbyStore', () => {
       const client = mockClient({
         createGame: vi.fn().mockRejectedValue(new Error('Network error')),
       });
-      await useLobbyStore.getState().createGame(client, GameFormat.STANDARD, 'Alice', decklist);
+      await useLobbyStore.getState().createGame(client, GameFormat.STANDARD, 'Test Game', 'Alice', decklist);
       const state = useLobbyStore.getState();
       expect(state.isCreating).toBe(false);
       expect(state.error).toBe('Network error');
@@ -64,7 +64,7 @@ describe('lobbyStore', () => {
       const client = mockClient({
         createGame: vi.fn().mockRejectedValue('string error'),
       });
-      await useLobbyStore.getState().createGame(client, GameFormat.STANDARD, 'Alice', decklist);
+      await useLobbyStore.getState().createGame(client, GameFormat.STANDARD, 'Test Game', 'Alice', decklist);
       expect(useLobbyStore.getState().error).toBe('Failed to create game');
     });
   });

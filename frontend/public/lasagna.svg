@@ -1,101 +1,107 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
+    <!-- Meat/bolognese layer -->
+    <linearGradient id="meat" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9c6040"/>
+      <stop offset="50%" stop-color="#7a4830"/>
+      <stop offset="100%" stop-color="#6a3c24"/>
+    </linearGradient>
+    <!-- Thin pasta sheet -->
     <linearGradient id="pasta" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#e8b84a"/>
-      <stop offset="100%" stop-color="#c89030"/>
+      <stop offset="0%" stop-color="#ecd088"/>
+      <stop offset="100%" stop-color="#d4b060"/>
     </linearGradient>
-    <linearGradient id="sauce" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#c0392b"/>
-      <stop offset="100%" stop-color="#8e2218"/>
+    <!-- Bubbly browned cheese top -->
+    <linearGradient id="cheeseTop" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0%" stop-color="#e8a830"/>
+      <stop offset="30%" stop-color="#d48820"/>
+      <stop offset="70%" stop-color="#c47818"/>
+      <stop offset="100%" stop-color="#b06818"/>
     </linearGradient>
-    <linearGradient id="ricotta" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#fffef5"/>
-      <stop offset="100%" stop-color="#ede0c8"/>
+    <!-- Plate -->
+    <radialGradient id="plate" cx="0.45" cy="0.45" r="0.55">
+      <stop offset="0%" stop-color="#a86048"/>
+      <stop offset="80%" stop-color="#8c4838"/>
+      <stop offset="100%" stop-color="#7a3c2c"/>
+    </radialGradient>
+    <!-- Side meat -->
+    <linearGradient id="sideMeat" x1="0" y1="0" x2="1" y2="0.3">
+      <stop offset="0%" stop-color="#6a3c24"/>
+      <stop offset="100%" stop-color="#4c2818"/>
     </linearGradient>
-    <linearGradient id="topCheese" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#ffe566"/>
-      <stop offset="50%" stop-color="#daa520"/>
-      <stop offset="100%" stop-color="#c89030"/>
-    </linearGradient>
-    <linearGradient id="sideDark" x1="0" y1="0" x2="1" y2="0.3">
-      <stop offset="0%" stop-color="rgba(0,0,0,0.25)"/>
-      <stop offset="100%" stop-color="rgba(0,0,0,0.4)"/>
-    </linearGradient>
-    <!-- Drop shadow filter -->
-    <filter id="shadow" x="-10%" y="-10%" width="130%" height="140%">
-      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.3"/>
+    <filter id="sh">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#000" flood-opacity="0.3"/>
     </filter>
   </defs>
 
-  <g filter="url(#shadow)">
-    <!-- === BOTTOM FACE (closes the 3D shape) === -->
-    <polygon points="10,50 48,50 56,54 18,54" fill="#8a6520"/>
+  <g filter="url(#sh)">
+    <!-- Front face: x=8..48, layers from y=18 to y=46 -->
+    
+    <!-- Bottom meat layer (thick) -->
+    <path d="M8,38 Q18,37 28,38.5 Q38,39.5 48,38 L48,46 L8,46 Z" fill="url(#meat)"/>
+    <!-- Meat texture dots -->
+    <circle cx="16" cy="42" r="1.2" fill="#5a3020" opacity="0.4"/>
+    <circle cx="28" cy="41" r="1" fill="#5a3020" opacity="0.35"/>
+    <circle cx="38" cy="43" r="0.9" fill="#5a3020" opacity="0.3"/>
+    <circle cx="22" cy="44" r="0.8" fill="#8a5838" opacity="0.3"/>
+    
+    <!-- Pasta sheet (thin) -->
+    <path d="M8,36 Q18,36.8 28,35.8 Q38,36.5 48,36 L48,38 Q38,39.5 28,38.5 Q18,37 8,38 Z" fill="url(#pasta)"/>
+    
+    <!-- Middle meat layer (thick) -->
+    <path d="M8,28 Q18,27 28,28.5 Q38,29.5 48,28 L48,36 Q38,36.5 28,35.8 Q18,36.8 8,36 Z" fill="url(#meat)"/>
+    <circle cx="14" cy="32" r="1.1" fill="#5a3020" opacity="0.35"/>
+    <circle cx="32" cy="31" r="0.9" fill="#5a3020" opacity="0.3"/>
+    <circle cx="42" cy="33" r="1" fill="#8a5838" opacity="0.25"/>
+    
+    <!-- Pasta sheet (thin) -->
+    <path d="M8,26 Q18,26.8 28,25.8 Q38,26.5 48,26 L48,28 Q38,29.5 28,28.5 Q18,27 8,28 Z" fill="url(#pasta)"/>
+    
+    <!-- Top meat layer (thick) -->
+    <path d="M8,18 Q18,17 28,18.5 Q38,19 48,18 L48,26 Q38,26.5 28,25.8 Q18,26.8 8,26 Z" fill="url(#meat)"/>
+    <circle cx="18" cy="22" r="1" fill="#5a3020" opacity="0.3"/>
+    <circle cx="36" cy="21" r="0.8" fill="#5a3020" opacity="0.25"/>
 
-    <!-- === FRONT FACE LAYERS (wavy edges, bottom to top) === -->
-    <!-- Bottom pasta -->
-    <path d="M10,46 Q19,45.2 29,46.3 Q39,47 48,46 L48,50 L10,50 Z" fill="url(#pasta)"/>
-    <!-- Sauce 1 -->
-    <path d="M10,41.5 Q20,40.5 30,41.8 Q40,42.5 48,41 L48,46 Q39,47 29,46.3 Q19,45.2 10,46 Z" fill="url(#sauce)"/>
-    <!-- Mid pasta -->
-    <path d="M10,37 Q18,37.8 28,36.8 Q38,37.5 48,37 L48,41 Q40,42.5 30,41.8 Q20,40.5 10,41.5 Z" fill="url(#pasta)"/>
-    <!-- Ricotta -->
-    <path d="M10,32.5 Q21,31.5 31,32.8 Q41,33.2 48,32 L48,37 Q38,37.5 28,36.8 Q18,37.8 10,37 Z" fill="url(#ricotta)"/>
-    <!-- Upper pasta -->
-    <path d="M10,28 Q19,28.8 29,27.8 Q39,28.5 48,28 L48,32 Q41,33.2 31,32.8 Q21,31.5 10,32.5 Z" fill="url(#pasta)"/>
-    <!-- Sauce 2 -->
-    <path d="M10,24.3 Q20,23.5 30,24.5 Q40,25 48,24 L48,28 Q39,28.5 29,27.8 Q19,28.8 10,28 Z" fill="url(#sauce)"/>
-    <!-- Top pasta -->
-    <path d="M10,20 L48,20 L48,24 Q40,25 30,24.5 Q20,23.5 10,24.3 Z" fill="url(#pasta)"/>
+    <!-- Right side face -->
+    <polygon points="48,18 56,14 56,42 48,46" fill="url(#sideMeat)"/>
+    <!-- Side pasta lines -->
+    <line x1="48" y1="26" x2="56" y2="22" stroke="#d4b060" stroke-width="1" opacity="0.6"/>
+    <line x1="48" y1="36" x2="56" y2="32" stroke="#d4b060" stroke-width="1" opacity="0.6"/>
+    <!-- Side darken -->
+    <polygon points="48,18 56,14 56,42 48,46" fill="rgba(0,0,0,0.08)"/>
 
-    <!-- === RIGHT SIDE FACE (same layers, darkened) === -->
-    <polygon points="48,20 56,24 56,54 48,50" fill="#b87a22"/>
-    <!-- Side layer lines -->
-    <line x1="48" y1="24" x2="56" y2="28" stroke="#a06a1a" stroke-width="0.5" opacity="0.7"/>
-    <line x1="48" y1="28" x2="56" y2="32" stroke="#a06a1a" stroke-width="0.5" opacity="0.7"/>
-    <line x1="48" y1="32" x2="56" y2="36" stroke="#a06a1a" stroke-width="0.5" opacity="0.7"/>
-    <line x1="48" y1="37" x2="56" y2="41" stroke="#a06a1a" stroke-width="0.5" opacity="0.7"/>
-    <line x1="48" y1="41" x2="56" y2="45" stroke="#a06a1a" stroke-width="0.5" opacity="0.7"/>
-    <line x1="48" y1="46" x2="56" y2="50" stroke="#a06a1a" stroke-width="0.5" opacity="0.7"/>
-    <!-- Darken overlay on side -->
-    <polygon points="48,20 56,24 56,54 48,50" fill="url(#sideDark)"/>
-    <!-- Sauce stripes on side -->
-    <polygon points="48,24 56,28 56,32 48,28" fill="#8e2218" opacity="0.6"/>
-    <polygon points="48,41 56,45 56,50 48,46" fill="#8e2218" opacity="0.6"/>
-    <!-- Ricotta stripe on side -->
-    <polygon points="48,32 56,36 56,41 48,37" fill="#d8ccb0" opacity="0.5"/>
+    <!-- Top face — bubbly browned cheese with sauce patches -->
+    <path d="M8,18 Q18,17 28,18.5 Q38,19 48,18 L56,14 L16,14 Z" fill="url(#cheeseTop)"/>
+    
+    <!-- Browned/bubbly cheese patches -->
+    <ellipse cx="20" cy="16.5" rx="5" ry="1.5" fill="#d08020" opacity="0.4"/>
+    <ellipse cx="36" cy="16" rx="4" ry="1.3" fill="#c07018" opacity="0.35"/>
+    <ellipse cx="48" cy="15.5" rx="3" ry="1" fill="#c07018" opacity="0.3"/>
+    
+    <!-- Red sauce showing through cheese -->
+    <ellipse cx="14" cy="16.5" rx="3" ry="1.2" fill="#c43020" opacity="0.35"/>
+    <ellipse cx="30" cy="15.5" rx="2.5" ry="1" fill="#c43020" opacity="0.3"/>
+    <ellipse cx="44" cy="16.8" rx="2" ry="0.8" fill="#c43020" opacity="0.25"/>
+    
+    <!-- Melted cheese highlights -->
+    <ellipse cx="24" cy="15.8" rx="2" ry="0.8" fill="#f0d060" opacity="0.3"/>
+    <ellipse cx="40" cy="15.2" rx="1.5" ry="0.6" fill="#f0d060" opacity="0.25"/>
 
-    <!-- === TOP FACE === -->
-    <polygon points="10,20 48,20 56,24 18,24" fill="#c89030"/>
-
-    <!-- Melted cheese on top — bubbly golden surface -->
-    <path d="M10 20 Q16 15 22 19 Q28 14 34 18 Q40 14 48 20 L56 24 L18 24 Z" fill="url(#topCheese)"/>
-    <!-- Browned cheese spots -->
-    <ellipse cx="24" cy="20" rx="2.5" ry="1.2" fill="#c88a18" opacity="0.4"/>
-    <ellipse cx="38" cy="19" rx="2" ry="1" fill="#c88a18" opacity="0.35"/>
-    <ellipse cx="48" cy="21.5" rx="1.5" ry="0.8" fill="#c88a18" opacity="0.3"/>
-    <!-- Cheese bubbles -->
-    <circle cx="20" cy="20.5" r="1" fill="#ffe880" opacity="0.5"/>
-    <circle cx="42" cy="19.5" r="0.8" fill="#ffe880" opacity="0.4"/>
-
-    <!-- === CHEESE DRIPS (organic curves) === -->
-    <path d="M16 20 C14 24, 15 27, 17 30 C16.5 31, 17.5 32, 17 33" stroke="#daa520" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-    <path d="M16 20 C14 24, 15 27, 17 30" stroke="#e8c840" stroke-width="2" fill="none" stroke-linecap="round"/>
-    <path d="M40 20 C42 23, 41 25, 40 28" stroke="#daa520" stroke-width="2" fill="none" stroke-linecap="round"/>
-    <path d="M40 20 C42 23, 41 25, 40 28" stroke="#e8c840" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-    <path d="M28 20 C27 22, 28 24, 27.5 25.5" stroke="#e8c840" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.8"/>
-    <!-- Drip on right side -->
-    <path d="M50 22 C52 26, 51 29, 52 32" stroke="#c89030" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.7"/>
-
-    <!-- Sauce texture dots -->
-    <circle cx="18" cy="43" r="1" fill="#a02018" opacity="0.4"/>
-    <circle cx="32" cy="42.5" r="0.8" fill="#a02018" opacity="0.35"/>
-    <circle cx="42" cy="44" r="0.7" fill="#a02018" opacity="0.3"/>
-    <!-- Ricotta texture -->
-    <circle cx="22" cy="34" r="1.2" fill="#f8f0e0" opacity="0.4"/>
-    <circle cx="38" cy="35" r="0.9" fill="#f8f0e0" opacity="0.35"/>
+    <!-- Cheese drip on front -->
+    <path d="M24,18 C23,21 23.5,23 23,24.5" stroke="#d8a030" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.5"/>
   </g>
 
-  <!-- Steam wisps (outside shadow group) -->
-  <path d="M20 13 C18 9, 20 6, 22 3" stroke="#fff" stroke-width="1.5" fill="none" opacity="0.25" stroke-linecap="round"/>
-  <path d="M34 11 C36 7, 34 4, 36 1" stroke="#fff" stroke-width="1.5" fill="none" opacity="0.2" stroke-linecap="round"/>
+  <!-- Basil sprig on top -->
+  <g transform="translate(32,13) rotate(-15)">
+    <!-- Stem -->
+    <path d="M0,0 C-1,3 0,5 -0.5,7" stroke="#3a7a28" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+    <!-- Left leaf -->
+    <path d="M-1,1 C-5,-1 -7,0 -6,3 C-5,5 -2,3 -1,1 Z" fill="#4a9a30"/>
+    <path d="M-1,1 C-4,1 -6,2 -6,3" stroke="#3a7a20" stroke-width="0.3" fill="none" opacity="0.5"/>
+    <!-- Right leaf -->
+    <path d="M0,0 C3,-3 6,-2 5,1 C4,3 1,2 0,0 Z" fill="#50a838"/>
+    <path d="M0,0 C2,-1 4,-1 5,1" stroke="#3a8a20" stroke-width="0.3" fill="none" opacity="0.5"/>
+    <!-- Small leaf -->
+    <path d="M-0.5,4 C-3,2 -4,3 -3,5 C-2,6 -1,5 -0.5,4 Z" fill="#48a030" opacity="0.8"/>
+  </g>
 </svg>

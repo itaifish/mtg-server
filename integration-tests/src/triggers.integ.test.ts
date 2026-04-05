@@ -6,6 +6,7 @@ import {
 	passPriority,
 	findAction,
 	findAllActions,
+	cleanupGame,
 } from './game-helpers';
 
 const SOUL_WARDEN_DECK = [
@@ -16,8 +17,19 @@ const SOUL_WARDEN_DECK = [
 ];
 
 describe('Triggered abilities', () => {
+	let gameId: string;
+	let aliceId: string;
+	let bobId: string;
+
+	afterAll(async () => {
+		if (gameId) await cleanupGame(gameId, [aliceId, bobId]);
+	});
+
 	it('Soul Warden gains life when creatures enter, Pridemate grows from life gain', async () => {
-		const { gameId, aliceId, bobId } = await setupGame(SOUL_WARDEN_DECK);
+		const setup = await setupGame(SOUL_WARDEN_DECK);
+		gameId = setup.gameId;
+		aliceId = setup.aliceId;
+		bobId = setup.bobId;
 
 		let creaturescast = 0;
 		const MAX_ITERATIONS = 1000;
@@ -48,40 +60,61 @@ describe('Triggered abilities', () => {
 				continue;
 			}
 
-			// Tap all available mana
+			// Tap one land and try to cast a 1-mana creature, then try 2-mana
 			const manaAbilities = findAllActions(actions, 'ACTIVATE_MANA_ABILITY');
-			if (manaAbilities.length > 0 && findAction(actions, 'CAST_SPELL')) {
-				for (const ma of manaAbilities) {
-					await submitAction(gameId, aliceId, {
-						activateManaAbility: {
-							objectId: ma.objectId!,
-							abilityIndex: 0,
-						},
-					});
-				}
+			const castSpell = findAction(actions, 'CAST_SPELL');
+			if (manaAbilities.length > 0 && castSpell) {
+				// Tap one land first
+				await submitAction(gameId, aliceId, {
+					activateManaAbility: {
+						objectId: manaAbilities[0].objectId!,
+						abilityIndex: 0,
+					},
+				});
 
-				// Now cast a creature
+				// Try casting with 1 WHITE
 				const afterMana = await getLegalActions(gameId, aliceId);
 				const cast = findAction(afterMana, 'CAST_SPELL');
 				if (cast) {
-					// Soul Warden / Savannah Lions = {W} → 1 symbol
-					// Ajani's Pridemate = {1}{W} → 2 symbols
-					// Pay each symbol with one WHITE
-					const numLands = manaAbilities.length;
-					const payment = Array.from({ length: Math.min(numLands, 2) }, () => ({
-						paidWith: ['WHITE' as const],
-					}));
 					try {
 						await submitAction(gameId, aliceId, {
 							castSpell: {
 								objectId: cast.objectId!,
-								manaPayment: payment,
+								manaPayment: [{ paidWith: ['WHITE' as const] }],
 								targets: [],
 							},
 						});
 						creaturescast++;
+						continue;
 					} catch {
-						// Mana payment might not match cost — just continue
+						// Might need 2 mana — tap another and try again
+						if (manaAbilities.length > 1) {
+							await submitAction(gameId, aliceId, {
+								activateManaAbility: {
+									objectId: manaAbilities[1].objectId!,
+									abilityIndex: 0,
+								},
+							});
+							const afterMana2 = await getLegalActions(gameId, aliceId);
+							const cast2 = findAction(afterMana2, 'CAST_SPELL');
+							if (cast2) {
+								try {
+									await submitAction(gameId, aliceId, {
+										castSpell: {
+											objectId: cast2.objectId!,
+											manaPayment: [
+												{ paidWith: ['WHITE' as const] },
+												{ paidWith: ['WHITE' as const] },
+											],
+											targets: [],
+										},
+									});
+									creaturescast++;
+								} catch {
+									// couldn't cast
+								}
+							}
+						}
 					}
 				}
 				continue;
@@ -106,6 +139,7 @@ describe('Triggered abilities', () => {
 
 		expect(creaturescast).toBeGreaterThanOrEqual(2);
 		expect(alice!.lifeTotal!).toBeGreaterThan(20);
+		expect(soulWarden).toBeDefined();
 
 		if (pridemate) {
 			expect(pridemate.effectivePower!).toBeGreaterThan(2);

@@ -22,17 +22,18 @@ describe('CreateGameForm', () => {
     expect(screen.getByRole('button', { name: /create game/i })).toBeInTheDocument();
   });
 
-  it('shows error when player name is empty', async () => {
+  it('shows error when game name is empty', async () => {
     const user = userEvent.setup();
     render(<CreateGameForm />);
     await user.click(screen.getByRole('button', { name: /create game/i }));
-    expect(screen.getByRole('alert')).toHaveTextContent('Player name is required');
+    expect(screen.getByRole('alert')).toHaveTextContent('Game name is required');
   });
 
   it('shows error when decklist is empty', async () => {
     const user = userEvent.setup();
     useLobbyStore.setState({ playerName: 'Test Player' });
     render(<CreateGameForm />);
+    await user.type(screen.getByLabelText('Game Name'), 'My Game');
     await user.click(screen.getByRole('button', { name: /create game/i }));
     expect(screen.getByRole('alert')).toHaveTextContent('Decklist must have at least one card');
   });
@@ -42,11 +43,13 @@ describe('CreateGameForm', () => {
     const createGame = vi.fn();
     useLobbyStore.setState({ playerName: 'Test Player', createGame });
     render(<CreateGameForm />);
+    await user.type(screen.getByLabelText('Game Name'), 'My Game');
     await user.type(screen.getByLabelText('Decklist'), '4 Lightning Bolt');
     await user.click(screen.getByRole('button', { name: /create game/i }));
     expect(createGame).toHaveBeenCalledWith(
       expect.anything(),
       'STANDARD',
+      'My Game',
       'Test Player',
       [{ count: 4, cardName: 'Lightning Bolt' }],
     );

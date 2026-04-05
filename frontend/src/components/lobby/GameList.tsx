@@ -20,8 +20,8 @@ export function GameList({ games, onJoin }: GameListProps) {
       {games.map((g) => (
         <div key={g.gameId} className="card" style={rowStyle}>
           <div>
-            <span style={{ fontWeight: 600 }}>{g.format}</span>
-            <span style={{ color: 'var(--color-text-muted)', marginLeft: '12px' }}>{g.playerCount} player(s) · {g.status}</span>
+            <span style={{ fontWeight: 600 }}>{g.name}</span>
+            <span style={{ color: 'var(--color-text-muted)', marginLeft: '12px', fontSize: '0.85rem' }}>{g.format} · {g.playerCount} player(s) · {g.status}</span>
           </div>
           {g.status === 'WAITING_FOR_PLAYERS' && (
             <Button variant="secondary" onClick={() => onJoin(g.gameId)}>Join</Button>

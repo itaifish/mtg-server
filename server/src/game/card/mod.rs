@@ -70,6 +70,8 @@ pub enum Supertype {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CardDefinition {
     pub name: String,
+    /// Scryfall oracle ID for card image lookup.
+    pub oracle_id: String,
     pub mana_cost: Option<ManaCost>,
     pub colors: Vec<Color>,
     pub card_types: Vec<CardType>,
