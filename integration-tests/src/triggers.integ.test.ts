@@ -23,6 +23,7 @@ describe('Triggered abilities', () => {
 		const MAX_ITERATIONS = 1000;
 
 		for (let i = 0; i < MAX_ITERATIONS; i++) {
+			if (i % 10 === 0) await new Promise((r) => setTimeout(r, 50));
 			const state = await getState(gameId);
 			if (state.status === 'FINISHED') break;
 			if (state.turnNumber! > 30) break;

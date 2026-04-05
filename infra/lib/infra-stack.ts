@@ -196,8 +196,8 @@ export class MtgServerStack extends cdk.Stack {
 			restApiName: `mtg-server-${stage}`,
 			deployOptions: {
 				stageName: stage,
-				throttlingRateLimit: prodLike ? 100 : 100,
-				throttlingBurstLimit: prodLike ? 200 : 200,
+				throttlingRateLimit: 500,
+				throttlingBurstLimit: 1000,
 			},
 		});
 
@@ -224,8 +224,8 @@ export class MtgServerStack extends cdk.Stack {
 		const usagePlan = this.api.addUsagePlan('MtgUsagePlan', {
 			name: `mtg-server-${stage}-usage-plan`,
 			throttle: {
-				rateLimit: prodLike ? 100 : 100,
-				burstLimit: prodLike ? 200 : 200,
+				rateLimit: 500,
+				burstLimit: 1000,
 			},
 			apiStages: [{ api: this.api, stage: this.api.deploymentStage }],
 		});

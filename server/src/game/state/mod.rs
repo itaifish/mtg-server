@@ -18,6 +18,7 @@ use super::zone::ZoneType;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameState {
     pub game_id: String,
+    pub name: String,
     pub status: GameStatus,
     pub players: Vec<Player>,
     /// The original turn order set at game start. Never changes.
@@ -155,7 +156,7 @@ pub enum GameStatus {
 
 impl GameState {
     /// Create a new game with the given players.
-    pub fn new(game_id: impl Into<String>, players: Vec<Player>, rng_seed: u64) -> Self {
+    pub fn new(game_id: impl Into<String>, name: impl Into<String>, players: Vec<Player>, rng_seed: u64) -> Self {
         let player_ids: Vec<PlayerId> = players.iter().map(|p| p.id.clone()).collect();
         let mut player_zones = HashMap::new();
         for player in &players {
@@ -170,6 +171,7 @@ impl GameState {
         }
         Self {
             game_id: game_id.into(),
+            name: name.into(),
             status: GameStatus::WaitingForPlayers,
             players,
             starting_turn_order: player_ids.clone(),

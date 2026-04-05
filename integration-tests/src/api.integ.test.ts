@@ -24,6 +24,7 @@ describe('API Gateway auth', () => {
 			client.send(
 				new CreateGameCommand({
 					format: 'STANDARD',
+					gameName: 'Test',
 					playerName: 'test',
 					decklist: SIMPLE_DECK,
 				}),
@@ -44,6 +45,7 @@ describe('Game lifecycle', () => {
 		const createResponse = await client.send(
 			new CreateGameCommand({
 				format: 'STANDARD',
+				gameName: 'Test',
 				playerName: 'Alice',
 				decklist: SIMPLE_DECK,
 			}),
@@ -63,6 +65,7 @@ describe('Game lifecycle', () => {
 		const createResponse = await client.send(
 			new CreateGameCommand({
 				format: 'STANDARD',
+				gameName: 'Test',
 				playerName: 'Alice',
 				decklist: SIMPLE_DECK,
 			}),

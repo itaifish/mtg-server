@@ -178,3 +178,22 @@ impl From<mtg_server_sdk::model::GameStatus> for crate::game::state::GameStatus 
         }
     }
 }
+
+impl From<crate::store::GameListItem> for mtg_server_sdk::model::GameSummary {
+    fn from(g: crate::store::GameListItem) -> Self {
+        Self {
+            game_id: g.game_id,
+            name: g.name,
+            status: match g.status.as_str() {
+                "WaitingForPlayers" => mtg_server_sdk::model::GameStatus::WaitingForPlayers,
+                "ChoosingPlayOrder" => mtg_server_sdk::model::GameStatus::ChoosingPlayOrder,
+                "ResolvingMulligans" => mtg_server_sdk::model::GameStatus::Mulligan,
+                "InProgress" => mtg_server_sdk::model::GameStatus::InProgress,
+                "Finished" => mtg_server_sdk::model::GameStatus::Finished,
+                _ => mtg_server_sdk::model::GameStatus::WaitingForPlayers,
+            },
+            player_count: g.player_count,
+            format: mtg_server_sdk::model::GameFormat::Standard,
+        }
+    }
+}

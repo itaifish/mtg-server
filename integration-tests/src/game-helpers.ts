@@ -50,7 +50,12 @@ export async function passPriority(
 
 export async function setupGame(decklist: DecklistEntry[]): Promise<GameSetup> {
 	const create = await client.send(
-		new CreateGameCommand({ format: 'STANDARD', playerName: 'Alice', decklist }),
+		new CreateGameCommand({
+			format: 'STANDARD',
+			gameName: 'Test Game',
+			playerName: 'Alice',
+			decklist,
+		}),
 	);
 	const join = await client.send(
 		new JoinGameCommand({ gameId: create.gameId!, playerName: 'Bob', decklist }),

@@ -18,7 +18,12 @@ const SIMPLE_DECK = [
 describe('ListGames', () => {
 	it('lists created games', async () => {
 		const create = await client.send(
-			new CreateGameCommand({ format: 'STANDARD', playerName: 'Alice', decklist: SIMPLE_DECK }),
+			new CreateGameCommand({
+				format: 'STANDARD',
+				gameName: 'Test Game',
+				playerName: 'Alice',
+				decklist: SIMPLE_DECK,
+			}),
 		);
 
 		const list = await client.send(new ListGamesCommand({}));
@@ -30,7 +35,12 @@ describe('ListGames', () => {
 
 	it('filters by status', async () => {
 		await client.send(
-			new CreateGameCommand({ format: 'STANDARD', playerName: 'Alice', decklist: SIMPLE_DECK }),
+			new CreateGameCommand({
+				format: 'STANDARD',
+				gameName: 'Test Game',
+				playerName: 'Alice',
+				decklist: SIMPLE_DECK,
+			}),
 		);
 
 		const waiting = await client.send(new ListGamesCommand({ status: 'WAITING_FOR_PLAYERS' }));
@@ -44,7 +54,12 @@ describe('ListGames', () => {
 describe('LeaveGame', () => {
 	it('player can leave a lobby', async () => {
 		const create = await client.send(
-			new CreateGameCommand({ format: 'STANDARD', playerName: 'Alice', decklist: SIMPLE_DECK }),
+			new CreateGameCommand({
+				format: 'STANDARD',
+				gameName: 'Test Game',
+				playerName: 'Alice',
+				decklist: SIMPLE_DECK,
+			}),
 		);
 		const join = await client.send(
 			new JoinGameCommand({ gameId: create.gameId!, playerName: 'Bob', decklist: SIMPLE_DECK }),
@@ -62,7 +77,12 @@ describe('LeaveGame', () => {
 
 	it('game is deleted when last player leaves', async () => {
 		const create = await client.send(
-			new CreateGameCommand({ format: 'STANDARD', playerName: 'Alice', decklist: SIMPLE_DECK }),
+			new CreateGameCommand({
+				format: 'STANDARD',
+				gameName: 'Test Game',
+				playerName: 'Alice',
+				decklist: SIMPLE_DECK,
+			}),
 		);
 
 		const result = await client.send(
@@ -77,7 +97,12 @@ describe('LeaveGame', () => {
 
 	it('cannot leave a game that has started', async () => {
 		const create = await client.send(
-			new CreateGameCommand({ format: 'STANDARD', playerName: 'Alice', decklist: SIMPLE_DECK }),
+			new CreateGameCommand({
+				format: 'STANDARD',
+				gameName: 'Test Game',
+				playerName: 'Alice',
+				decklist: SIMPLE_DECK,
+			}),
 		);
 		const join = await client.send(
 			new JoinGameCommand({ gameId: create.gameId!, playerName: 'Bob', decklist: SIMPLE_DECK }),

@@ -11,6 +11,7 @@ use crate::game::stack::{SpellTarget, StackEntry};
 fn setup_soul_warden_pridemate_game() -> GameState {
     let mut state = GameState::new(
         "test",
+        "Test Game",
         vec![Player::new("alice", "Alice"), Player::new("bob", "Bob")],
         42,
     );

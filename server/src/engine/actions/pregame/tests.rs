@@ -5,6 +5,7 @@ use crate::game::state::{GameState, GameStatus, Player};
 fn setup_game() -> GameState {
     let mut state = GameState::new(
         "test",
+        "Test Game",
         vec![Player::new("alice", "Alice"), Player::new("bob", "Bob")],
         42,
     );

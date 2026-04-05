@@ -34,6 +34,7 @@ pub async fn create_game(
 
     let mut state = GameState::new(
         game_id.clone(),
+        input.game_name.clone(),
         vec![Player::new(player_id.clone(), input.player_name.clone())],
         rand::random(),
     );
@@ -105,22 +106,32 @@ pub async fn leave_game(
     let mut state = get_game::<LeaveGameError>(&store, &input.game_id).await?;
 
     if state.status != GameStatus::WaitingForPlayers {
-        return Err(LeaveGameError::ServerError(mtg_server_sdk::error::ServerError {
-            message: "can only leave during lobby phase".into(),
-        }));
+        return Err(LeaveGameError::ServerError(
+            mtg_server_sdk::error::ServerError {
+                message: "can only leave during lobby phase".into(),
+            },
+        ));
     }
 
     state.players.retain(|p| p.id != input.player_id);
     state.living_turn_order.retain(|id| id != &input.player_id);
-    state.starting_turn_order.retain(|id| id != &input.player_id);
+    state
+        .starting_turn_order
+        .retain(|id| id != &input.player_id);
     state.player_zones.remove(&input.player_id);
 
     let remaining = state.players.len() as i32;
 
     if remaining == 0 {
-        store.delete(&input.game_id).await.map_err(server_err::<LeaveGameError>)?;
+        store
+            .delete(&input.game_id)
+            .await
+            .map_err(server_err::<LeaveGameError>)?;
     } else {
-        store.update(state).await.map_err(server_err::<LeaveGameError>)?;
+        store
+            .update(state)
+            .await
+            .map_err(server_err::<LeaveGameError>)?;
     }
 
     tracing::info!(game_id = %input.game_id, player_id = %input.player_id, "player left");
@@ -135,19 +146,18 @@ pub async fn list_games(
     Extension(store): Extension<Arc<GameStore>>,
 ) -> Result<output::ListGamesOutput, ListGamesError> {
     let status_filter: Option<GameStatus> = input.status.map(Into::into);
-    let games = store.list(status_filter).await.map_err(server_err::<ListGamesError>)?;
+    let limit = input.limit.unwrap_or(20) as i64;
+    let offset = input.offset.unwrap_or(0) as i64;
+    let search = input.search.as_deref();
 
-    let summaries = games
-        .iter()
-        .map(|g| mtg_server_sdk::model::GameSummary {
-            game_id: g.game_id.clone(),
-            status: g.status.into(),
-            player_count: g.players.len() as i32,
-            format: mtg_server_sdk::model::GameFormat::Standard, // TODO: store format on GameState
-        })
-        .collect();
+    let items = store
+        .list(status_filter, search, limit, offset)
+        .await
+        .map_err(server_err::<ListGamesError>)?;
 
-    Ok(output::ListGamesOutput { games: summaries })
+    Ok(output::ListGamesOutput {
+        games: items.into_iter().map(Into::into).collect(),
+    })
 }
 
 pub async fn set_ready(

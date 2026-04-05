@@ -4,7 +4,7 @@ use crate::game::event::PendingTrigger;
 use crate::game::state::{GameState, Player};
 
 fn two_player_game() -> GameState {
-    let mut state = GameState::new("test", vec![Player::new("alice", "Alice"), Player::new("bob", "Bob")], 42);
+    let mut state = GameState::new("test", "Test Game", vec![Player::new("alice", "Alice"), Player::new("bob", "Bob")], 42);
     state.status = crate::game::state::GameStatus::InProgress;
     state
 }

@@ -46,7 +46,7 @@ mod tests {
     use crate::game::state::Player;
 
     fn test_game() -> GameState {
-        GameState::new("test", vec![Player::new("alice", "Alice")], 42)
+        GameState::new("test", "Test Game", vec![Player::new("alice", "Alice")], 42)
     }
 
     #[test]
@@ -82,6 +82,7 @@ mod tests {
     fn different_players_get_different_shuffles() {
         let mut state = GameState::new(
             "test",
+            "Test Game",
             vec![Player::new("alice", "Alice"), Player::new("bob", "Bob")],
             42,
         );
