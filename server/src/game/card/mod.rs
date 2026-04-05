@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use super::ability::Ability;
+use super::ability::{Ability, AbilityEffect};
 use super::counter::{CounterEntry, CounterType, PtModifier};
+use super::effect::Effect;
 use super::keyword::Keyword;
 use super::mana::{Color, ManaCost};
 
@@ -86,6 +87,8 @@ pub struct CardDefinition {
     /// CR 702 — Keyword abilities printed on the card.
     /// Map of keyword → count (e.g., cascade×2).
     pub keywords: HashMap<Keyword, u32>,
+    /// Effect when this spell resolves (instants/sorceries only).
+    pub spell_effect: Option<Effect>,
 }
 
 /// A card instance in a game — a specific object with a definition and

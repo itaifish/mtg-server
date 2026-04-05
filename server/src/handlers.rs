@@ -173,6 +173,47 @@ pub async fn submit_action(
         ActionInput::PlayLand(play) => {
             engine::actions::play_land(&mut state, &input.player_id, play.object_id as u64)?;
         }
+        ActionInput::CastSpell(cast) => {
+            let payments: Vec<_> = cast.mana_payment.iter().map(Into::into).collect();
+            let targets: Vec<_> = cast
+                .targets
+                .as_deref()
+                .unwrap_or_default()
+                .iter()
+                .map(Into::into)
+                .collect();
+            engine::actions::cast_spell(
+                &mut state,
+                &input.player_id,
+                cast.object_id as u64,
+                &payments,
+                targets,
+            )?;
+        }
+        ActionInput::ActivateManaAbility(act) => {
+            engine::actions::activate_mana_ability(
+                &mut state,
+                &input.player_id,
+                act.object_id as u64,
+                act.ability_index as usize,
+            )?;
+        }
+        ActionInput::DeclareAttackers(decl) => {
+            let attackers = decl.attackers.iter().map(Into::into).collect();
+            engine::actions::combat::declare_attackers(
+                &mut state,
+                &input.player_id,
+                attackers,
+            )?;
+        }
+        ActionInput::DeclareBlockers(decl) => {
+            let blockers = decl.blockers.iter().map(Into::into).collect();
+            engine::actions::combat::declare_blockers(
+                &mut state,
+                &input.player_id,
+                blockers,
+            )?;
+        }
         ActionInput::ChooseFirstPlayer(choose) => {
             engine::actions::pregame::choose_first_player(
                 &mut state,

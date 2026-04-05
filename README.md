@@ -55,6 +55,12 @@ To build without running:
 cargo build
 ```
 
+To format the server code (excludes the generated SDK):
+
+```bash
+cargo fmt -p mtg-server
+```
+
 ## Project Structure
 
 ```

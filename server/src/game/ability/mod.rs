@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::card::ObjectId;
+use super::effect::Effect;
 use super::mana::{ManaProduction, ManaType};
 
 /// An ability on a card or permanent.
@@ -35,18 +36,12 @@ pub enum AbilityCost {
 /// The effect produced by an ability.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AbilityEffect {
-    /// Add mana to the controller's mana pool.
+    /// Mana abilities produce mana with optional restrictions.
+    /// Separate from Effect because mana abilities don't use the stack
+    /// and have production-specific data (restrictions, etc.).
     AddMana(Vec<ManaProduction>),
-    /// Deal damage to a target.
-    DealDamage { amount: u32 },
-    /// Draw cards.
-    DrawCards { count: u32 },
-    /// Gain life.
-    GainLife { amount: u32 },
-    /// A named effect resolved by the engine via a registered handler function.
-    /// Used for complex or card-specific effects that can't be expressed as
-    /// simple data (e.g., "destroy target creature", "search your library").
-    Custom { name: String },
+    /// All other effects use the composable Effect DSL.
+    Effect(Effect),
 }
 
 /// CR 305.6 — Basic land types have intrinsic mana abilities.

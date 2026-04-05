@@ -3,6 +3,7 @@ use std::sync::LazyLock;
 
 use crate::game::ability::{Ability, AbilityCost, AbilityEffect};
 use crate::game::card::{CardDefinition, CardType, Supertype};
+use crate::game::effect::{Effect, PlayerSpec, TargetSpec, Value};
 use crate::game::mana::{Color, ManaCost, ManaProduction, ManaSymbol, ManaType};
 
 // Mana symbol shorthands
@@ -125,6 +126,35 @@ static REGISTRY: LazyLock<HashMap<String, CardDefinition>> = LazyLock::new(|| {
             4,
             &["Wurm"],
         ),
+        // --- Instants ---
+        instant(
+            "Lightning Bolt",
+            cost(&[R]),
+            &[Color::Red],
+            Effect::DealDamage {
+                amount: Value::Constant(3),
+                target: TargetSpec::Chosen(0),
+            },
+        ),
+        instant(
+            "Healing Salve",
+            cost(&[W]),
+            &[Color::White],
+            Effect::GainLife {
+                amount: Value::Constant(3),
+                player: PlayerSpec::TargetPlayer(0),
+            },
+        ),
+        // --- Sorceries ---
+        sorcery(
+            "Divination",
+            cost(&[M2, U]),
+            &[Color::Blue],
+            Effect::DrawCards {
+                count: Value::Constant(2),
+                player: PlayerSpec::Controller,
+            },
+        ),
     ];
 
     cards.into_iter().map(|c| (c.name.clone(), c)).collect()
@@ -166,6 +196,28 @@ fn vanilla(
         subtypes: subtypes.iter().map(|s| s.to_string()).collect(),
         power: Some(power),
         toughness: Some(toughness),
+        ..Default::default()
+    }
+}
+
+fn instant(name: &str, mana_cost: ManaCost, colors: &[Color], effect: Effect) -> CardDefinition {
+    CardDefinition {
+        name: name.into(),
+        mana_cost: Some(mana_cost),
+        colors: colors.to_vec(),
+        card_types: vec![CardType::Instant],
+        spell_effect: Some(effect),
+        ..Default::default()
+    }
+}
+
+fn sorcery(name: &str, mana_cost: ManaCost, colors: &[Color], effect: Effect) -> CardDefinition {
+    CardDefinition {
+        name: name.into(),
+        mana_cost: Some(mana_cost),
+        colors: colors.to_vec(),
+        card_types: vec![CardType::Sorcery],
+        spell_effect: Some(effect),
         ..Default::default()
     }
 }

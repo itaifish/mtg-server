@@ -78,6 +78,10 @@ structure SubmitActionInput {
 union ActionInput {
     passPriority: PassPriorityAction
     playLand: PlayLandAction
+    castSpell: CastSpellAction
+    activateManaAbility: ActivateManaAbilityAction
+    declareAttackers: DeclareAttackersAction
+    declareBlockers: DeclareBlockersAction
     chooseFirstPlayer: ChooseFirstPlayerAction
     keepHand: KeepHandAction
     mulligan: MulliganAction
@@ -89,6 +93,118 @@ structure PassPriorityAction {}
 structure PlayLandAction {
     @required
     objectId: Long
+}
+
+/// CR 601 — Cast a spell from hand, paying its mana cost.
+structure CastSpellAction {
+    @required
+    objectId: Long
+
+    /// How each mana symbol in the cost is being paid.
+    @required
+    manaPayment: ManaPaymentList
+
+    /// CR 601.2c — Targets chosen for the spell.
+    targets: TargetList
+
+    /// CR 601.2b — Modal choices (e.g., "choose one" / "choose two").
+    modeChoices: IntegerList
+}
+
+list ManaPaymentList {
+    member: SymbolPaymentEntry
+}
+
+/// How a single mana symbol is being paid.
+structure SymbolPaymentEntry {
+    /// The mana types from the pool used to pay this symbol.
+    @required
+    paidWith: ManaTypeList
+}
+
+list ManaTypeList {
+    member: ManaTypeEnum
+}
+
+enum ManaTypeEnum {
+    WHITE
+    BLUE
+    BLACK
+    RED
+    GREEN
+    COLORLESS
+}
+
+/// A target for a spell or ability.
+union SpellTarget {
+    player: PlayerTarget
+    object: ObjectTarget
+}
+
+structure PlayerTarget {
+    @required
+    playerId: String
+}
+
+structure ObjectTarget {
+    @required
+    objectId: Long
+}
+
+list TargetList {
+    member: SpellTarget
+}
+
+list IntegerList {
+    member: Integer
+}
+
+/// Activate a mana ability on a permanent.
+structure ActivateManaAbilityAction {
+    @required
+    objectId: Long
+
+    @required
+    abilityIndex: Integer
+}
+
+/// CR 508 — Declare which creatures are attacking and what they're attacking.
+structure DeclareAttackersAction {
+    @required
+    attackers: AttackerList
+}
+
+list AttackerList {
+    member: AttackerEntry
+}
+
+structure AttackerEntry {
+    @required
+    objectId: Long
+
+    /// The player being attacked.
+    /// TODO: support attacking planeswalkers and battles
+    @required
+    targetPlayerId: String
+}
+
+/// CR 509 — Declare which creatures are blocking and what they're blocking.
+structure DeclareBlockersAction {
+    @required
+    blockers: BlockerList
+}
+
+list BlockerList {
+    member: BlockerEntry
+}
+
+structure BlockerEntry {
+    @required
+    objectId: Long
+
+    /// The attacker being blocked.
+    @required
+    blockingId: Long
 }
 
 /// CR 103.1 — The chosen player picks who goes first.

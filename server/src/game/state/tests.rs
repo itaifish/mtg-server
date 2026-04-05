@@ -1,8 +1,9 @@
 use super::tests_helper::two_player_game;
-use super::*;
 use crate::game::card::{CardDefinition, CardInstance, CardType};
 use crate::game::mana::Color;
 use crate::game::zone::ZoneType;
+
+use crate::game::stack::{SpellTarget, StackEntry};
 
 fn test_card(id: u64, owner: &str) -> CardInstance {
     CardInstance::new(
@@ -83,15 +84,20 @@ fn find_zone_returns_none_for_missing_object() {
 }
 
 #[test]
-fn move_object_to_stack() {
+fn push_to_stack_moves_from_hand() {
     let mut gs = two_player_game();
     let card = test_card(1, "alice");
     gs.objects.insert(1, card);
     gs.player_zones.get_mut("alice").unwrap().hand.insert(1);
 
-    gs.move_object(1, ZoneType::Stack);
+    gs.push_to_stack(StackEntry {
+        object_id: 1,
+        controller: "alice".into(),
+        targets: vec![],
+        mode_choices: vec![],
+    });
 
-    assert_eq!(gs.stack, vec![1]);
+    assert!(gs.stack.contains(&1));
     assert!(!gs.player_zones["alice"].hand.contains(&1));
 }
 

@@ -100,7 +100,7 @@ fn cast_creature_with_mana() {
             paid_with: vec![ManaType::Green],
         },
     ];
-    cast_spell(&mut state, "alice", 20, &payment).unwrap();
+    cast_spell(&mut state, "alice", 20, &payment, vec![]).unwrap();
 
     // Spell is on the stack, not yet on battlefield
     assert!(state.stack.contains(&20));
@@ -140,7 +140,7 @@ fn cast_spell_fails_without_mana() {
             paid_with: vec![ManaType::Green],
         },
     ];
-    let result = cast_spell(&mut state, "alice", 20, &payment);
+    let result = cast_spell(&mut state, "alice", 20, &payment, vec![]);
     assert!(result.is_err());
     // Card should still be in hand
     assert!(state.player_zones["alice"].hand.contains(&20));

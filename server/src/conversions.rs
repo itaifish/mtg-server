@@ -63,3 +63,57 @@ impl From<&mtg_server_sdk::model::DecklistEntry> for crate::deck::loader::DeckEn
         }
     }
 }
+
+impl From<&mtg_server_sdk::model::ManaTypeEnum> for crate::game::mana::ManaType {
+    fn from(m: &mtg_server_sdk::model::ManaTypeEnum) -> Self {
+        match m {
+            mtg_server_sdk::model::ManaTypeEnum::White => Self::White,
+            mtg_server_sdk::model::ManaTypeEnum::Blue => Self::Blue,
+            mtg_server_sdk::model::ManaTypeEnum::Black => Self::Black,
+            mtg_server_sdk::model::ManaTypeEnum::Red => Self::Red,
+            mtg_server_sdk::model::ManaTypeEnum::Green => Self::Green,
+            mtg_server_sdk::model::ManaTypeEnum::Colorless => Self::Colorless,
+            _ => Self::Colorless,
+        }
+    }
+}
+
+impl From<&mtg_server_sdk::model::SymbolPaymentEntry> for crate::game::mana::SymbolPayment {
+    fn from(e: &mtg_server_sdk::model::SymbolPaymentEntry) -> Self {
+        Self {
+            paid_with: e.paid_with.iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl From<&mtg_server_sdk::model::AttackerEntry> for crate::game::state::AttackerInfo {
+    fn from(e: &mtg_server_sdk::model::AttackerEntry) -> Self {
+        Self {
+            object_id: e.object_id as u64,
+            target: crate::game::state::AttackTarget::Player(e.target_player_id.clone()),
+        }
+    }
+}
+
+impl From<&mtg_server_sdk::model::BlockerEntry> for crate::game::state::BlockerInfo {
+    fn from(e: &mtg_server_sdk::model::BlockerEntry) -> Self {
+        Self {
+            object_id: e.object_id as u64,
+            blocking: e.blocking_id as u64,
+        }
+    }
+}
+
+impl From<&mtg_server_sdk::model::SpellTarget> for crate::game::stack::SpellTarget {
+    fn from(t: &mtg_server_sdk::model::SpellTarget) -> Self {
+        match t {
+            mtg_server_sdk::model::SpellTarget::Player(p) => {
+                Self::Player(p.player_id.clone())
+            }
+            mtg_server_sdk::model::SpellTarget::Object(o) => {
+                Self::Object(o.object_id as u64)
+            }
+            _ => Self::Player("unknown".into()),
+        }
+    }
+}

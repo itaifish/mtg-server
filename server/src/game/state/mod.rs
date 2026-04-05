@@ -10,6 +10,7 @@ use crate::game::phases_and_steps::{BeginningStep, EndingStep};
 use super::card::{CardInstance, ObjectId, PlayerId};
 use super::mana::{ManaPool, ManaRestriction, ManaType};
 use super::phases_and_steps::Phase;
+use super::stack::{Stack, StackEntry};
 use super::zone::ZoneType;
 
 /// Top-level game state. Contains all information needed to represent a game
@@ -37,8 +38,8 @@ pub struct GameState {
     pub player_zones: HashMap<PlayerId, PlayerZones>,
     /// CR 400.5 — Battlefield is unordered. Shared by all players.
     pub battlefield: HashSet<ObjectId>,
-    /// CR 400.5 — Stack is ordered (top = last element). Shared by all players.
-    pub stack: Vec<ObjectId>,
+    /// CR 405 — The stack.
+    pub stack: Stack,
     /// CR 400.5 — Exile is unordered. Shared by all players.
     pub exile: HashSet<ObjectId>,
     /// CR 400.5 — Command zone is unordered. Shared by all players.
@@ -177,7 +178,7 @@ impl GameState {
             phase: Phase::Beginning(BeginningStep::Untap),
             player_zones,
             battlefield: HashSet::new(),
-            stack: vec![],
+            stack: Stack::default(),
             exile: HashSet::new(),
             command: HashSet::new(),
             objects: HashMap::new(),
@@ -269,7 +270,9 @@ impl GameState {
             ZoneType::Battlefield => {
                 self.battlefield.insert(object_id);
             }
-            ZoneType::Stack => self.stack.push(object_id),
+            ZoneType::Stack => {
+                panic!("use push_to_stack() instead of move_object for stack")
+            }
             ZoneType::Exile => {
                 self.exile.insert(object_id);
             }
@@ -300,7 +303,7 @@ impl GameState {
 
     fn remove_from_current_zone(&mut self, object_id: ObjectId) {
         self.battlefield.remove(&object_id);
-        self.stack.retain(|&id| id != object_id);
+        self.stack.remove(&object_id);
         self.exile.remove(&object_id);
         self.command.remove(&object_id);
         for zones in self.player_zones.values_mut() {
@@ -530,6 +533,13 @@ impl GameState {
     /// TODO: triggered abilities (e.g., Blood Artist)
     pub fn send_to_graveyard(&mut self, object_id: ObjectId) {
         self.move_object(object_id, ZoneType::Graveyard);
+    }
+
+    /// Put a spell or ability on the stack with its targets and controller.
+    pub fn push_to_stack(&mut self, entry: StackEntry) {
+        let object_id = entry.object_id;
+        self.remove_from_current_zone(object_id);
+        self.stack.push(entry);
     }
 
     /// Get all object IDs on the battlefield with a given card type.

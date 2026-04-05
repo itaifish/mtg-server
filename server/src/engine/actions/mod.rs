@@ -1,7 +1,9 @@
 use crate::game::ability::{all_abilities, AbilityCost, AbilityEffect};
 use crate::game::card::CardType;
+use crate::game::effect::{Effect, PlayerSpec, TargetSpec, Value};
 use crate::game::mana::SymbolPayment;
 use crate::game::phases_and_steps::Phase;
+use crate::game::stack::{SpellTarget, StackEntry};
 use crate::game::state::{GameState, GameStatus};
 use crate::game::zone::ZoneType;
 
@@ -59,26 +61,131 @@ pub fn pass_priority(state: &mut GameState, player_id: &str) -> Result<(), Actio
 /// Resolve the top item on the stack. CR 608
 /// TODO: support abilities on the stack (not just spells)
 fn resolve_top_of_stack(state: &mut GameState) -> Result<(), ActionError> {
-    let object_id = state
+    let entry = state
         .stack
         .pop()
         .ok_or_else(|| ActionError::Illegal("stack is empty".into()))?;
 
     let card = state
         .objects
-        .get(&object_id)
+        .get(&entry.object_id)
         .ok_or_else(|| ActionError::Illegal("object not found".into()))?;
 
     let card_types = card.definition.card_types.clone();
+    let spell_effect = card.definition.spell_effect.clone();
 
     if card_types.iter().any(|t| t.is_permanent()) {
-        state.move_object(object_id, ZoneType::Battlefield);
+        state.move_object(entry.object_id, ZoneType::Battlefield);
     } else {
-        // TODO: resolve the spell's effect before sending to graveyard
-        state.send_to_graveyard(object_id);
+        if let Some(effect) = spell_effect {
+            resolve_effect(state, &effect, &entry)?;
+        }
+        state.send_to_graveyard(entry.object_id);
     }
 
     Ok(())
+}
+
+/// Resolve an Effect DSL node against the game state.
+fn resolve_effect(
+    state: &mut GameState,
+    effect: &Effect,
+    entry: &StackEntry,
+) -> Result<(), ActionError> {
+    match effect {
+        Effect::DealDamage { amount, target } => {
+            let amount = eval_value(state, amount);
+            for target in get_referenced_targets(state, target, entry) {
+                match target {
+                    SpellTarget::Player(pid) => state.deal_damage_to_player(&pid, amount),
+                    SpellTarget::Object(oid) => {
+                        if let Some(card) = state.objects.get_mut(&oid) {
+                            card.damage_marked += amount;
+                        }
+                    }
+                }
+            }
+        }
+        Effect::GainLife { amount, player } => {
+            let amount = eval_value(state, amount);
+            for pid in get_referenced_players(state, player, entry) {
+                state.gain_life(&pid, amount);
+            }
+        }
+        // CR 119.3a — Loss of life is not damage.
+        Effect::LoseLife { amount, player } => {
+            let amount = eval_value(state, amount);
+            for pid in get_referenced_players(state, player, entry) {
+                if let Some(p) = state.get_player_mut(&pid) {
+                    p.life_total -= amount as i32;
+                }
+            }
+        }
+        Effect::DrawCards { count, player } => {
+            let count = eval_value(state, count);
+            for pid in get_referenced_players(state, player, entry) {
+                for _ in 0..count {
+                    state.draw_card(&pid);
+                }
+            }
+        }
+        Effect::Destroy { target } => {
+            for target in get_referenced_targets(state, target, entry) {
+                if let SpellTarget::Object(oid) = target {
+                    state.send_to_graveyard(oid);
+                }
+            }
+        }
+        Effect::Sequence(effects) => {
+            for e in effects {
+                resolve_effect(state, e, entry)?;
+            }
+        }
+        Effect::Custom { name } => {
+            tracing::warn!(%name, "unimplemented custom effect");
+        }
+        _ => {
+            // TODO: implement remaining effect types
+        }
+    }
+    Ok(())
+}
+
+fn eval_value(_state: &GameState, value: &Value) -> u32 {
+    match value {
+        Value::Constant(n) => *n,
+        Value::XValue => 0,           // TODO: track X from mana payment
+        Value::Count(_selector) => 0, // TODO: count matching objects
+    }
+}
+
+fn get_referenced_targets(
+    _state: &GameState,
+    spec: &TargetSpec,
+    entry: &StackEntry,
+) -> Vec<SpellTarget> {
+    match spec {
+        TargetSpec::Chosen(idx) => entry.targets.get(*idx).cloned().into_iter().collect(),
+        TargetSpec::Source => vec![SpellTarget::Object(entry.object_id)],
+        TargetSpec::Each(_selector) => vec![], // TODO: resolve selector
+    }
+}
+
+fn get_referenced_players(state: &GameState, spec: &PlayerSpec, entry: &StackEntry) -> Vec<String> {
+    match spec {
+        PlayerSpec::Controller => vec![entry.controller.clone()],
+        PlayerSpec::TargetPlayer(idx) => match entry.targets.get(*idx) {
+            Some(SpellTarget::Player(pid)) => vec![pid.clone()],
+            _ => vec![],
+        },
+        PlayerSpec::Opponent => state
+            .living_turn_order
+            .iter()
+            .filter(|id| id.as_str() != entry.controller)
+            .cloned()
+            .collect(),
+        PlayerSpec::Each => state.living_turn_order.clone(),
+    }
 }
 
 /// Activate a mana ability on a permanent. CR 605 — Mana abilities don't
@@ -187,6 +294,7 @@ pub fn cast_spell(
     player_id: &str,
     object_id: u64,
     mana_payment: &[SymbolPayment],
+    targets: Vec<SpellTarget>,
 ) -> Result<(), ActionError> {
     validate_player(state, player_id)?;
 
@@ -229,8 +337,13 @@ pub fn cast_spell(
         .try_pay(&mana_cost, mana_payment)
         .map_err(|e| ActionError::Illegal(e.to_string()))?;
 
-    // CR 601.2a — Move the spell to the stack
-    state.move_object(object_id, ZoneType::Stack);
+    // CR 601.2a — Put the spell on the stack
+    state.push_to_stack(StackEntry {
+        object_id,
+        controller: player_id.to_string(),
+        targets,
+        mode_choices: vec![],
+    });
 
     // Caster gets priority back after casting. CR 117.3b
     state.reset_priority_to_active();
