@@ -76,6 +76,36 @@ A Rust-based server that emulates the rules of Magic: The Gathering, using the c
 - **Storage**: Scryfall JSONB in Postgres for card data/images. Runtime `CardDefinition` built from registry at game start.
 - **Future: Rules text parser**: An ANTLR4 formal grammar for MTG rules text exists (https://github.com/Soothsilver/mtg-grammar, Unlicense). Magic Arena uses a similar parser internally to generate code from oracle text. The grammar covers keywords, activated/triggered/static abilities, modal spells, targeting, zones, and more (~400 lines). Plan: port to Rust (via `pest` PEG parser) as a batch tool that parses Scryfall oracle text → `Effect` DSL nodes. Would auto-generate ~80% of card registry entries. Remaining ~20% hand-authored or custom. Not blocking for initial playable game.
 
+### D11: Frontend — Tauri + React + react-three-fiber
+
+- **Stack**: Tauri v2 (cross-platform desktop/web shell) + React + react-three-fiber (R3F) for 3D game rendering
+- **Why Three.js/R3F over 2D engines**: Rich animations are a priority — 3D cards with thickness/foil/reflections, table surface with lighting and shadows, camera swoops on big spells, particle effects (fire for damage, sparkles for healing), physically sliding cards between zones. R3F wraps Three.js in React's component model so state management stays unified.
+- **Key libraries**:
+  - `react-three-fiber` — React renderer for Three.js
+  - `@react-three/drei` — Helpers: Image (card textures from S3), Text, Environment (lighting), Float (hover animations)
+  - `@react-three/postprocessing` — Bloom, depth of field, vignette
+  - `react-spring` or `@react-three/rapier` — Physics-based animations
+  - `zustand` — State management (game state, UI state)
+- **Architecture**:
+  - React owns: lobby, deckbuilder, menus, chat, settings
+  - R3F owns: game board (3D scene with cards, zones, stack, particles)
+  - No framework bridging — R3F components are React components
+  - Orthographic camera option for 2D-feeling layout; perspective camera for immersive 3D
+- **Communication**:
+  - **WebSocket** for server → client push: priority notifications, game state updates, opponent actions. Enables smooth real-time feel for both players and spectators.
+  - **Smithy REST API** (existing TS client) for client → server actions: submit actions, create/join games, etc.
+  - Clean split: WS for reads/notifications, REST for writes/commands.
+- **Card rendering**: S3 card images loaded as Three.js textures. Preloaded during deck loading screen.
+- **Spectator mode**: Same R3F renderer with server-side hidden information filtering. Spectators receive WS updates with appropriate perspective.
+- **Visuals wishlist**:
+  - Cards as 3D objects with thickness, foil/holographic shader effects
+  - Table surface with dynamic lighting and card shadows
+  - Camera animations on spell resolution, combat, game-ending moments
+  - Particle systems per damage type / mana color
+  - Stack visualized as physically stacked floating cards
+  - Graveyard as a fannable pile
+  - Hand cards that fan out and highlight on hover
+
 ## Future Features (Out of Scope)
 
 ### F1: Loop Declaration System
