@@ -13,13 +13,13 @@ const SIMPLE_DECK = [
 
 describe('API Gateway auth', () => {
 	it('/ping succeeds without an API key', async () => {
-		const client = createClient();
+		const client = createClient({ withApiKey: false });
 		const response = await client.send(new PingCommand({}));
 		expect(response.status).toBeDefined();
 	});
 
 	(isLocal ? it.skip : it)('protected endpoint returns 403 without an API key', async () => {
-		const client = createClient();
+		const client = createClient({ withApiKey: false });
 		await expect(
 			client.send(
 				new CreateGameCommand({
