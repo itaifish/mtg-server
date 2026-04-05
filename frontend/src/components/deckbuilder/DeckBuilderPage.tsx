@@ -72,7 +72,7 @@ export function DeckBuilderPage() {
   ];
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div className="page-container" style={{ maxWidth: '600px', margin: '0 auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <h1>Deck Builder</h1>
       <p style={{ color: 'var(--color-text-muted)' }}>Enter one card per line: "4 Lightning Bolt"</p>
       <Input label="Deck Name" value={deckName} onChange={(e) => setDeckName(e.target.value)} placeholder="My Deck" />
@@ -88,7 +88,7 @@ export function DeckBuilderPage() {
         onChange={(e) => setDeckText(e.target.value)}
         rows={16}
         placeholder={'4 Lightning Bolt\n20 Mountain'}
-        style={{ padding: '12px', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)', color: 'var(--color-text)', resize: 'vertical', fontFamily: 'monospace' }}
+        style={{ padding: '12px', borderRadius: 'var(--radius)', border: 'var(--border-width) var(--border-style) var(--color-border)', background: 'var(--color-bg-secondary)', color: 'var(--color-text)', resize: 'vertical', fontFamily: 'monospace' }}
       />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span>Cards: {countCards(deckText)}</span>

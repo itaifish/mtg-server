@@ -1,9 +1,10 @@
+use crate::engine::triggers::process_pending_triggers;
 use crate::game::ability::{all_abilities, AbilityCost, AbilityEffect};
 use crate::game::card::CardType;
-use crate::game::effect::{Effect, PlayerSpec, TargetSpec, Value};
+use crate::game::effect::{CounterSpec, Effect, PlayerSpec, TargetSpec, Value};
 use crate::game::mana::SymbolPayment;
 use crate::game::phases_and_steps::Phase;
-use crate::game::stack::{SpellTarget, StackEntry};
+use crate::game::stack::{SpellTarget, StackEntry, StackEntryKind};
 use crate::game::state::{GameState, GameStatus};
 use crate::game::zone::ZoneType;
 
@@ -11,6 +12,12 @@ use super::state_based;
 
 pub mod combat;
 pub mod pregame;
+
+/// Run state-based actions and process any pending triggers.
+fn check_state_and_triggers(state: &mut GameState) {
+    state_based::check(state);
+    process_pending_triggers(state);
+}
 
 /// Errors from action execution.
 #[derive(Debug, thiserror::Error)]
@@ -54,7 +61,7 @@ pub fn pass_priority(state: &mut GameState, player_id: &str) -> Result<(), Actio
         }
     }
 
-    state_based::check(state);
+    check_state_and_triggers(state);
     Ok(())
 }
 
@@ -66,21 +73,30 @@ fn resolve_top_of_stack(state: &mut GameState) -> Result<(), ActionError> {
         .pop()
         .ok_or_else(|| ActionError::Illegal("stack is empty".into()))?;
 
-    let card = state
-        .objects
-        .get(&entry.object_id)
-        .ok_or_else(|| ActionError::Illegal("object not found".into()))?;
+    match &entry.kind {
+        StackEntryKind::Spell { object_id } => {
+            let object_id = *object_id;
+            let card = state
+                .objects
+                .get(&object_id)
+                .ok_or_else(|| ActionError::Illegal("object not found".into()))?;
 
-    let card_types = card.definition.card_types.clone();
-    let spell_effect = card.definition.spell_effect.clone();
+            let card_types = card.definition.card_types.clone();
+            let spell_effect = card.definition.spell_effect.clone();
 
-    if card_types.iter().any(|t| t.is_permanent()) {
-        state.move_object(entry.object_id, ZoneType::Battlefield);
-    } else {
-        if let Some(effect) = spell_effect {
+            if card_types.iter().any(|t| t.is_permanent()) {
+                state.move_object(object_id, ZoneType::Battlefield);
+            } else {
+                if let Some(effect) = spell_effect {
+                    resolve_effect(state, &effect, &entry)?;
+                }
+                state.send_to_graveyard(object_id);
+            }
+        }
+        StackEntryKind::Ability { effect, .. } => {
+            let effect = effect.clone();
             resolve_effect(state, &effect, &entry)?;
         }
-        state.send_to_graveyard(entry.object_id);
     }
 
     Ok(())
@@ -136,6 +152,42 @@ fn resolve_effect(
                 }
             }
         }
+        Effect::AddCounters {
+            target,
+            counter,
+            count,
+        } => {
+            let count = eval_value(state, count);
+            for target in get_referenced_targets(state, target, entry) {
+                if let SpellTarget::Object(oid) = target {
+                    if let Some(card) = state.objects.get_mut(&oid) {
+                        let counter_type = match counter {
+                            CounterSpec::PlusOnePlusOne => {
+                                crate::game::counter::CounterType::PowerToughness(
+                                    crate::game::counter::PtModifier {
+                                        power: 1,
+                                        toughness: 1,
+                                    },
+                                )
+                            }
+                            CounterSpec::MinusOneMinusOne => {
+                                crate::game::counter::CounterType::PowerToughness(
+                                    crate::game::counter::PtModifier {
+                                        power: -1,
+                                        toughness: -1,
+                                    },
+                                )
+                            }
+                            CounterSpec::Loyalty => crate::game::counter::CounterType::Loyalty,
+                            CounterSpec::Named(name) => {
+                                crate::game::counter::CounterType::Named(name.clone())
+                            }
+                        };
+                        card.add_counters(counter_type, count);
+                    }
+                }
+            }
+        }
         Effect::Sequence(effects) => {
             for e in effects {
                 resolve_effect(state, e, entry)?;
@@ -166,7 +218,13 @@ fn get_referenced_targets(
 ) -> Vec<SpellTarget> {
     match spec {
         TargetSpec::Chosen(idx) => entry.targets.get(*idx).cloned().into_iter().collect(),
-        TargetSpec::Source => vec![SpellTarget::Object(entry.object_id)],
+        TargetSpec::Source => {
+            let id = match &entry.kind {
+                StackEntryKind::Spell { object_id } => *object_id,
+                StackEntryKind::Ability { source_id, .. } => *source_id,
+            };
+            vec![SpellTarget::Object(id)]
+        }
         TargetSpec::Each(_selector) => vec![], // TODO: resolve selector
     }
 }
@@ -339,7 +397,7 @@ pub fn cast_spell(
 
     // CR 601.2a — Put the spell on the stack
     state.push_to_stack(StackEntry {
-        object_id,
+        kind: StackEntryKind::Spell { object_id },
         controller: player_id.to_string(),
         targets,
         mode_choices: vec![],
@@ -348,7 +406,7 @@ pub fn cast_spell(
     // Caster gets priority back after casting. CR 117.3b
     state.reset_priority_to_active();
     state.record_action();
-    state_based::check(state);
+    check_state_and_triggers(state);
     Ok(())
 }
 
@@ -401,7 +459,7 @@ pub fn play_land(
     state.lands_played_this_turn += 1;
     state.record_action();
 
-    state_based::check(state);
+    check_state_and_triggers(state);
     Ok(())
 }
 
@@ -416,7 +474,7 @@ pub fn concede(state: &mut GameState, player_id: &str) -> Result<(), ActionError
         state.status = GameStatus::Finished;
     }
 
-    state_based::check(state);
+    check_state_and_triggers(state);
     Ok(())
 }
 
@@ -429,3 +487,5 @@ pub(crate) fn validate_player(state: &GameState, player_id: &str) -> Result<(), 
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_triggered;

@@ -31,7 +31,7 @@ export function CreateGameForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <form onSubmit={handleSubmit} className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <h3>Create Game</h3>
       <Input label="Player Name" value={playerName} onChange={(e) => setPlayerName(e.target.value)} placeholder="Your name" />
       <Select label="Format" options={formatOptions} value={format} onChange={(e) => setFormat(e.target.value as GameFormat)} />
@@ -43,7 +43,7 @@ export function CreateGameForm() {
           onChange={(e) => setDeckText(e.target.value)}
           placeholder={'4 Lightning Bolt\n4 Mountain'}
           rows={6}
-          style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)', color: 'var(--color-text)', resize: 'vertical' }}
+          style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: 'var(--border-width) var(--border-style) var(--color-border)', background: 'var(--color-bg-secondary)', color: 'var(--color-text)', resize: 'vertical' }}
         />
       </div>
       {error && <span style={{ color: 'var(--color-danger)', fontSize: '0.85rem' }} role="alert">{error}</span>}

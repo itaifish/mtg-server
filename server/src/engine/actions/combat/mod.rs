@@ -4,6 +4,7 @@ use crate::game::state::{AttackTarget, AttackerInfo, BlockerInfo, CombatState, G
 
 use super::{validate_player, ActionError};
 use crate::engine::state_based;
+use crate::engine::triggers;
 
 /// Declare attackers. CR 508
 /// Must be in the declare attackers step. Each attacker must be an untapped
@@ -214,7 +215,7 @@ pub fn resolve_combat_damage(state: &mut GameState) -> Result<(), ActionError> {
     }
 
     state.record_action();
-    state_based::check(state);
+    state_based::check(state); triggers::process_pending_triggers(state);
     Ok(())
 }
 

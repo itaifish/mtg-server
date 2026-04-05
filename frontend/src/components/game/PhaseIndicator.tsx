@@ -19,7 +19,7 @@ export function PhaseIndicator({ currentStatus }: PhaseIndicatorProps) {
         <span key={p.key} style={{
           padding: '4px 10px', borderRadius: 'var(--radius)', fontSize: '0.75rem', fontWeight: 600,
           background: p.key === currentStatus ? 'var(--color-gold)' : 'transparent',
-          color: p.key === currentStatus ? '#1a1a2e' : 'var(--color-text-muted)',
+          color: p.key === currentStatus ? 'var(--color-bg)' : 'var(--color-text-muted)',
         }}>
           {p.label}
         </span>

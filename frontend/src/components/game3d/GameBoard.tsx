@@ -1,5 +1,6 @@
 import { Canvas } from '@react-three/fiber';
 import { useUiStore } from '@/stores/uiStore';
+import { useTheme } from '@/theme';
 import { CameraController } from './CameraController';
 import { HandZone } from './zones/HandZone';
 import { BattlefieldZone } from './zones/BattlefieldZone';
@@ -10,6 +11,8 @@ import { PLACEHOLDER_ZONES } from '@/types/game3d';
 
 export function GameBoard() {
   const deselectObject = useUiStore((s) => s.deselectObject);
+  const { theme } = useTheme();
+  const { scene } = theme;
   const zones = PLACEHOLDER_ZONES;
 
   return (
@@ -19,13 +22,13 @@ export function GameBoard() {
       style={{ width: '100%', height: '100%' }}
       onPointerMissed={deselectObject}
     >
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[5, 5, 10]} intensity={0.8} />
+      <ambientLight intensity={scene.ambientLightIntensity} />
+      <directionalLight position={[5, 5, 10]} intensity={scene.directionalLightIntensity} />
 
       {/* Table surface */}
       <mesh rotation={[0, 0, 0]} position={[0, 0, -0.1]}>
         <planeGeometry args={[20, 14]} />
-        <meshStandardMaterial color="#2d5a27" />
+        <meshStandardMaterial color={scene.tableSurface} />
       </mesh>
 
       <HandZone cards={zones.hand} />

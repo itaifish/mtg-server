@@ -31,7 +31,7 @@ export function WaitingRoom() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '24px', maxWidth: '500px', margin: '0 auto' }}>
+    <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '24px', maxWidth: '500px', margin: '0 auto' }}>
       <h2>Waiting Room</h2>
       {error && <ErrorBanner message={error} onDismiss={clearError} />}
       <p style={{ color: 'var(--color-text-muted)' }}>Game ID: {gameId}</p>

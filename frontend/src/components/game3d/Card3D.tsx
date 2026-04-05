@@ -4,12 +4,12 @@ import { useFrame } from '@react-three/fiber';
 import { useSpring, animated } from '@react-spring/three';
 import * as THREE from 'three';
 import { useUiStore } from '@/stores/uiStore';
+import { useTheme } from '@/theme';
 import {
   CARD_WIDTH,
   CARD_HEIGHT,
   CARD_DEPTH,
-  CARD_BACK_COLOR,
-  COLOR_MAP,
+  getCardColor,
 } from '@/types/game3d';
 import type { CardData } from '@/types/game3d';
 
@@ -21,9 +21,6 @@ interface Card3DProps {
 }
 
 const SPRING_CONFIG = { tension: 170, friction: 26 };
-const GLOW_GOLD = new THREE.Color('#ffd700');
-const GLOW_WHITE = new THREE.Color('#ffffff');
-const GLOW_NONE = new THREE.Color('#000000');
 
 export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = false }: Card3DProps) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -33,9 +30,15 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
   const deselectObject = useUiStore((s) => s.deselectObject);
   const hoverObject = useUiStore((s) => s.hoverObject);
   const unhoverObject = useUiStore((s) => s.unhoverObject);
+  const { theme } = useTheme();
+  const { scene } = theme;
 
   const selected = selectedObjectId === card.objectId;
-  const faceColor = COLOR_MAP[card.color];
+  const faceColor = getCardColor(card.color, scene);
+
+  const glowSelected = useMemo(() => new THREE.Color(scene.cardGlowSelected), [scene.cardGlowSelected]);
+  const glowHover = useMemo(() => new THREE.Color(scene.cardGlowHover), [scene.cardGlowHover]);
+  const glowNone = useMemo(() => new THREE.Color(scene.cardGlowNone), [scene.cardGlowNone]);
 
   // Spring for hover scale + Y lift
   const spring = useSpring({
@@ -46,10 +49,10 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
 
   // Emissive glow: gold when selected, subtle white when hovered
   const emissiveColor = useMemo(() => {
-    if (selected) return GLOW_GOLD;
-    if (hovered) return GLOW_WHITE;
-    return GLOW_NONE;
-  }, [selected, hovered]);
+    if (selected) return glowSelected;
+    if (hovered) return glowHover;
+    return glowNone;
+  }, [selected, hovered, glowSelected, glowHover, glowNone]);
   const emissiveIntensity = selected ? 0.4 : hovered ? 0.15 : 0;
 
   // Smooth tap/untap rotation via useFrame
@@ -87,7 +90,7 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
 
   const isCreature = card.cardType === 'creature' && card.power !== undefined;
   const isDark = card.color === 'black';
-  const textColor = isDark ? '#ffffff' : '#000000';
+  const textColor = isDark ? scene.cardTextOnDark : scene.cardTextOnLight;
 
   return (
     <group position={position} rotation={[rotation[0], rotation[1], 0]}>
@@ -104,14 +107,14 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
           <meshStandardMaterial color={faceColor} emissive={emissiveColor} emissiveIntensity={emissiveIntensity} attach="material-2" />
           <meshStandardMaterial color={faceColor} emissive={emissiveColor} emissiveIntensity={emissiveIntensity} attach="material-3" />
           <meshStandardMaterial color={faceColor} emissive={emissiveColor} emissiveIntensity={emissiveIntensity} attach="material-4" />
-          <meshStandardMaterial color={CARD_BACK_COLOR} attach="material-5" />
+          <meshStandardMaterial color={scene.cardBack} attach="material-5" />
         </mesh>
 
         {/* Selection outline */}
         {(selected || highlighted) && (
           <mesh>
             <boxGeometry args={[CARD_WIDTH + 0.06, CARD_HEIGHT + 0.06, CARD_DEPTH + 0.01]} />
-            <meshBasicMaterial color={selected ? '#ffd700' : '#00ff88'} transparent opacity={0.6} />
+            <meshBasicMaterial color={selected ? scene.cardGlowSelected : scene.cardHighlight} transparent opacity={0.6} />
           </mesh>
         )}
 

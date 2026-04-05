@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { ApiClientProvider } from './api/hooks';
+import { ThemeProvider } from '@/theme';
+import { APP_NAME } from './constants';
 import { useUiStore } from './stores/uiStore';
 import { LobbyPage } from './components/lobby';
 import { GamePage } from './components/game';
@@ -26,7 +28,7 @@ function Nav() {
   return (
     <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 24px', background: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border)' }}>
       <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-        <Link to="/" style={{ fontWeight: 700, fontSize: '1.1rem' }}>MTG Arena</Link>
+        <Link to="/" style={{ fontWeight: 700, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '6px' }}><img src="/lasagna.svg" alt="" width="22" height="22" />{APP_NAME}</Link>
         <Link to="/deckbuilder" style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>Deck Builder</Link>
       </div>
       <button onClick={toggleSettings} style={{ background: 'none', border: 'none', color: 'var(--color-text)', cursor: 'pointer', fontSize: '1.2rem' }} aria-label="Settings">⚙</button>
@@ -48,13 +50,15 @@ export function App() {
   return (
     <ApiClientProvider config={config}>
       <BrowserRouter>
-        <Nav />
-        <Routes>
-          <Route path="/" element={<LobbyPage />} />
-          <Route path="/game/:gameId" element={<GamePage />} />
-          <Route path="/deckbuilder" element={<DeckBuilderPage />} />
-        </Routes>
-        {showSettings && <SettingsPanel onClose={handleCloseSettings} />}
+        <ThemeProvider>
+          <Nav />
+          <Routes>
+            <Route path="/" element={<LobbyPage />} />
+            <Route path="/game/:gameId" element={<GamePage />} />
+            <Route path="/deckbuilder" element={<DeckBuilderPage />} />
+          </Routes>
+          {showSettings && <SettingsPanel onClose={handleCloseSettings} />}
+        </ThemeProvider>
       </BrowserRouter>
     </ApiClientProvider>
   );

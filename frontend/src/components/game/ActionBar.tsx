@@ -57,7 +57,7 @@ export function ActionBar({ legalActions, isMyTurn, isSubmitting, onAction, game
     : legalActions.filter((la) => !panelHandledActions.has(la.actionType));
 
   return (
-    <div style={{ display: 'flex', gap: '8px', padding: '12px', background: 'var(--color-bg-secondary)', borderRadius: 'var(--radius)', flexWrap: 'wrap', alignItems: 'center' }} role="toolbar" aria-label="Game actions">
+    <div className="panel action-bar" style={{ display: 'flex', gap: '8px', padding: '12px', background: 'var(--color-bg-secondary)', borderRadius: 'var(--radius)', flexWrap: 'wrap', alignItems: 'center' }} role="toolbar" aria-label="Game actions">
       {!isMyTurn && <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>Waiting for opponent…</span>}
       {visibleActions.map((la, i) => {
         const actionInput = buildSimpleAction(la);

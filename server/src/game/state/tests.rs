@@ -3,7 +3,7 @@ use crate::game::card::{CardDefinition, CardInstance, CardType};
 use crate::game::mana::Color;
 use crate::game::zone::ZoneType;
 
-use crate::game::stack::{SpellTarget, StackEntry};
+use crate::game::stack::{SpellTarget, StackEntry, StackEntryKind};
 
 fn test_card(id: u64, owner: &str) -> CardInstance {
     CardInstance::new(
@@ -91,7 +91,7 @@ fn push_to_stack_moves_from_hand() {
     gs.player_zones.get_mut("alice").unwrap().hand.insert(1);
 
     gs.push_to_stack(StackEntry {
-        object_id: 1,
+        kind: StackEntryKind::Spell { object_id: 1 },
         controller: "alice".into(),
         targets: vec![],
         mode_choices: vec![],

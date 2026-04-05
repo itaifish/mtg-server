@@ -12,6 +12,15 @@ vi.mock('@/hooks/useGameActions', () => ({
   }),
 }));
 
+vi.mock('@/theme', async () => {
+  const { defaultTheme } = await import('@/theme/defaultTheme');
+  return {
+    useTheme: () => ({ theme: defaultTheme, setTheme: vi.fn(), availableThemes: [defaultTheme] }),
+    ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    defaultTheme,
+  };
+});
+
 import { App } from '../App';
 
 describe('App extended', () => {
@@ -23,7 +32,7 @@ describe('App extended', () => {
   it('handles corrupt localStorage gracefully', () => {
     localStorage.setItem('mtg-settings', '{invalid');
     render(<App />);
-    expect(screen.getByText('MTG Arena')).toBeInTheDocument();
+    expect(screen.getByText('Project Lasagna')).toBeInTheDocument();
   });
 
   it('opens and closes settings panel', async () => {
@@ -38,6 +47,6 @@ describe('App extended', () => {
   it('reads config from localStorage', () => {
     localStorage.setItem('mtg-settings', JSON.stringify({ serverUrl: 'http://custom.com', apiKey: 'key' }));
     render(<App />);
-    expect(screen.getByText('MTG Arena')).toBeInTheDocument();
+    expect(screen.getByText('Project Lasagna')).toBeInTheDocument();
   });
 });

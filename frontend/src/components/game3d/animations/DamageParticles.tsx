@@ -1,6 +1,7 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useTheme } from '@/theme';
 
 interface DamageParticlesProps {
   /** Whether particles are visible/animating */
@@ -11,8 +12,6 @@ interface DamageParticlesProps {
   count?: number;
 }
 
-const PARTICLE_COLOR = new THREE.Color('#e74c3c');
-
 /**
  * Simple particle stub for damage visualization.
  * Red particles float upward and fade out when visible.
@@ -20,6 +19,8 @@ const PARTICLE_COLOR = new THREE.Color('#e74c3c');
 export function DamageParticles({ visible, position = [0, 0, 0], count = 8 }: DamageParticlesProps) {
   const groupRef = useRef<THREE.Group>(null);
   const timeRef = useRef(0);
+  const { theme } = useTheme();
+  const particleColor = useMemo(() => new THREE.Color(theme.particles.damage), [theme.particles.damage]);
 
   const offsets = useMemo(
     () =>
@@ -56,7 +57,7 @@ export function DamageParticles({ visible, position = [0, 0, 0], count = 8 }: Da
       {offsets.map((_, i) => (
         <mesh key={i}>
           <sphereGeometry args={[0.04, 6, 6]} />
-          <meshBasicMaterial color={PARTICLE_COLOR} transparent opacity={1} />
+          <meshBasicMaterial color={particleColor} transparent opacity={1} />
         </mesh>
       ))}
     </group>

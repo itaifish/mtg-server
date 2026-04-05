@@ -8,7 +8,7 @@ use mtg_server_sdk::error::{
 use mtg_server_sdk::server::request::extension::Extension;
 use mtg_server_sdk::{input, output};
 
-use mtg_server_sdk::model::ActionInput;
+use mtg_server_sdk::model::{ActionInput, PermanentInfo};
 
 use crate::deck::loader::{load_deck, DeckEntry};
 use crate::engine;
@@ -166,6 +166,16 @@ pub async fn get_game_state(
             None
         },
         play_order_chooser_id: state.play_order_chooser.clone(),
+        battlefield: Some(
+            state
+                .battlefield
+                .iter()
+                .filter_map(|id| {
+                    let card = state.objects.get(id)?;
+                    PermanentInfo::try_from(card).ok()
+                })
+                .collect(),
+        ),
     })
 }
 

@@ -131,3 +131,37 @@ impl From<&mtg_server_sdk::model::SpellTarget> for crate::game::stack::SpellTarg
         }
     }
 }
+
+impl TryFrom<&crate::game::card::CardInstance> for mtg_server_sdk::model::PermanentInfo {
+    type Error = &'static str;
+
+    fn try_from(card: &crate::game::card::CardInstance) -> Result<Self, Self::Error> {
+        if !card.definition.card_types.iter().any(|t| t.is_permanent()) {
+            return Err("not a permanent");
+        }
+        Ok(Self {
+            object_id: card.id as i64,
+            name: card.definition.name.clone(),
+            controller: card.controller.clone().unwrap_or_default(),
+            owner: card.owner.clone(),
+            card_types: card.definition.card_types.iter().map(|t| format!("{:?}", t)).collect(),
+            subtypes: card.definition.subtypes.clone(),
+            power: card.definition.power,
+            toughness: card.definition.toughness,
+            effective_power: card.effective_power(),
+            effective_toughness: card.effective_toughness(),
+            tapped: card.tapped,
+            summoning_sick: card.is_summoning_sick(),
+            damage_marked: card.damage_marked as i32,
+            counters: card
+                .counters
+                .iter()
+                .map(|c| mtg_server_sdk::model::CounterInfo {
+                    counter_type: format!("{:?}", c.counter_type),
+                    count: c.count as i32,
+                })
+                .collect(),
+            keywords: card.keywords.keys().map(|k| format!("{:?}", k)).collect(),
+        })
+    }
+}

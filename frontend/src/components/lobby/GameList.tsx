@@ -16,9 +16,9 @@ export function GameList({ games, onJoin }: GameListProps) {
     return <p style={{ color: 'var(--color-text-muted)' }}>No games available. Create one!</p>;
   }
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       {games.map((g) => (
-        <div key={g.gameId} style={rowStyle}>
+        <div key={g.gameId} className="card" style={rowStyle}>
           <div>
             <span style={{ fontWeight: 600 }}>{g.format}</span>
             <span style={{ color: 'var(--color-text-muted)', marginLeft: '12px' }}>{g.playerCount} player(s) · {g.status}</span>

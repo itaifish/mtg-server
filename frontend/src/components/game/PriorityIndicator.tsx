@@ -34,7 +34,7 @@ export function PriorityIndicator() {
           fontWeight: 600,
           fontSize: '0.85rem',
           background: isMyTurn ? 'var(--color-gold)' : 'var(--color-surface)',
-          color: isMyTurn ? '#1a1a2e' : 'var(--color-text-muted)',
+          color: isMyTurn ? 'var(--color-bg)' : 'var(--color-text-muted)',
           animation: isMyTurn ? 'priority-pulse 2s ease-in-out infinite' : 'none',
           textAlign: 'center',
         }}

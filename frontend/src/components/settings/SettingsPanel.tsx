@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Modal, Input, Button } from '@/components/shared';
+import { Modal, Input, Button, Select } from '@/components/shared';
 import { storage } from '@/services/storage';
+import { useTheme } from '@/theme';
 
 interface SettingsPanelProps {
   onClose: () => void;
@@ -28,6 +29,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
     // Sync init from localStorage for instant render; async load overwrites if different
     return parseSettings(localStorage.getItem(SETTINGS_KEY));
   });
+  const { theme, setTheme, availableThemes } = useTheme();
 
   useEffect(() => {
     storage.loadSettings().then((raw) => {
@@ -44,6 +46,9 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
     storage.saveSettings(json);
   }, [settings]);
 
+  const themeOptions = availableThemes.map((t) => ({ value: t.id, label: t.name }));
+  const selectedTheme = availableThemes.find((t) => t.id === theme.id);
+
   return (
     <Modal title="Settings" onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -53,6 +58,10 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
           <label htmlFor="camera-pref" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Overhead Camera</label>
           <input id="camera-pref" type="checkbox" checked={settings.cameraPreference === 'overhead'} onChange={(e) => setSettings((s) => ({ ...s, cameraPreference: e.target.checked ? 'overhead' : 'default' }))} />
         </div>
+        <Select label="Theme" options={themeOptions} value={theme.id} onChange={(e) => setTheme(e.target.value)} />
+        {selectedTheme && (
+          <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: 0 }}>{selectedTheme.description}</p>
+        )}
         <Button variant="secondary" onClick={onClose}>Done</Button>
       </div>
     </Modal>

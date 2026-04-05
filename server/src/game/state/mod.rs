@@ -4,13 +4,13 @@ use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use serde::{Deserialize, Serialize};
 
-use crate::game::card::CardType;
 use crate::game::phases_and_steps::{BeginningStep, EndingStep};
 
-use super::card::{CardInstance, ObjectId, PlayerId};
+use super::card::{CardInstance, CardType, ObjectId, PlayerId};
+use super::event::{trigger_matches, GameEvent, PendingTrigger};
 use super::mana::{ManaPool, ManaRestriction, ManaType};
 use super::phases_and_steps::Phase;
-use super::stack::{Stack, StackEntry};
+use super::stack::{Stack, StackEntry, StackEntryKind};
 use super::zone::ZoneType;
 
 /// Top-level game state. Contains all information needed to represent a game
@@ -32,6 +32,9 @@ pub struct GameState {
     /// or stack change. When all living players pass, the top of the stack
     /// resolves (or the phase advances if stack is empty).
     pub players_passed: HashSet<PlayerId>,
+    /// Triggered abilities waiting to be put on the stack.
+    /// Grouped by controller — each player orders their own triggers.
+    pub pending_triggers: Vec<PendingTrigger>,
     pub turn_number: u32,
     pub phase: Phase,
     /// CR 400.1 — Per-player zones (library, hand, graveyard) keyed by player id.
@@ -174,6 +177,7 @@ impl GameState {
             active_player_index: 0,
             priority_index: 0,
             players_passed: HashSet::new(),
+            pending_triggers: vec![],
             turn_number: 0,
             phase: Phase::Beginning(BeginningStep::Untap),
             player_zones,
@@ -264,6 +268,7 @@ impl GameState {
     /// CR 400.7 — An object that moves from one zone to another becomes a new
     /// object with no memory of its previous existence.
     pub fn move_object(&mut self, object_id: ObjectId, to_zone: ZoneType) {
+        let from_zone = self.find_zone_type(object_id);
         self.remove_from_current_zone(object_id);
 
         match to_zone {
@@ -291,14 +296,40 @@ impl GameState {
                     .expect("player zones must exist");
                 match to_zone {
                     ZoneType::Library => zones.library.push(object_id),
-                    ZoneType::Hand => {
-                        zones.hand.insert(object_id);
-                    }
+                    ZoneType::Hand => { zones.hand.insert(object_id); }
                     ZoneType::Graveyard => zones.graveyard.push(object_id),
                     _ => unreachable!(),
                 }
             }
         }
+
+        // Emit zone change event
+        let card = self.objects.get(&object_id);
+        let owner = card.map(|c| c.owner.clone()).unwrap_or_default();
+        let controller = card.and_then(|c| c.controller.clone());
+        let from = from_zone.unwrap_or(ZoneType::Library);
+        let to = to_zone;
+        self.emit_event(&GameEvent::ZoneChange {
+            object_id,
+            from,
+            to,
+            owner,
+            controller,
+        });
+    }
+
+    /// Find which zone type an object is currently in.
+    fn find_zone_type(&self, object_id: ObjectId) -> Option<ZoneType> {
+        if self.battlefield.contains(&object_id) { return Some(ZoneType::Battlefield); }
+        if self.stack.contains(&object_id) { return Some(ZoneType::Stack); }
+        if self.exile.contains(&object_id) { return Some(ZoneType::Exile); }
+        if self.command.contains(&object_id) { return Some(ZoneType::Command); }
+        for (_, zones) in &self.player_zones {
+            if zones.library.contains(&object_id) { return Some(ZoneType::Library); }
+            if zones.hand.contains(&object_id) { return Some(ZoneType::Hand); }
+            if zones.graveyard.contains(&object_id) { return Some(ZoneType::Graveyard); }
+        }
+        None
     }
 
     fn remove_from_current_zone(&mut self, object_id: ObjectId) {
@@ -449,6 +480,70 @@ impl GameState {
         self.action_count += 1;
     }
 
+    /// Emit a game event and collect any triggered abilities that match.
+    /// Triggers are added to `pending_triggers` for the controller to
+    /// order and choose targets before they go on the stack.
+    pub fn emit_event(&mut self, event: &GameEvent) {
+        let zone_for_event = |zone_type: &ZoneType| -> ZoneType {
+            match zone_type {
+                ZoneType::Battlefield => ZoneType::Battlefield,
+                ZoneType::Graveyard => ZoneType::Graveyard,
+                ZoneType::Hand => ZoneType::Hand,
+                ZoneType::Library => ZoneType::Library,
+                ZoneType::Stack => ZoneType::Stack,
+                ZoneType::Exile => ZoneType::Exile,
+                ZoneType::Command => ZoneType::Command,
+            }
+        };
+
+        // Check all objects for triggered abilities that match this event.
+        // Only check objects in the zone their trigger is registered for.
+        let mut new_triggers = vec![];
+
+        // Collect from battlefield
+        for &obj_id in &self.battlefield.clone() {
+            if let Some(card) = self.objects.get(&obj_id) {
+                let controller = card.controller.clone().unwrap_or_else(|| card.owner.clone());
+                if let Some(triggers) = card.definition.triggered_abilities.get(&ZoneType::Battlefield) {
+                    for trigger in triggers {
+                        if trigger_matches(trigger, event, obj_id, &controller, &self.objects) {
+                            new_triggers.push(PendingTrigger {
+                                source_id: obj_id,
+                                controller: controller.clone(),
+                                effect: trigger.effect.clone(),
+                                needs_targets: trigger.needs_targets,
+                                description: trigger.description.clone(),
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // Collect from graveyards
+        for (player_id, zones) in &self.player_zones.clone() {
+            for &obj_id in &zones.graveyard {
+                if let Some(card) = self.objects.get(&obj_id) {
+                    if let Some(triggers) = card.definition.triggered_abilities.get(&ZoneType::Graveyard) {
+                        for trigger in triggers {
+                            if trigger_matches(trigger, event, obj_id, player_id, &self.objects) {
+                                new_triggers.push(PendingTrigger {
+                                    source_id: obj_id,
+                                    controller: player_id.clone(),
+                                    effect: trigger.effect.clone(),
+                                    needs_targets: trigger.needs_targets,
+                                    description: trigger.description.clone(),
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        self.pending_triggers.extend(new_triggers);
+    }
+
     /// Get a reference to a player by ID.
     pub fn get_player(&self, player_id: &str) -> Option<&Player> {
         self.players.iter().find(|p| p.id == player_id)
@@ -500,11 +595,13 @@ impl GameState {
         if let Some(player) = self.get_player_mut(player_id) {
             player.life_total -= amount as i32;
         }
+        self.emit_event(&GameEvent::LifeLost {
+            player_id: player_id.to_string(),
+            amount,
+        });
     }
 
     /// CR 121 — A player draws a card (moves top of library to hand).
-    /// TODO: replacement effects (e.g., Notion Thief, Alms Collector)
-    /// TODO: triggered abilities (e.g., Consecrated Sphinx)
     pub fn draw_card(&mut self, player_id: &str) -> bool {
         let zones = match self.player_zones.get_mut(player_id) {
             Some(z) => z,
@@ -513,6 +610,9 @@ impl GameState {
         match zones.library.pop() {
             Some(id) => {
                 zones.hand.insert(id);
+                self.emit_event(&GameEvent::CardDrawn {
+                    player_id: player_id.to_string(),
+                });
                 true
             }
             None => false,
@@ -520,12 +620,14 @@ impl GameState {
     }
 
     /// CR 119.3 — A player gains life.
-    /// TODO: replacement effects (e.g., Tainted Remedy)
-    /// TODO: triggered abilities (e.g., Ajani's Pridemate)
     pub fn gain_life(&mut self, player_id: &str, amount: u32) {
         if let Some(player) = self.get_player_mut(player_id) {
             player.life_total += amount as i32;
         }
+        self.emit_event(&GameEvent::LifeGained {
+            player_id: player_id.to_string(),
+            amount,
+        });
     }
 
     /// Move an object to its owner's graveyard.
@@ -537,8 +639,10 @@ impl GameState {
 
     /// Put a spell or ability on the stack with its targets and controller.
     pub fn push_to_stack(&mut self, entry: StackEntry) {
-        let object_id = entry.object_id;
-        self.remove_from_current_zone(object_id);
+        // Only spells move zones — abilities stay where they are
+        if let StackEntryKind::Spell { object_id } = &entry.kind {
+            self.remove_from_current_zone(*object_id);
+        }
         self.stack.push(entry);
     }
 

@@ -24,7 +24,7 @@ describe('LobbyPage', () => {
 
   it('renders lobby with create form and game list', () => {
     render(<MemoryRouter><LobbyPage /></MemoryRouter>);
-    expect(screen.getByText('MTG Arena Lobby')).toBeInTheDocument();
+    expect(screen.getByText('Project Lasagna Lobby')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Create Game' })).toBeInTheDocument();
     expect(screen.getByText('Available Games')).toBeInTheDocument();
   });

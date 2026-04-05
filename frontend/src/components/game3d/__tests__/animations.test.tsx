@@ -7,6 +7,15 @@ vi.mock('@react-three/fiber', () => ({
   useThree: () => ({}),
 }));
 
+vi.mock('@/theme', async () => {
+  const { defaultTheme } = await import('@/theme/defaultTheme');
+  return {
+    useTheme: () => ({ theme: defaultTheme, setTheme: vi.fn(), availableThemes: [defaultTheme] }),
+    ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    defaultTheme,
+  };
+});
+
 vi.mock('@react-spring/three', () => ({
   useSpring: (props: Record<string, unknown>) => {
     const result: Record<string, unknown> = {};

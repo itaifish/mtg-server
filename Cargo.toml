@@ -5,5 +5,6 @@ members = [
 ]
 exclude = [
     "model/build/codegen/mtg-server-sdk/rust-server-codegen",
+    "frontend/src-tauri",
 ]
 resolver = "2"

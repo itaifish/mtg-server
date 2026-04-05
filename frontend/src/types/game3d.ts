@@ -49,18 +49,12 @@ export const PLACEHOLDER_ZONES: ZoneData = {
   ],
 };
 
-/** Map card colors to hex values for placeholder rendering. */
-export const COLOR_MAP: Record<CardData['color'], string> = {
-  white: '#f9faf4',
-  blue: '#0e68ab',
-  black: '#150b00',
-  red: '#d3202a',
-  green: '#00733e',
-  colorless: '#beb9b2',
-};
+import type { ThemeScene } from '@/theme';
 
-/** Card back color. */
-export const CARD_BACK_COLOR = '#6b3a2a';
+/** Get the card face color for a given MTG color identity from the theme. */
+export function getCardColor(color: string, scene: ThemeScene): string {
+  return scene.cardColors[color as keyof typeof scene.cardColors] ?? scene.cardColors.colorless;
+}
 
 /** Standard MTG card dimensions (ratio 5:7), scaled for scene units. */
 export const CARD_WIDTH = 1;

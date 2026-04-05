@@ -15,6 +15,18 @@ vi.mock('@/services/storage', () => ({
   },
 }));
 
+const mockSetTheme = vi.fn();
+vi.mock('@/theme', async () => {
+  const { defaultTheme } = await import('@/theme/defaultTheme');
+  const { picassoTheme } = await import('@/theme/picassoTheme');
+  return {
+    useTheme: () => ({ theme: defaultTheme, setTheme: mockSetTheme, availableThemes: [defaultTheme, picassoTheme] }),
+    ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    defaultTheme,
+    picassoTheme,
+  };
+});
+
 describe('SettingsPanel', () => {
   const onClose = vi.fn();
 
@@ -29,6 +41,7 @@ describe('SettingsPanel', () => {
     expect(screen.getByLabelText(/server url/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/api key/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/overhead camera/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/theme/i)).toBeInTheDocument();
   });
 
   it('loads defaults when no saved settings', () => {
@@ -75,5 +88,17 @@ describe('SettingsPanel', () => {
     localStorage.setItem('mtg-settings', 'not-json');
     render(<SettingsPanel onClose={onClose} />);
     expect(screen.getByLabelText(/server url/i)).toHaveValue('http://localhost:13734');
+  });
+
+  it('calls setTheme when theme dropdown changes', async () => {
+    const user = userEvent.setup();
+    render(<SettingsPanel onClose={onClose} />);
+    await user.selectOptions(screen.getByLabelText(/theme/i), 'picasso');
+    expect(mockSetTheme).toHaveBeenCalledWith('picasso');
+  });
+
+  it('shows theme description', () => {
+    render(<SettingsPanel onClose={onClose} />);
+    expect(screen.getByText(/original dark theme/i)).toBeInTheDocument();
   });
 });

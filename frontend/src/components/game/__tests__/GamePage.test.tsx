@@ -28,6 +28,15 @@ vi.mock('@/hooks/useGameActions', () => ({
 
 vi.mock('@/api/hooks', () => ({ useApiClient: () => ({}) }));
 
+vi.mock('@/theme', async () => {
+  const { defaultTheme } = await import('@/theme/defaultTheme');
+  return {
+    useTheme: () => ({ theme: defaultTheme, setTheme: vi.fn(), availableThemes: [defaultTheme] }),
+    ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    defaultTheme,
+  };
+});
+
 // Mock selectOpponentPlayers to return stable reference
 const stableOpponents = [{ playerId: 'p2', name: 'Bob', lifeTotal: 20, ready: true }];
 vi.mock('@/stores/gameStore', async () => {

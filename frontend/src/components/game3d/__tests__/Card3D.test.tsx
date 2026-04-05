@@ -25,6 +25,15 @@ vi.mock('@react-spring/three', () => ({
   },
 }));
 
+vi.mock('@/theme', async () => {
+  const { defaultTheme } = await import('@/theme/defaultTheme');
+  return {
+    useTheme: () => ({ theme: defaultTheme, setTheme: vi.fn(), availableThemes: [defaultTheme] }),
+    ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    defaultTheme,
+  };
+});
+
 import { useUiStore } from '@/stores/uiStore';
 import { Card3D } from '../Card3D';
 

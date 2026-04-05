@@ -52,6 +52,74 @@ structure GetGameStateOutput {
 
     /// The player who gets to choose play order (only during CHOOSING_PLAY_ORDER).
     playOrderChooserId: String
+
+    /// Permanents on the battlefield.
+    battlefield: PermanentList
+}
+
+list PermanentList {
+    member: PermanentInfo
+}
+
+structure PermanentInfo {
+    @required
+    objectId: Long
+
+    @required
+    name: String
+
+    @required
+    controller: String
+
+    @required
+    owner: String
+
+    @required
+    cardTypes: StringList
+
+    @required
+    subtypes: StringList
+
+    power: Integer
+
+    toughness: Integer
+
+    /// Effective power after counters.
+    effectivePower: Integer
+
+    /// Effective toughness after counters.
+    effectiveToughness: Integer
+
+    @required
+    tapped: Boolean
+
+    @required
+    summoningSick: Boolean
+
+    @required
+    damageMarked: Integer
+
+    @required
+    counters: CounterList
+
+    @required
+    keywords: StringList
+}
+
+list StringList {
+    member: String
+}
+
+structure CounterInfo {
+    @required
+    counterType: String
+
+    @required
+    count: Integer
+}
+
+list CounterList {
+    member: CounterInfo
 }
 
 /// Submit a game action.

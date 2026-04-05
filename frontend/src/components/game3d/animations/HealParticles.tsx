@@ -1,6 +1,7 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useTheme } from '@/theme';
 
 interface HealParticlesProps {
   /** Whether particles are visible/animating */
@@ -11,8 +12,6 @@ interface HealParticlesProps {
   count?: number;
 }
 
-const HEAL_COLORS = [new THREE.Color('#2ecc71'), new THREE.Color('#ffffff')];
-
 /**
  * Simple particle stub for healing visualization.
  * Green/white particles float upward and fade out when visible.
@@ -20,6 +19,11 @@ const HEAL_COLORS = [new THREE.Color('#2ecc71'), new THREE.Color('#ffffff')];
 export function HealParticles({ visible, position = [0, 0, 0], count = 8 }: HealParticlesProps) {
   const groupRef = useRef<THREE.Group>(null);
   const timeRef = useRef(0);
+  const { theme } = useTheme();
+  const healColors = useMemo(
+    () => theme.particles.heal.map((c) => new THREE.Color(c)),
+    [theme.particles.heal],
+  );
 
   const offsets = useMemo(
     () =>
@@ -27,9 +31,9 @@ export function HealParticles({ visible, position = [0, 0, 0], count = 8 }: Heal
         x: (Math.random() - 0.5) * 0.6,
         speed: 0.4 + Math.random() * 0.4,
         phase: Math.random() * Math.PI * 2,
-        color: HEAL_COLORS[i % 2],
+        color: healColors[i % healColors.length],
       })),
-    [count],
+    [count, healColors],
   );
 
   useFrame((_, delta) => {

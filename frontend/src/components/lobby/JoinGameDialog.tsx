@@ -38,7 +38,7 @@ export function JoinGameDialog({ gameId, onClose }: JoinGameDialogProps) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <label htmlFor="join-decklist" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Decklist</label>
           <textarea id="join-decklist" value={deckText} onChange={(e) => setDeckText(e.target.value)} placeholder={'4 Lightning Bolt\n4 Mountain'} rows={6}
-            style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)', color: 'var(--color-text)', resize: 'vertical' }} />
+            style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: 'var(--border-width) var(--border-style) var(--color-border)', background: 'var(--color-bg-secondary)', color: 'var(--color-text)', resize: 'vertical' }} />
         </div>
         {error && <span style={{ color: 'var(--color-danger)', fontSize: '0.85rem' }} role="alert">{error}</span>}
         <Button type="submit" loading={isJoining}>Join</Button>

@@ -1,5 +1,5 @@
 {
-  "productName": "MTG Arena",
+  "productName": "Project Lasagna",
   "version": "0.1.0",
   "identifier": "com.mtg.arena",
   "build": {
@@ -14,7 +14,7 @@
     },
     "windows": [
       {
-        "title": "Magic: The Gathering",
+        "title": "Project Lasagna",
         "width": 1280,
         "height": 800,
         "resizable": true,

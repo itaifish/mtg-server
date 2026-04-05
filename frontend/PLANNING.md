@@ -19,6 +19,52 @@ Magic: The Gathering game client. Ships as a desktop/mobile app via Tauri v2, wi
 | react-router-dom | 7 | Client-side routing |
 | vitest | 3 | Testing framework |
 
+## Theme System
+
+Swappable theme engine controlling CSS variables, 3D scene properties, and layout overrides.
+
+### Architecture
+
+```
+ThemeProvider (React Context)
+├── Injects CSS custom properties on :root  (colors, fonts)
+├── Injects <style> tag for cssOverrides    (layout hacks per theme)
+├── Persists theme ID via StorageService
+└── Exposes useTheme() hook for 3D scene values
+
+Theme interface
+├── colors      → CSS vars (--color-bg, --color-accent, etc.)
+├── typography  → font families, weights
+├── layout      → border radius, width, style
+├── scene       → Three.js: table color, lighting, card materials, glow colors
+├── particles   → damage/heal particle colors
+└── cssOverrides → raw CSS string for theme-specific layout hacks
+```
+
+### Available Themes
+
+| Theme | ID | Description |
+|-------|-----|-------------|
+| Classic Dark | `default` | Original dark blue/gold look |
+| Cubist Avant-Garde | `picasso` | Picasso-inspired: burnt orange accent, geometric fonts, double borders, skewed buttons, terracotta table, dramatic lighting, asymmetric panels |
+
+### Adding a New Theme
+
+1. Create `src/theme/myTheme.ts` implementing the `Theme` interface
+2. Add it to the `themes` array in `ThemeProvider.tsx`
+3. Done — it appears in the settings dropdown automatically
+
+### What Themes Control
+
+| Layer | Properties |
+|-------|-----------|
+| CSS | 20+ custom properties (colors, fonts, overlay) |
+| Layout | Border radius, width, style (solid/double/dashed) |
+| 3D Scene | Table surface color, ambient/directional light intensity |
+| Cards | Face colors per MTG color, back color, glow colors, text colors |
+| Particles | Damage color, heal color array |
+| CSS Overrides | Arbitrary CSS for skewed buttons, asymmetric borders, rotated zones, etc. |
+
 ## Architecture Decisions
 
 | Choice | Rationale |
@@ -44,6 +90,11 @@ frontend/
 │   ├── api/                # REST API client
 │   │   ├── client.ts       # MtgApiClient (typed fetch wrapper, 7 methods)
 │   │   └── hooks.tsx       # ApiClientProvider context, useApiClient hook
+│   ├── theme/              # Theme engine
+│   │   ├── types.ts        # Theme, ThemeColors, ThemeScene, ThemeParticles
+│   │   ├── defaultTheme.ts # Classic Dark (original look)
+│   │   ├── picassoTheme.ts # Cubist Avant-Garde
+│   │   └── ThemeProvider.tsx # React context, CSS injection, persistence
 │   ├── services/           # Platform abstraction
 │   │   └── storage.ts      # StorageService interface, Tauri/Web implementations
 │   ├── stores/             # zustand state management
@@ -160,20 +211,22 @@ npx tauri android init && npx tauri android dev
 | 8 | Comprehensive testing (90%+ coverage) | ✅ |
 | 9 | Refactor and final polish | ✅ |
 | 10 | .gitignore + Tauri v2 integration | ✅ |
+| 11 | Theme system (engine + Picasso/Cubist theme) | ✅ |
 
 ## Statistics
 
 | Metric | Value |
 |---|---|
-| Source files | ~65 |
-| Test files | 36 |
-| Total tests | 277 |
-| Statement coverage | 97.93% |
-| Branch coverage | 95.54% |
-| Function coverage | 95.20% |
-| Line coverage | 97.93% |
+| Source files | ~70 |
+| Test files | 37 |
+| Total tests | 288 |
+| Statement coverage | 97.84% |
+| Branch coverage | 95.14% |
+| Function coverage | 95.48% |
+| Line coverage | 97.84% |
 | TSC errors | 0 |
 | `any` in source | 0 |
+| Themes | 2 (Classic Dark, Cubist Avant-Garde) |
 | Tauri cargo check | ✅ |
 | Tauri cargo build | ✅ |
 
@@ -186,6 +239,7 @@ npx tauri android init && npx tauri android dev
 
 ## Future Improvements
 
+- [ ] More themes: Art Deco, Synthwave/Neon, Parchment/Medieval, Mondrian
 - [ ] WebSocket for real-time game state push
 - [ ] Real card images from S3 (loaded as Three.js textures)
 - [ ] Mobile builds (iOS/Android via Tauri v2)
@@ -197,4 +251,4 @@ npx tauri android init && npx tauri android dev
 
 ## Current Status
 
-**All phases complete.** Frontend is fully implemented with Tauri v2 desktop integration, comprehensive test coverage (97.93%), and zero TypeScript errors. Runs as both a web app (npm run dev) and a native desktop app (npm run tauri dev).
+**All phases complete.** Frontend is fully implemented with Tauri v2 desktop integration, swappable theme system (Classic Dark + Cubist Avant-Garde), comprehensive test coverage (97.84%), and zero TypeScript errors. Runs as both a web app (`npm run dev`) and a native desktop app (`npm run tauri dev`). Switch themes instantly via Settings → Theme dropdown.

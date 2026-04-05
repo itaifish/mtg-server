@@ -41,6 +41,15 @@ vi.mock('../Card3D', () => ({
   Card3D: ({ card }: { card: CardData }) => <div data-testid={`card-${card.objectId}`}>{card.name}</div>,
 }));
 
+vi.mock('@/theme', async () => {
+  const { defaultTheme } = await import('@/theme/defaultTheme');
+  return {
+    useTheme: () => ({ theme: defaultTheme, setTheme: vi.fn(), availableThemes: [defaultTheme] }),
+    ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    defaultTheme,
+  };
+});
+
 // Mock stores
 vi.mock('@/stores/uiStore', () => ({
   useUiStore: (selector: (s: Record<string, unknown>) => unknown) =>

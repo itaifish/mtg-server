@@ -19,6 +19,8 @@
   --color-border: #2a3a5c;
   --font-main: 'Segoe UI', system-ui, -apple-system, sans-serif;
   --radius: 6px;
+  --border-width: 1px;
+  --border-style: solid;
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
@@ -36,7 +38,7 @@ body {
   min-height: 100vh;
 }
 
-h1, h2, h3 { color: var(--color-gold); font-weight: 600; }
+h1, h2, h3 { color: var(--color-gold); font-weight: 600; font-family: var(--font-heading, var(--font-main)); }
 h1 { font-size: 1.8rem; }
 h2 { font-size: 1.4rem; }
 h3 { font-size: 1.1rem; }

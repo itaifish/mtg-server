@@ -44,7 +44,7 @@ export function GamePage() {
   const isInGame = gameState.status === GameStatus.IN_PROGRESS;
 
   return (
-    <div style={{ position: 'relative', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="game-page" style={{ position: 'relative', height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {error && <ErrorBanner message={error} onDismiss={clearError} />}
       {/* Top HUD: opponents + phase + priority */}
       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', gap: '12px' }}>

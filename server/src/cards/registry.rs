@@ -3,8 +3,10 @@ use std::sync::LazyLock;
 
 use crate::game::ability::{Ability, AbilityCost, AbilityEffect};
 use crate::game::card::{CardDefinition, CardType, Supertype};
-use crate::game::effect::{Effect, PlayerSpec, TargetSpec, Value};
+use crate::game::effect::{CounterSpec, Effect, Filter, PlayerSpec, TargetSpec, Value};
+use crate::game::event::{TriggerEvent, TriggerFilter, TriggerPlayerRef, TriggeredAbility};
 use crate::game::mana::{Color, ManaCost, ManaProduction, ManaSymbol, ManaType};
+use crate::game::zone::ZoneType;
 
 // Mana symbol shorthands
 const W: ManaSymbol = ManaSymbol::Colored(Color::White);
@@ -126,6 +128,9 @@ static REGISTRY: LazyLock<HashMap<String, CardDefinition>> = LazyLock::new(|| {
             4,
             &["Wurm"],
         ),
+        // --- Creatures with triggered abilities ---
+        soul_warden(),
+        ajanis_pridemate(),
         // --- Instants ---
         instant(
             "Lightning Bolt",
@@ -252,6 +257,66 @@ fn mana_dork(
             effect: AbilityEffect::AddMana(vec![ManaProduction::new(produces, 1)]),
             is_mana_ability: true,
         }],
+        ..Default::default()
+    }
+}
+
+fn soul_warden() -> CardDefinition {
+    let mut triggers = HashMap::new();
+    triggers.insert(
+        ZoneType::Battlefield,
+        vec![TriggeredAbility {
+            trigger: TriggerEvent::EntersZone { zone: ZoneType::Battlefield },
+            filters: vec![
+                TriggerFilter::ObjectMatches(vec![Filter::HasType("Creature".into())]),
+                TriggerFilter::Not(Box::new(TriggerFilter::IsSelf)),
+            ],
+            effect: Effect::GainLife {
+                amount: Value::Constant(1),
+                player: PlayerSpec::Controller,
+            },
+            needs_targets: false,
+            description: "Whenever another creature enters the battlefield, you gain 1 life.".into(),
+        }],
+    );
+    CardDefinition {
+        name: "Soul Warden".into(),
+        mana_cost: Some(cost(&[W])),
+        colors: vec![Color::White],
+        card_types: vec![CardType::Creature],
+        subtypes: vec!["Human".into(), "Cleric".into()],
+        power: Some(1),
+        toughness: Some(1),
+        triggered_abilities: triggers,
+        ..Default::default()
+    }
+}
+
+fn ajanis_pridemate() -> CardDefinition {
+    let mut triggers = HashMap::new();
+    triggers.insert(
+        ZoneType::Battlefield,
+        vec![TriggeredAbility {
+            trigger: TriggerEvent::LifeGained,
+            filters: vec![TriggerFilter::PlayerIs(TriggerPlayerRef::You)],
+            effect: Effect::AddCounters {
+                target: TargetSpec::Source,
+                counter: CounterSpec::PlusOnePlusOne,
+                count: Value::Constant(1),
+            },
+            needs_targets: false,
+            description: "Whenever you gain life, put a +1/+1 counter on Ajani's Pridemate.".into(),
+        }],
+    );
+    CardDefinition {
+        name: "Ajani's Pridemate".into(),
+        mana_cost: Some(cost(&[M1, W])),
+        colors: vec![Color::White],
+        card_types: vec![CardType::Creature],
+        subtypes: vec!["Cat".into(), "Soldier".into()],
+        power: Some(2),
+        toughness: Some(2),
+        triggered_abilities: triggers,
         ..Default::default()
     }
 }

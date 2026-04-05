@@ -8,7 +8,7 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 const selectStyle: React.CSSProperties = {
   padding: '8px 12px',
   borderRadius: 'var(--radius)',
-  border: '1px solid var(--color-border)',
+  border: 'var(--border-width) var(--border-style) var(--color-border)',
   background: 'var(--color-bg-secondary)',
   color: 'var(--color-text)',
   width: '100%',
