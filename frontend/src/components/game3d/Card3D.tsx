@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo, useCallback, Suspense } from 'react';
+import { useRef, useState, useCallback, Suspense } from 'react';
 import { Text, useTexture } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useSpring, animated } from '@react-spring/three';
@@ -160,11 +160,6 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
   const selected = selectedObjectId === card.objectId;
   const faceColor = getCardColor(card.color, scene);
 
-  const glowSelected = useMemo(() => new THREE.Color(scene.cardGlowSelected), [scene.cardGlowSelected]);
-  const glowHover = useMemo(() => new THREE.Color(scene.cardGlowHover), [scene.cardGlowHover]);
-  const glowNone = useMemo(() => new THREE.Color(scene.cardGlowNone), [scene.cardGlowNone]);
-
-  // Spring for hover scale + Y lift + drag offset
   const spring = useSpring({
     scale: hovered && !isDragging ? 1.08 : 1,
     posX: isDragging ? dragOffset![0] : 0,
@@ -172,14 +167,6 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
     posZ: isDragging ? dragOffset![2] : 0,
     config: isDragging ? { tension: 300, friction: 30 } : SPRING_CONFIG,
   });
-
-  // Emissive glow: gold when selected, subtle white when hovered
-  const emissiveColor = useMemo(() => {
-    if (selected) return glowSelected;
-    if (hovered) return glowHover;
-    return glowNone;
-  }, [selected, hovered, glowSelected, glowHover, glowNone]);
-  const emissiveIntensity = selected ? 0.4 : hovered ? 0.15 : 0;
 
   // Smooth tap/untap rotation via useFrame
   const targetRotZ = useRef(rotation[2]);

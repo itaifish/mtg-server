@@ -9,6 +9,7 @@ interface LibraryZoneProps {
   position: [number, number, number];
   /** Target position for draw animation (e.g. hand zone center) */
   drawTarget: [number, number, number];
+  rotation?: [number, number, number];
 }
 
 function CardBackFace() {
@@ -16,7 +17,7 @@ function CardBackFace() {
   return (
     <mesh position={[0, 0, CARD_DEPTH / 2 + 0.001]}>
       <planeGeometry args={[CARD_WIDTH * 0.95, CARD_HEIGHT * 0.95]} />
-      <meshStandardMaterial map={texture} />
+      <meshBasicMaterial map={texture} />
     </mesh>
   );
 }
@@ -43,17 +44,17 @@ function DrawAnimation({ from, to, onComplete }: { from: THREE.Vector3; to: THRE
     <group ref={ref} position={[from.x, from.y, from.z]}>
       <mesh>
         <boxGeometry args={[CARD_WIDTH, CARD_HEIGHT, CARD_DEPTH]} />
-        <meshStandardMaterial color="#1a0033" />
+        <meshBasicMaterial color="#1a0033" />
       </mesh>
       <mesh position={[0, 0, CARD_DEPTH / 2 + 0.001]}>
         <planeGeometry args={[CARD_WIDTH * 0.95, CARD_HEIGHT * 0.95]} />
-        <meshStandardMaterial map={texture} />
+        <meshBasicMaterial map={texture} />
       </mesh>
     </group>
   );
 }
 
-export function LibraryZone({ cardCount, position, drawTarget }: LibraryZoneProps) {
+export function LibraryZone({ cardCount, position, drawTarget, rotation }: LibraryZoneProps) {
   const [prevCount, setPrevCount] = useState(cardCount);
   const [animating, setAnimating] = useState(false);
 
@@ -71,7 +72,7 @@ export function LibraryZone({ cardCount, position, drawTarget }: LibraryZoneProp
   const to = new THREE.Vector3(drawTarget[0], drawTarget[1], drawTarget[2]);
 
   return (
-    <group position={position}>
+    <group position={position} rotation={rotation}>
       {/* Card pile — slight offsets for realism */}
       {Array.from({ length: pileCards }, (_, i) => {
         // Deterministic pseudo-random offsets per card
@@ -83,7 +84,7 @@ export function LibraryZone({ cardCount, position, drawTarget }: LibraryZoneProp
           <group key={i} position={[ox, oy, i * CARD_DEPTH]} rotation={[0, 0, rz]}>
             <mesh>
               <boxGeometry args={[CARD_WIDTH, CARD_HEIGHT, CARD_DEPTH]} />
-              <meshStandardMaterial color="#1a0033" />
+              <meshBasicMaterial color="#1a0033" />
             </mesh>
             {i === pileCards - 1 && <CardBackFace />}
           </group>

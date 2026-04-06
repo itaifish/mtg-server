@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { useUiStore } from '@/stores/uiStore';
 
 const CAMERA_POSITIONS: Record<string, [number, number, number]> = {
-  default: [0, -10, 8],
+  default: [0, -13, 11],
   overhead: [0, 0, 18],
   closeup: [0, -6, 5],
 };

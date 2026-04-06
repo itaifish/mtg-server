@@ -10,7 +10,7 @@ function CardBack() {
   return (
     <mesh position={[0, 0, CARD_DEPTH / 2 + 0.001]}>
       <planeGeometry args={[CARD_WIDTH * 0.95, CARD_HEIGHT * 0.95]} />
-      <meshStandardMaterial map={texture} />
+      <meshBasicMaterial map={texture} />
     </mesh>
   );
 }
@@ -29,7 +29,7 @@ export function OpponentHandZone({ cardCount }: OpponentHandZoneProps) {
           <group key={i} position={[x, Math.abs(t) * 0.15, i * 0.03]} rotation={[0, 0, t * 0.08]}>
             <mesh>
               <boxGeometry args={[CARD_WIDTH, CARD_HEIGHT, CARD_DEPTH]} />
-              <meshStandardMaterial color="#1a0033" />
+              <meshBasicMaterial color="#1a0033" />
             </mesh>
             <CardBack />
           </group>

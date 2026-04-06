@@ -27,7 +27,7 @@ export function GameBoard() {
 
   return (
     <Canvas
-      camera={{ fov: 45, position: [0, -10, 8], near: 0.01, far: 200 }}
+      camera={{ fov: 45, position: [0, -13, 11], near: 0.01, far: 200 }}
       style={{ width: '100%', height: '100%' }}
       onPointerMissed={deselectObject}
     >
@@ -47,8 +47,8 @@ export function GameBoard() {
       <ExileZone cards={zones.exile} />
 
       {/* Libraries — right side, my library near hand, opponent's near their hand */}
-      <LibraryZone cardCount={myLibrarySize} position={[9, -8, 0.1]} drawTarget={[0, -10, 2.5]} />
-      <LibraryZone cardCount={opponentLibrarySize} position={[-9, 6, 0.1]} drawTarget={[0, 7, 2.5]} />
+      <LibraryZone cardCount={myLibrarySize} position={[9, -6, 0.1]} drawTarget={[0, -7, 2.5]} />
+      <LibraryZone cardCount={opponentLibrarySize} position={[-9, 6, 0.1]} drawTarget={[0, 7, 2.5]} rotation={[0, 0, Math.PI]} />
 
       <CameraController />
     </Canvas>

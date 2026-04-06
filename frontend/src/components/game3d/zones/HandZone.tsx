@@ -84,7 +84,7 @@ export function HandZone({ cards }: HandZoneProps) {
   );
 
   return (
-    <group position={[0, -10, 2.5]} rotation={[Math.atan2(8, 10), 0, 0]}>
+    <group position={[0, -7, 2.5]} rotation={[Math.atan2(8, 10), 0, 0]}>
       {orderedCards.map((card, i) => {
         const t = count > 1 ? (i / (count - 1)) * 2 - 1 : 0;
         const rotZ = -t * 0.08;
