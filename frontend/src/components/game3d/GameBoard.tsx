@@ -5,7 +5,6 @@ import { HandZone } from './zones/HandZone';
 import { OpponentHandZone } from './zones/OpponentHandZone';
 import { BattlefieldZone } from './zones/BattlefieldZone';
 import { GraveyardZone } from './zones/GraveyardZone';
-import { StackZone } from './zones/StackZone';
 import { ExileZone } from './zones/ExileZone';
 import { LibraryZone } from './zones/LibraryZone';
 import { TableSurface } from './TableSurface';
@@ -37,7 +36,6 @@ export function GameBoard() {
       <HandZone cards={zones.hand} />
       <BattlefieldZone cards={zones.battlefield} playerId={playerId ?? ''} />
       <GraveyardZone cards={zones.graveyard} />
-      <StackZone cards={zones.stack} />
       <ExileZone cards={zones.exile} />
 
       {/* Libraries — right side, my library near hand, opponent's near their hand */}

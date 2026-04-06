@@ -16,6 +16,7 @@ import { PregamePanel } from './PregamePanel';
 import { CombatPanel } from './CombatPanel';
 import { ManaPanel } from './ManaPanel';
 import { CastingOverlay } from './CastingOverlay';
+import { StackOverlay } from './StackOverlay';
 import { ManaPoolDisplay, EMPTY_POOL } from './ManaPoolDisplay';
 import { useUiStore } from '@/stores/uiStore';
 import type { ActionInput } from '@/types/actions';
@@ -91,6 +92,7 @@ export function GamePage() {
 
       <CardPreview />
       <CastingOverlay />
+      <StackOverlay />
       {gameState.status === 'FINISHED' && <GameOverOverlay players={gameState.players} />}
     </div>
   );

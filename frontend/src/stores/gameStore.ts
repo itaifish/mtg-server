@@ -77,7 +77,7 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
   ...initialState,
 
   fetchGameState: async (client, gameId, perspectivePlayerId?) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true });
     try {
       const gameState = await client.getGameState({ gameId, perspectivePlayerId });
       set({ gameState, isLoading: false });

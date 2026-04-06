@@ -506,6 +506,9 @@ structure StackEntryInfo {
     objectId: Long
 
     oracleId: String
+
+    @required
+    targets: TargetList
 }
 
 // --- Player Zone Map ---
