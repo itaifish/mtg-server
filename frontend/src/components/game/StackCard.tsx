@@ -25,9 +25,9 @@ export function StackCard({ entry, index, total }: StackCardProps) {
       }}
     >
       {imageUrl ? (
-        <img src={imageUrl} alt={entry.name} style={{ width: '40px', borderRadius: '3px', flexShrink: 0 }} />
+        <img src={imageUrl} alt={entry.name} style={{ width: '50px', borderRadius: '3px', flexShrink: 0 }} />
       ) : (
-        <div style={{ width: '40px', height: '56px', borderRadius: '3px', background: 'var(--color-surface)', flexShrink: 0 }} />
+        <div style={{ width: '50px', height: '70px', borderRadius: '3px', background: 'var(--color-surface)', flexShrink: 0 }} />
       )}
       <div style={{ fontSize: '0.7rem', fontWeight: 600, lineHeight: 1.2 }}>
         {entry.name}

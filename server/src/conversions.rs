@@ -335,3 +335,20 @@ impl From<&crate::game::mana::ManaPool> for mtg_server_sdk::model::ManaPoolInfo 
         }
     }
 }
+
+impl From<&crate::game::stack::SpellTarget> for mtg_server_sdk::model::SpellTarget {
+    fn from(t: &crate::game::stack::SpellTarget) -> Self {
+        match t {
+            crate::game::stack::SpellTarget::Player(pid) => {
+                Self::Player(mtg_server_sdk::model::PlayerTarget {
+                    player_id: pid.clone(),
+                })
+            }
+            crate::game::stack::SpellTarget::Object(oid) => {
+                Self::Object(mtg_server_sdk::model::ObjectTarget {
+                    object_id: *oid as i64,
+                })
+            }
+        }
+    }
+}

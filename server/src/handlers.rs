@@ -338,6 +338,7 @@ pub async fn get_game_state(
                         controller: entry.controller.clone(),
                         object_id,
                         oracle_id,
+                        targets: entry.targets.iter().map(Into::into).collect(),
                     }
                 })
                 .collect(),

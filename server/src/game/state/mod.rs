@@ -156,7 +156,12 @@ pub enum GameStatus {
 
 impl GameState {
     /// Create a new game with the given players.
-    pub fn new(game_id: impl Into<String>, name: impl Into<String>, players: Vec<Player>, rng_seed: u64) -> Self {
+    pub fn new(
+        game_id: impl Into<String>,
+        name: impl Into<String>,
+        players: Vec<Player>,
+        rng_seed: u64,
+    ) -> Self {
         let player_ids: Vec<PlayerId> = players.iter().map(|p| p.id.clone()).collect();
         let mut player_zones = HashMap::new();
         for player in &players {
@@ -298,7 +303,9 @@ impl GameState {
                     .expect("player zones must exist");
                 match to_zone {
                     ZoneType::Library => zones.library.push(object_id),
-                    ZoneType::Hand => { zones.hand.insert(object_id); }
+                    ZoneType::Hand => {
+                        zones.hand.insert(object_id);
+                    }
                     ZoneType::Graveyard => zones.graveyard.push(object_id),
                     _ => unreachable!(),
                 }
@@ -322,14 +329,28 @@ impl GameState {
 
     /// Find which zone type an object is currently in.
     fn find_zone_type(&self, object_id: ObjectId) -> Option<ZoneType> {
-        if self.battlefield.contains(&object_id) { return Some(ZoneType::Battlefield); }
-        if self.stack.contains(&object_id) { return Some(ZoneType::Stack); }
-        if self.exile.contains(&object_id) { return Some(ZoneType::Exile); }
-        if self.command.contains(&object_id) { return Some(ZoneType::Command); }
+        if self.battlefield.contains(&object_id) {
+            return Some(ZoneType::Battlefield);
+        }
+        if self.stack.contains(&object_id) {
+            return Some(ZoneType::Stack);
+        }
+        if self.exile.contains(&object_id) {
+            return Some(ZoneType::Exile);
+        }
+        if self.command.contains(&object_id) {
+            return Some(ZoneType::Command);
+        }
         for (_, zones) in &self.player_zones {
-            if zones.library.contains(&object_id) { return Some(ZoneType::Library); }
-            if zones.hand.contains(&object_id) { return Some(ZoneType::Hand); }
-            if zones.graveyard.contains(&object_id) { return Some(ZoneType::Graveyard); }
+            if zones.library.contains(&object_id) {
+                return Some(ZoneType::Library);
+            }
+            if zones.hand.contains(&object_id) {
+                return Some(ZoneType::Hand);
+            }
+            if zones.graveyard.contains(&object_id) {
+                return Some(ZoneType::Graveyard);
+            }
         }
         None
     }
@@ -413,9 +434,15 @@ impl GameState {
     pub fn advance_phase(&mut self) {
         self.empty_mana_pools();
         if let Some(next) = self.phase.next() {
+            tracing::info!(
+                "Advancing phase from {:#?} to {:#?}",
+                self.phase,
+                self.phase.next()
+            );
             self.phase = next;
             self.on_phase_enter();
         } else {
+            tracing::info!("Advancing turn");
             self.advance_turn();
         }
         self.reset_priority_to_active();
@@ -427,6 +454,7 @@ impl GameState {
         match self.phase {
             // CR 502.3 — Untap all permanents the active player controls.
             Phase::Beginning(BeginningStep::Untap) => {
+                tracing::info!("Untapping permanents");
                 let to_untap: Vec<ObjectId> = self
                     .battlefield
                     .iter()
@@ -474,6 +502,7 @@ impl GameState {
         self.turn_number += 1;
         self.phase = Phase::Beginning(BeginningStep::Untap);
         self.lands_played_this_turn = 0;
+        self.on_phase_enter();
         self.reset_priority_to_active();
     }
 
@@ -505,8 +534,15 @@ impl GameState {
         // Collect from battlefield
         for &obj_id in &self.battlefield.clone() {
             if let Some(card) = self.objects.get(&obj_id) {
-                let controller = card.controller.clone().unwrap_or_else(|| card.owner.clone());
-                if let Some(triggers) = card.definition.triggered_abilities.get(&ZoneType::Battlefield) {
+                let controller = card
+                    .controller
+                    .clone()
+                    .unwrap_or_else(|| card.owner.clone());
+                if let Some(triggers) = card
+                    .definition
+                    .triggered_abilities
+                    .get(&ZoneType::Battlefield)
+                {
                     for trigger in triggers {
                         if trigger_matches(trigger, event, obj_id, &controller, &self.objects) {
                             new_triggers.push(PendingTrigger {
@@ -526,7 +562,11 @@ impl GameState {
         for (player_id, zones) in &self.player_zones.clone() {
             for &obj_id in &zones.graveyard {
                 if let Some(card) = self.objects.get(&obj_id) {
-                    if let Some(triggers) = card.definition.triggered_abilities.get(&ZoneType::Graveyard) {
+                    if let Some(triggers) = card
+                        .definition
+                        .triggered_abilities
+                        .get(&ZoneType::Graveyard)
+                    {
                         for trigger in triggers {
                             if trigger_matches(trigger, event, obj_id, player_id, &self.objects) {
                                 new_triggers.push(PendingTrigger {

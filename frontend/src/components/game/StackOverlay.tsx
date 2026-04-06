@@ -30,7 +30,7 @@ export function StackOverlay() {
           <div key={entry.objectId ?? i} style={{
             background: 'var(--color-bg-secondary)', borderRadius: '4px', padding: '4px 8px',
             marginBottom: i < stack.length - 1 ? '4px' : 0,
-            fontSize: '0.75rem', borderLeft: '3px solid var(--color-primary)',
+            fontSize: '0.75rem', borderLeft: '3px solid var(--color-gold)',
           }}>
             {entry.name}
           </div>
