@@ -21,6 +21,7 @@ interface Card3DProps {
   highlighted?: boolean;
   draggable?: boolean;
   onDrop?: (card: CardData, worldY: number, worldX: number) => void;
+  onDrag?: (card: CardData, worldY: number, worldX: number) => void;
 }
 
 /** Renders a card image texture on the top face. Must be wrapped in Suspense. */
@@ -65,7 +66,7 @@ function PlayableGlow({ color }: { color: string }) {
   );
 }
 
-export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = false, draggable = false, onDrop }: Card3DProps) {
+export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = false, draggable = false, onDrop, onDrag }: Card3DProps) {
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
@@ -111,6 +112,12 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
     (evt.target as Element).setPointerCapture(evt.nativeEvent.pointerId);
     dragStartPointer.current = { x: evt.nativeEvent.clientX, y: evt.nativeEvent.clientY };
     didDrag.current = false;
+    // Set drag plane perpendicular to camera view through the card's position
+    const groupWorld = new THREE.Vector3();
+    if (groupRef.current) groupRef.current.getWorldPosition(groupWorld);
+    const camDir = new THREE.Vector3();
+    camera.getWorldDirection(camDir);
+    dragPlane.current.setFromNormalAndCoplanarPoint(camDir.negate(), groupWorld);
   }, [draggable]);
 
   const handlePointerMove = useCallback((e: THREE.Event) => {
@@ -124,21 +131,31 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
     if (!didDrag.current) {
       didDrag.current = true;
       startDrag(card.objectId);
-      // Capture offset between mouse world pos and card world pos at drag start
       const startWorld = pointerToWorld(evt.nativeEvent.clientX, evt.nativeEvent.clientY);
       const groupWorld = new THREE.Vector3();
       if (groupRef.current) groupRef.current.getWorldPosition(groupWorld);
       dragGrabOffset.current = { x: startWorld.x - groupWorld.x, y: startWorld.y - groupWorld.y };
     }
-    // Snap card to world position under cursor, minus the grab offset
     const world = pointerToWorld(evt.nativeEvent.clientX, evt.nativeEvent.clientY);
-    const groupWorld = new THREE.Vector3();
-    if (groupRef.current) groupRef.current.getWorldPosition(groupWorld);
+    // Convert world hit to group's local space
+    const localHit = groupRef.current
+      ? groupRef.current.worldToLocal(world.clone())
+      : world;
+    const localGrab = groupRef.current
+      ? groupRef.current.worldToLocal(
+          new THREE.Vector3(dragGrabOffset.current.x, dragGrabOffset.current.y, 0)
+            .add(new THREE.Vector3().copy(groupRef.current.getWorldPosition(new THREE.Vector3())))
+        )
+      : new THREE.Vector3();
     setDragOffset([
-      world.x - groupWorld.x - dragGrabOffset.current.x,
-      world.y - groupWorld.y - dragGrabOffset.current.y,
-      2,
+      localHit.x - localGrab.x,
+      localHit.y - localGrab.y,
+      0,
     ]);
+    if (onDrag) {
+      const worldHit = pointerToWorld(evt.nativeEvent.clientX, evt.nativeEvent.clientY);
+      onDrag(card, worldHit.y, worldHit.x);
+    }
   }, [card.objectId, pointerToWorld, startDrag]);
 
   const handlePointerUp = useCallback((e: THREE.Event) => {
@@ -164,7 +181,7 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
     scale: hovered && !isDragging ? 1.08 : 1,
     posX: isDragging ? dragOffset![0] : 0,
     posY: isDragging ? dragOffset![1] : hovered ? 0.15 : 0,
-    posZ: isDragging ? dragOffset![2] : 0,
+    posZ: isDragging ? dragOffset![2] + 1 : 0,
     config: isDragging ? { tension: 300, friction: 30 } : SPRING_CONFIG,
   });
 
