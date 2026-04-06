@@ -15,6 +15,8 @@ export interface CardData {
   power?: number;
   toughness?: number;
   tapped?: boolean;
+  manaValue?: number;
+  manaCost?: string[];
 }
 
 export interface ZoneData {
@@ -87,6 +89,8 @@ function mapCardInfo(c: CardInfo): CardData {
     oracleId: c.oracleId,
     cardType: parseCardType(c.cardTypes),
     color: colorFromManaCost(c.manaCost),
+    manaValue: c.manaValue,
+    manaCost: c.manaCost,
   };
 }
 

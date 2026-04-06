@@ -24,6 +24,7 @@ impl From<&crate::game::state::Player> for mtg_server_sdk::model::PlayerInfo {
             poison_counters: p.poison_counters as i32,
             mulligan_count: p.pregame.mulligan_count as i32,
             has_kept: p.pregame.has_kept,
+            mana_pool: (&p.mana_pool).into(),
         }
     }
 }
@@ -44,6 +45,7 @@ pub fn player_info(
         poison_counters: p.poison_counters as i32,
         mulligan_count: p.pregame.mulligan_count as i32,
         has_kept: p.pregame.has_kept,
+        mana_pool: (&p.mana_pool).into(),
     }
 }
 
@@ -301,6 +303,35 @@ impl From<&crate::game::card::CardInstance> for mtg_server_sdk::model::CardInfo 
                 .as_ref()
                 .map(|mc| mc.mana_value() as i32)
                 .unwrap_or(0),
+        }
+    }
+}
+
+fn mana_slot_info(
+    slot: &crate::game::mana::ManaPoolSlot,
+) -> mtg_server_sdk::model::ManaPoolSlotInfo {
+    mtg_server_sdk::model::ManaPoolSlotInfo {
+        unrestricted: slot.unrestricted as i32,
+        restricted: slot
+            .restricted
+            .iter()
+            .map(|r| mtg_server_sdk::model::RestrictedManaInfo {
+                amount: r.amount as i32,
+                restriction: format!("{:?}", r.restriction),
+            })
+            .collect(),
+    }
+}
+
+impl From<&crate::game::mana::ManaPool> for mtg_server_sdk::model::ManaPoolInfo {
+    fn from(pool: &crate::game::mana::ManaPool) -> Self {
+        Self {
+            white: mana_slot_info(&pool.white),
+            blue: mana_slot_info(&pool.blue),
+            black: mana_slot_info(&pool.black),
+            red: mana_slot_info(&pool.red),
+            green: mana_slot_info(&pool.green),
+            colorless: mana_slot_info(&pool.colorless),
         }
     }
 }

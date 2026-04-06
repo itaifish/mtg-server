@@ -63,6 +63,10 @@ done
 echo "Building server..."
 cargo build --bin mtg-server --manifest-path "$SCRIPT_DIR/server/Cargo.toml"
 
+# Clear stale test data
+echo "Clearing old test games..."
+$RUNTIME exec "$CONTAINER_NAME" psql -U "$PG_USER" -d "$PG_DB" -c "DELETE FROM games;" 2>/dev/null || true
+
 echo "Starting server..."
 DATABASE_URL="host=localhost port=${PG_PORT} user=${PG_USER} password=${PG_PASS} dbname=${PG_DB}" \
   RUST_LOG=info \

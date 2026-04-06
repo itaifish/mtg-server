@@ -163,15 +163,19 @@ describe('gameStore', () => {
   });
 
   describe('polling', () => {
-    it('starts and stops polling', () => {
+    it('starts and stops polling', async () => {
       const getGameState = vi.fn().mockResolvedValue(gameStateResponse);
       const getLegalActions = vi.fn().mockResolvedValue({ gameId: 'g1', actions: [] });
       const client = mockClient({ getGameState, getLegalActions });
+      const flush = () => Promise.resolve().then(() => Promise.resolve());
 
       useGameStore.getState().startPolling(client, 'g1', 'p1', 1000);
       expect(useGameStore.getState().pollingInterval).not.toBeNull();
 
-      vi.advanceTimersByTime(3000);
+      for (let i = 0; i < 3; i++) {
+        vi.advanceTimersByTime(1000);
+        await flush();
+      }
       expect(getGameState).toHaveBeenCalledTimes(3);
       expect(getLegalActions).toHaveBeenCalledTimes(3);
 
@@ -179,6 +183,7 @@ describe('gameStore', () => {
       expect(useGameStore.getState().pollingInterval).toBeNull();
 
       vi.advanceTimersByTime(2000);
+      await flush();
       expect(getGameState).toHaveBeenCalledTimes(3);
     });
 

@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { useGameStore, selectOpponentPlayers } from '@/stores/gameStore';
+import { useState, useCallback, useMemo } from 'react';
+import { useGameStore } from '@/stores/gameStore';
 import { useLobbyStore } from '@/stores/lobbyStore';
 import { useGameActions } from '@/hooks/useGameActions';
 import { LegalActionType } from '@/types/enums';
@@ -9,7 +9,8 @@ import type { AttackerEntry, BlockerEntry } from '@/types/models';
 export function CombatPanel() {
   const legalActions = useGameStore((s) => s.legalActions);
   const playerId = useLobbyStore((s) => s.playerId) ?? '';
-  const opponents = useGameStore((s) => selectOpponentPlayers(s, playerId));
+  const players = useGameStore((s) => s.gameState?.players);
+  const opponents = useMemo(() => players?.filter((p) => p.playerId !== playerId) ?? [], [players, playerId]);
   const { declareAttackers, declareBlockers, isLoading } = useGameActions();
 
   const isAttacking = legalActions.some((a) => a.actionType === LegalActionType.DECLARE_ATTACKERS);

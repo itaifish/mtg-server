@@ -35,8 +35,8 @@ describe('PriorityIndicator', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  it('shows "Your turn" when player has priority', () => {
-    setGameState({ priorityPlayerId: 'p1' });
+  it('shows "Your turn" when player has priority and is active', () => {
+    setGameState({ priorityPlayerId: 'p1', activePlayerId: 'p1' });
     render(<PriorityIndicator />);
     expect(screen.getByRole('status')).toHaveTextContent('Your turn');
   });
@@ -60,7 +60,7 @@ describe('PriorityIndicator', () => {
   });
 
   it('has correct aria-label for my turn', () => {
-    setGameState({ priorityPlayerId: 'p1' });
+    setGameState({ priorityPlayerId: 'p1', activePlayerId: 'p1' });
     render(<PriorityIndicator />);
     expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'Your turn');
   });

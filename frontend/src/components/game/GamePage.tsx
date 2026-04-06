@@ -15,6 +15,9 @@ import { PriorityIndicator } from './PriorityIndicator';
 import { PregamePanel } from './PregamePanel';
 import { CombatPanel } from './CombatPanel';
 import { ManaPanel } from './ManaPanel';
+import { CastingOverlay } from './CastingOverlay';
+import { ManaPoolDisplay, EMPTY_POOL } from './ManaPoolDisplay';
+import { useUiStore } from '@/stores/uiStore';
 import type { ActionInput } from '@/types/actions';
 
 export function GamePage() {
@@ -54,6 +57,7 @@ export function GamePage() {
         </div>
         <PriorityIndicator />
         <PhaseIndicator currentStatus={gameState.status} currentPhase={gameState.phase} landsPlayedThisTurn={gameState.landsPlayedThisTurn} />
+        <button onClick={useUiStore.getState().toggleSettings} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: '4px', color: 'var(--color-text-muted)' }} aria-label="Settings">⚙</button>
       </div>
 
       {/* Pregame panel */}
@@ -75,12 +79,18 @@ export function GamePage() {
         ))}
         {hasCombat && <CombatPanel />}
         {isInGame && <ManaPanel />}
+        {isInGame && (() => {
+          const me = gameState.players.find((p) => p.playerId === playerId);
+          const pool = me?.manaPool ?? EMPTY_POOL;
+          return <ManaPoolDisplay pool={pool} compact />;
+        })()}
         <div style={{ marginLeft: 'auto', flexShrink: 0 }}>
           <ActionBar legalActions={legalActions} isMyTurn={isMyTurn} isSubmitting={isSubmitting} onAction={handleAction} gameStatus={gameState.status} />
         </div>
       </div>
 
       <CardPreview />
+      <CastingOverlay />
       {gameState.status === 'FINISHED' && <GameOverOverlay players={gameState.players} />}
     </div>
   );

@@ -19,7 +19,8 @@ export function HandZone({ cards }: HandZoneProps) {
   const handOrder = useUiStore((s) => s.handOrder);
   const setHandOrder = useUiStore((s) => s.setHandOrder);
   const draggingObjectId = useUiStore((s) => s.draggingObjectId);
-  const { playLand, castSpell } = useGameActions();
+  const cameraPosition = useUiStore((s) => s.cameraPosition);
+  const { playLand } = useGameActions();
   const [dragSlot, setDragSlot] = useState<number | null>(null);
   const lastDroppedId = useRef<number | null>(null);
 
@@ -87,11 +88,16 @@ export function HandZone({ cards }: HandZoneProps) {
     setDragSlot(Math.max(0, Math.min(count - 1, newSlot)));
   }, [count, spread]);
 
+  const startCasting = useUiStore((s) => s.startCasting);
+
   const handleCardDrop = useCallback((card: CardData, worldY: number, worldX: number) => {
     setDragSlot(null);
     if (worldY > BATTLEFIELD_DROP_Y) {
       if (playLandIds.has(card.objectId)) { playLand(card.objectId); return; }
-      if (castSpellIds.has(card.objectId)) { castSpell(card.objectId, []); return; }
+      if (castSpellIds.has(card.objectId)) {
+        startCasting({ objectId: card.objectId, cardName: card.name, manaValue: card.manaValue ?? 0, manaCost: card.manaCost });
+        return;
+      }
     }
     lastDroppedId.current = card.objectId;
     const newOrder = orderedCards.filter((c) => c.objectId !== card.objectId).map((c) => c.objectId);
@@ -99,10 +105,10 @@ export function HandZone({ cards }: HandZoneProps) {
     const slot = Math.max(0, Math.min(count - 1, Math.round((worldX + spread / 2) / slotWidth)));
     newOrder.splice(slot, 0, card.objectId);
     setHandOrder(newOrder);
-  }, [orderedCards, count, spread, playLandIds, castSpellIds, playLand, castSpell, setHandOrder]);
+  }, [orderedCards, count, spread, playLandIds, castSpellIds, playLand, startCasting, setHandOrder]);
 
   return (
-    <group position={[0, -7, 2.5]} rotation={[Math.atan2(8, 10), 0, 0]}>
+    <group position={[0, -7, 2.5]} rotation={[cameraPosition === 'topdown' ? 0 : Math.atan2(8, 10), 0, 0]}>
       {orderedCards.map((card, i) => {
         const t = count > 1 ? (i / (count - 1)) * 2 - 1 : 0;
         const rotZ = -t * 0.08;

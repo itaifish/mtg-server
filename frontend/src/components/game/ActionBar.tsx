@@ -3,6 +3,7 @@ import { LegalActionType, GameStatus } from '@/types/enums';
 import type { LegalAction } from '@/types/models';
 import type { ActionInput } from '@/types/actions';
 import { useGameActions } from '@/hooks/useGameActions';
+import { useGameStore } from '@/stores/gameStore';
 import { Button } from '@/components/shared';
 
 interface ActionBarProps {
@@ -53,6 +54,8 @@ function buildSimpleAction(action: LegalAction): ActionInput | null {
 
 export function ActionBar({ legalActions, isMyTurn, isSubmitting, onAction, gameStatus }: ActionBarProps) {
   const { passPriority, concede, isLoading } = useGameActions();
+  const gameState = useGameStore((s) => s.gameState);
+  const setAutoPassUntilTurn = useGameStore((s) => s.setAutoPassUntilTurn);
   const [menuOpen, setMenuOpen] = useState(false);
   const isPregame = gameStatus === GameStatus.CHOOSING_PLAY_ORDER || gameStatus === GameStatus.MULLIGAN;
   const canPass = legalActions.some((la) => la.actionType === LegalActionType.PASS_PRIORITY);
@@ -89,8 +92,11 @@ export function ActionBar({ legalActions, isMyTurn, isSubmitting, onAction, game
           <Button variant="primary" disabled={isLoading} onClick={() => passPriority()} style={{ fontSize: '0.8rem', padding: '4px 10px' }}>
             Pass Priority
           </Button>
-          <Button variant="primary" disabled={isLoading} onClick={() => passPriority()} style={{ fontSize: '0.8rem', padding: '4px 10px' }}>
-            Pass Turn
+          <Button variant="primary" disabled={isLoading} onClick={() => {
+            if (gameState) setAutoPassUntilTurn(gameState.turnNumber + 1);
+            passPriority();
+          }} style={{ fontSize: '0.8rem', padding: '4px 10px' }}>
+            Pass until next turn
           </Button>
         </>
       )}

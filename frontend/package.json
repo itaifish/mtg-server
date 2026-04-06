@@ -15,7 +15,8 @@
     "format": "prettier --write 'src/**/*.{ts,tsx,css,json}'",
     "tauri": "tauri",
     "tauri:test": "tauri dev",
-    "tauri:local": "VITE_MODE=localdev tauri dev"
+    "tauri:local": "VITE_MODE=localdev tauri dev",
+    "tauri:build": "tauri build"
   },
   "dependencies": {
     "@react-spring/three": "^9.7.5",

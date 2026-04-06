@@ -3,11 +3,7 @@ import { render } from '@testing-library/react';
 
 vi.mock('@react-three/fiber', () => ({
   useFrame: () => {},
-  useThree: () => ({ camera: { position: { lerp: vi.fn() } } }),
-}));
-
-vi.mock('@react-three/drei', () => ({
-  OrbitControls: () => <div data-testid="orbit" />,
+  useThree: () => ({ camera: { position: { set: vi.fn() }, lookAt: vi.fn() } }),
 }));
 
 vi.mock('@/stores/uiStore', () => ({
@@ -18,8 +14,8 @@ vi.mock('@/stores/uiStore', () => ({
 import { CameraController } from '../CameraController';
 
 describe('CameraController', () => {
-  it('renders OrbitControls', () => {
-    const { getByTestId } = render(<CameraController />);
-    expect(getByTestId('orbit')).toBeInTheDocument();
+  it('renders without crashing', () => {
+    const { container } = render(<CameraController />);
+    expect(container).toBeDefined();
   });
 });

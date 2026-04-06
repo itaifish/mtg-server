@@ -5,6 +5,19 @@ export interface DecklistEntry {
   count: number;
 }
 
+export interface ManaPoolSlotInfo {
+  unrestricted: number;
+}
+
+export interface ManaPoolInfo {
+  white: ManaPoolSlotInfo;
+  blue: ManaPoolSlotInfo;
+  black: ManaPoolSlotInfo;
+  red: ManaPoolSlotInfo;
+  green: ManaPoolSlotInfo;
+  colorless: ManaPoolSlotInfo;
+}
+
 export interface PlayerInfo {
   playerId: string;
   name: string;
@@ -13,6 +26,7 @@ export interface PlayerInfo {
   handSize: number;
   librarySize: number;
   poisonCounters: number;
+  manaPool?: ManaPoolInfo;
 }
 
 export interface LegalAction {

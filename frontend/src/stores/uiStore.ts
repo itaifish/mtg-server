@@ -15,15 +15,24 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+export interface PendingCast {
+  objectId: number;
+  cardName: string;
+  manaValue: number;
+  manaCost?: string[];
+}
+
 export interface UiState {
   selectedObjectId: number | null;
   hoveredObjectId: number | null;
   draggingObjectId: number | null;
   handOrder: number[];
   targetingMode: TargetingMode | null;
+  pendingCast: PendingCast | null;
   showSettings: boolean;
   showDeckBuilder: boolean;
-  cameraPosition: 'default' | 'overhead' | 'closeup';
+  cameraPosition: 'default' | 'overhead' | 'closeup' | 'topdown';
+  autoTapLands: boolean;
   chatMessages: ChatMessage[];
 }
 
@@ -39,9 +48,12 @@ export interface UiActions {
   addTarget: (target: SpellTarget) => void;
   removeTarget: (target: SpellTarget) => void;
   exitTargetingMode: () => void;
+  startCasting: (pending: PendingCast) => void;
+  cancelCasting: () => void;
   toggleSettings: () => void;
   toggleDeckBuilder: () => void;
   setCameraPosition: (pos: UiState['cameraPosition']) => void;
+  toggleAutoTapLands: () => void;
   addChatMessage: (msg: ChatMessage) => void;
   reset: () => void;
 }
@@ -52,9 +64,11 @@ const initialState: UiState = {
   draggingObjectId: null,
   handOrder: [],
   targetingMode: null,
+  pendingCast: null,
   showSettings: false,
   showDeckBuilder: false,
   cameraPosition: 'default',
+  autoTapLands: false,
   chatMessages: [],
 };
 
@@ -103,9 +117,12 @@ export const useUiStore = create<UiState & UiActions>()((set, get) => ({
   },
 
   exitTargetingMode: () => set({ targetingMode: null }),
+  startCasting: (pending) => set({ pendingCast: pending }),
+  cancelCasting: () => set({ pendingCast: null }),
   toggleSettings: () => set((s) => ({ showSettings: !s.showSettings })),
   toggleDeckBuilder: () => set((s) => ({ showDeckBuilder: !s.showDeckBuilder })),
   setCameraPosition: (pos) => set({ cameraPosition: pos }),
+  toggleAutoTapLands: () => set((s) => ({ autoTapLands: !s.autoTapLands })),
   addChatMessage: (msg) => set((s) => ({ chatMessages: [...s.chatMessages, msg] })),
   reset: () => set(initialState),
 }));

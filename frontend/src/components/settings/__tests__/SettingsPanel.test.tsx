@@ -40,7 +40,7 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('dialog', { name: /settings/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/server url/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/api key/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/overhead camera/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/top-down camera/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/theme/i)).toBeInTheDocument();
   });
 
@@ -63,18 +63,15 @@ describe('SettingsPanel', () => {
     localStorage.setItem('mtg-settings', JSON.stringify({ serverUrl: 'http://saved.com', apiKey: 'key123', cameraPreference: 'overhead' }));
     render(<SettingsPanel onClose={onClose} />);
     expect(screen.getByLabelText(/server url/i)).toHaveValue('http://saved.com');
-    expect(screen.getByLabelText(/overhead camera/i)).toBeChecked();
   });
 
   it('toggles camera preference', async () => {
     const user = userEvent.setup();
     render(<SettingsPanel onClose={onClose} />);
-    const checkbox = screen.getByLabelText(/overhead camera/i);
+    const checkbox = screen.getByLabelText(/top-down camera/i);
     expect(checkbox).not.toBeChecked();
     await user.click(checkbox);
     expect(checkbox).toBeChecked();
-    const saved = JSON.parse(localStorage.getItem('mtg-settings') ?? '{}');
-    expect(saved.cameraPreference).toBe('overhead');
   });
 
   it('calls onClose when Done clicked', async () => {

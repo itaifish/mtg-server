@@ -43,7 +43,7 @@ describe('ActionBar', () => {
     const actions: LegalAction[] = [{ actionType: LegalActionType.PASS_PRIORITY }];
     render(<ActionBar {...baseProps} legalActions={actions} gameStatus={GameStatus.IN_PROGRESS} />);
     expect(screen.getByRole('button', { name: /pass priority/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /pass turn/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /pass until next turn/i })).toBeInTheDocument();
   });
 
   it('hides concede in menu', async () => {

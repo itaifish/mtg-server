@@ -119,6 +119,50 @@ structure PlayerInfo {
     /// Whether this player has kept their hand (during mulligan phase).
     @required
     hasKept: Boolean
+
+    /// Current mana in the player's mana pool.
+    @required
+    manaPool: ManaPoolInfo
+}
+
+structure ManaPoolInfo {
+    @required
+    white: ManaPoolSlotInfo
+
+    @required
+    blue: ManaPoolSlotInfo
+
+    @required
+    black: ManaPoolSlotInfo
+
+    @required
+    red: ManaPoolSlotInfo
+
+    @required
+    green: ManaPoolSlotInfo
+
+    @required
+    colorless: ManaPoolSlotInfo
+}
+
+structure ManaPoolSlotInfo {
+    @required
+    unrestricted: Integer
+
+    @required
+    restricted: RestrictedManaList
+}
+
+list RestrictedManaList {
+    member: RestrictedManaInfo
+}
+
+structure RestrictedManaInfo {
+    @required
+    amount: Integer
+
+    @required
+    restriction: String
 }
 
 list PlayerList {

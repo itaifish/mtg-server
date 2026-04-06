@@ -14,7 +14,7 @@ function CardRow({ cards, y, flipZ = false }: { cards: CardData[]; y: number; fl
       {cards.map((card, i) => {
         const x = (i - (cards.length - 1) / 2) * 1.3;
         const rotZ = card.tapped ? -Math.PI / 2 : flipZ ? Math.PI : 0;
-        return <Card3D key={card.objectId} card={card} position={[x, 0, 0]} rotation={[0, 0, rotZ]} />;
+        return <Card3D key={card.objectId} card={card} position={[x, 0, i * 0.01]} rotation={[0, 0, rotZ]} />;
       })}
     </group>
   );

@@ -1,4 +1,4 @@
-import { useGameStore, selectIsMyTurn } from '@/stores/gameStore';
+import { useGameStore } from '@/stores/gameStore';
 import { useLobbyStore } from '@/stores/lobbyStore';
 
 const pulseKeyframes = `
@@ -11,16 +11,36 @@ const pulseKeyframes = `
 export function PriorityIndicator() {
   const gameState = useGameStore((s) => s.gameState);
   const playerId = useLobbyStore((s) => s.playerId);
-  const isMyTurn = useGameStore((s) => selectIsMyTurn(s, playerId ?? ''));
 
   if (!gameState) return null;
 
-  const priorityPlayer = gameState.players.find(
-    (p) => p.playerId === gameState.priorityPlayerId,
-  );
-  const label = isMyTurn
-    ? 'Your turn'
-    : `Waiting for ${priorityPlayer?.name ?? 'opponent'}`;
+  const hasPriority = gameState.priorityPlayerId === playerId;
+  const isActiveTurn = gameState.activePlayerId === playerId;
+
+  let label: string;
+  let bg: string;
+  let fg: string;
+  let animate: boolean;
+
+  if (isActiveTurn && hasPriority) {
+    label = 'Your turn';
+    bg = 'var(--color-gold)';
+    fg = 'var(--color-bg)';
+    animate = true;
+  } else if (hasPriority) {
+    label = 'You have priority';
+    bg = 'var(--color-accent, #3388ff)';
+    fg = '#fff';
+    animate = true;
+  } else {
+    const priorityPlayer = gameState.players.find(
+      (p) => p.playerId === gameState.priorityPlayerId,
+    );
+    label = `Waiting for ${priorityPlayer?.name ?? 'opponent'}`;
+    bg = 'var(--color-surface)';
+    fg = 'var(--color-text-muted)';
+    animate = false;
+  }
 
   return (
     <>
@@ -33,9 +53,9 @@ export function PriorityIndicator() {
           borderRadius: 'var(--radius)',
           fontWeight: 600,
           fontSize: '0.85rem',
-          background: isMyTurn ? 'var(--color-gold)' : 'var(--color-surface)',
-          color: isMyTurn ? 'var(--color-bg)' : 'var(--color-text-muted)',
-          animation: isMyTurn ? 'priority-pulse 2s ease-in-out infinite' : 'none',
+          background: bg,
+          color: fg,
+          animation: animate ? 'priority-pulse 2s ease-in-out infinite' : 'none',
           textAlign: 'center',
         }}
       >

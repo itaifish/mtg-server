@@ -1,5 +1,6 @@
 import { useTexture } from '@react-three/drei';
 import { CARD_WIDTH, CARD_HEIGHT, CARD_DEPTH } from '@/types/game3d';
+import { useUiStore } from '@/stores/uiStore';
 
 interface OpponentHandZoneProps {
   cardCount: number;
@@ -16,12 +17,13 @@ function CardBack() {
 }
 
 export function OpponentHandZone({ cardCount }: OpponentHandZoneProps) {
+  const cameraPosition = useUiStore((s) => s.cameraPosition);
   if (cardCount === 0) return null;
 
   const spread = Math.min(cardCount * 0.8, 5);
 
   return (
-    <group position={[0, 7, 2.5]} rotation={[Math.atan2(8, 10), 0, Math.PI]}>
+    <group position={[0, 7, 2.5]} rotation={[cameraPosition === 'topdown' ? 0 : Math.atan2(8, 10), 0, Math.PI]}>
       {Array.from({ length: cardCount }, (_, i) => {
         const t = cardCount > 1 ? (i / (cardCount - 1)) * 2 - 1 : 0;
         const x = t * (spread / 2);
