@@ -57,30 +57,55 @@ impl From<crate::engine::legal_actions::LegalAction> for mtg_server_sdk::model::
             LA::PassPriority => Self {
                 action_type: T::PassPriority,
                 object_id: None,
+                target_requirements: None,
+                mana_cost: None,
             },
             LA::PlayLand { object_id } => Self {
                 action_type: T::PlayLand,
                 object_id: Some(object_id as i64),
+                target_requirements: None,
+                mana_cost: None,
             },
-            LA::CastSpell { object_id } => Self {
+            LA::CastSpell {
+                object_id,
+                target_requirements,
+                mana_cost_symbols,
+            } => Self {
                 action_type: T::CastSpell,
                 object_id: Some(object_id as i64),
+                target_requirements: Some(
+                    target_requirements
+                        .into_iter()
+                        .map(|kinds| mtg_server_sdk::model::TargetRequirement {
+                            valid_kinds: kinds.into_iter().map(Into::into).collect(),
+                        })
+                        .collect(),
+                ),
+                mana_cost: Some(mana_cost_symbols),
             },
             LA::ActivateManaAbility { object_id, .. } => Self {
                 action_type: T::ActivateManaAbility,
                 object_id: Some(object_id as i64),
+                target_requirements: None,
+                mana_cost: None,
             },
             LA::DeclareAttackers => Self {
                 action_type: T::DeclareAttackers,
                 object_id: None,
+                target_requirements: None,
+                mana_cost: None,
             },
             LA::DeclareBlockers => Self {
                 action_type: T::DeclareBlockers,
                 object_id: None,
+                target_requirements: None,
+                mana_cost: None,
             },
             LA::Concede => Self {
                 action_type: T::Concede,
                 object_id: None,
+                target_requirements: None,
+                mana_cost: None,
             },
         }
     }
@@ -349,6 +374,22 @@ impl From<&crate::game::stack::SpellTarget> for mtg_server_sdk::model::SpellTarg
                     object_id: *oid as i64,
                 })
             }
+        }
+    }
+}
+
+impl From<crate::game::effect::TargetKind> for mtg_server_sdk::model::TargetKind {
+    fn from(k: crate::game::effect::TargetKind) -> Self {
+        use crate::game::effect::TargetKind as TK;
+        match k {
+            TK::Player => Self::Player,
+            TK::Creature => Self::Creature,
+            TK::Planeswalker => Self::Planeswalker,
+            TK::Artifact => Self::Artifact,
+            TK::Enchantment => Self::Enchantment,
+            TK::Land => Self::Land,
+            TK::Permanent => Self::Permanent,
+            TK::Spell => Self::Spell,
         }
     }
 }

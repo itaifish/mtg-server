@@ -27,9 +27,10 @@ export function HandZone({ cards }: HandZoneProps) {
   const playLandIds = new Set(
     legalActions.filter((a) => a.actionType === LegalActionType.PLAY_LAND && a.objectId != null).map((a) => a.objectId!),
   );
-  const castSpellIds = new Set(
-    legalActions.filter((a) => a.actionType === LegalActionType.CAST_SPELL && a.objectId != null).map((a) => a.objectId!),
+  const castSpellActions = new Map(
+    legalActions.filter((a) => a.actionType === LegalActionType.CAST_SPELL && a.objectId != null).map((a) => [a.objectId!, a]),
   );
+  const castSpellIds = new Set(castSpellActions.keys());
   const legalObjectIds = new Set([...playLandIds, ...castSpellIds]);
 
   const orderedCards = useMemo(() => {
@@ -95,7 +96,8 @@ export function HandZone({ cards }: HandZoneProps) {
     if (worldY > BATTLEFIELD_DROP_Y) {
       if (playLandIds.has(card.objectId)) { playLand(card.objectId); return; }
       if (castSpellIds.has(card.objectId)) {
-        startCasting({ objectId: card.objectId, cardName: card.name, manaValue: card.manaValue ?? 0, manaCost: card.manaCost });
+        const action = castSpellActions.get(card.objectId);
+        startCasting({ objectId: card.objectId, cardName: card.name, manaValue: card.manaValue ?? 0, manaCost: card.manaCost, targetRequirements: action?.targetRequirements });
         return;
       }
     }

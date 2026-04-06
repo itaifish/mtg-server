@@ -210,6 +210,11 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
   const handleClick = (e: THREE.Event) => {
     (e as unknown as { stopPropagation: () => void }).stopPropagation();
     if (didDrag.current) return;
+    // If in targeting mode, dispatch target event instead of selecting
+    if (useUiStore.getState().targetingMode) {
+      window.dispatchEvent(new CustomEvent('target-selected', { detail: { object: { objectId: card.objectId } } }));
+      return;
+    }
     if (selected) {
       deselectObject();
     } else {

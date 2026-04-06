@@ -14,6 +14,8 @@ pub enum LegalAction {
     },
     CastSpell {
         object_id: u64,
+        target_requirements: Vec<Vec<crate::game::effect::TargetKind>>,
+        mana_cost_symbols: Vec<String>,
     },
     ActivateManaAbility {
         object_id: u64,
@@ -92,7 +94,23 @@ pub fn for_player(state: &GameState, player_id: &str) -> Vec<LegalAction> {
             }
             let is_instant = card.definition.card_types.contains(&CardType::Instant);
             if is_instant || sorcery_speed {
-                actions.push(LegalAction::CastSpell { object_id: obj_id });
+                let target_requirements = card
+                    .definition
+                    .spell_effect
+                    .as_ref()
+                    .map(|e| crate::game::effect::target_requirements(e))
+                    .unwrap_or_default();
+                let mana_cost_symbols = card
+                    .definition
+                    .mana_cost
+                    .as_ref()
+                    .map(|mc| mc.symbols.iter().map(|s| format!("{:?}", s)).collect())
+                    .unwrap_or_default();
+                actions.push(LegalAction::CastSpell {
+                    object_id: obj_id,
+                    target_requirements,
+                    mana_cost_symbols,
+                });
             }
         }
     }

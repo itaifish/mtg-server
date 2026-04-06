@@ -59,3 +59,15 @@ export const LegalActionType = {
 } as const;
 export type LegalActionType =
   (typeof LegalActionType)[keyof typeof LegalActionType];
+
+export const TargetKind = {
+  PLAYER: 'PLAYER',
+  CREATURE: 'CREATURE',
+  PLANESWALKER: 'PLANESWALKER',
+  ARTIFACT: 'ARTIFACT',
+  ENCHANTMENT: 'ENCHANTMENT',
+  LAND: 'LAND',
+  PERMANENT: 'PERMANENT',
+  SPELL: 'SPELL',
+} as const;
+export type TargetKind = (typeof TargetKind)[keyof typeof TargetKind];

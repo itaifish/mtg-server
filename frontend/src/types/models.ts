@@ -1,4 +1,4 @@
-import type { LegalActionType, ManaType } from './enums';
+import type { LegalActionType, ManaType, TargetKind } from './enums';
 
 export interface DecklistEntry {
   cardName: string;
@@ -29,9 +29,15 @@ export interface PlayerInfo {
   manaPool?: ManaPoolInfo;
 }
 
+export interface TargetRequirement {
+  validKinds: TargetKind[];
+}
+
 export interface LegalAction {
   actionType: LegalActionType;
   objectId?: number;
+  targetRequirements?: TargetRequirement[];
+  manaCost?: string[];
 }
 
 export interface SymbolPaymentEntry {

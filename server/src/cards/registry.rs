@@ -3,7 +3,7 @@ use std::sync::LazyLock;
 
 use crate::game::ability::{Ability, AbilityCost, AbilityEffect};
 use crate::game::card::{CardDefinition, CardType, Supertype};
-use crate::game::effect::{CounterSpec, Effect, Filter, PlayerSpec, TargetSpec, Value};
+use crate::game::effect::{CounterSpec, Effect, Filter, PlayerSpec, TargetKind, TargetSpec, Value};
 use crate::game::event::{TriggerEvent, TriggerFilter, TriggerPlayerRef, TriggeredAbility};
 use crate::game::mana::{Color, ManaCost, ManaProduction, ManaSymbol, ManaType};
 use crate::game::zone::ZoneType;
@@ -159,7 +159,14 @@ static REGISTRY: LazyLock<HashMap<String, CardDefinition>> = LazyLock::new(|| {
             &[Color::Red],
             Effect::DealDamage {
                 amount: Value::Constant(3),
-                target: TargetSpec::Chosen(0),
+                target: TargetSpec::Chosen {
+                    index: 0,
+                    valid_kinds: vec![
+                        TargetKind::Player,
+                        TargetKind::Creature,
+                        TargetKind::Planeswalker,
+                    ],
+                },
             },
         ),
         instant(

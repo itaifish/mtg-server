@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { LegalActionType } from '../types/enums';
 import type { SpellTarget } from '../types/actions';
+import type { TargetRequirement } from '../types/models';
 
 export interface TargetingMode {
   actionType: LegalActionType;
@@ -20,6 +21,7 @@ export interface PendingCast {
   cardName: string;
   manaValue: number;
   manaCost?: string[];
+  targetRequirements?: TargetRequirement[];
 }
 
 export interface UiState {

@@ -1,4 +1,5 @@
 import type { PlayerInfo } from '@/types/models';
+import { useUiStore } from '@/stores/uiStore';
 
 interface PlayerPanelProps {
   player: PlayerInfo;
@@ -6,8 +7,14 @@ interface PlayerPanelProps {
 }
 
 export function PlayerPanel({ player, isActive }: PlayerPanelProps) {
+  const handleClick = () => {
+    if (useUiStore.getState().targetingMode) {
+      window.dispatchEvent(new CustomEvent('target-selected', { detail: { player: { playerId: player.playerId } } }));
+    }
+  };
+
   return (
-    <div className="panel player-panel" style={{ padding: '6px 10px', background: 'var(--color-surface)', borderRadius: 'var(--radius)', border: isActive ? '2px solid var(--color-gold)' : 'var(--border-width) var(--border-style) var(--color-border)' }}>
+    <div onClick={handleClick} className="panel player-panel" style={{ padding: '6px 10px', background: 'var(--color-surface)', borderRadius: 'var(--radius)', border: isActive ? '2px solid var(--color-gold)' : 'var(--border-width) var(--border-style) var(--color-border)', cursor: useUiStore.getState().targetingMode ? 'pointer' : 'default' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontWeight: 600 }}>{player.name}</span>
         <span style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--color-gold)' }} aria-label={`Life total: ${player.lifeTotal}`}>{player.lifeTotal}</span>

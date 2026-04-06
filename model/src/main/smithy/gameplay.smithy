@@ -414,6 +414,38 @@ structure LegalAction {
     actionType: LegalActionType
 
     objectId: Long
+
+    /// For CAST_SPELL: target requirements, one entry per required target.
+    /// Each entry lists the valid target kinds for that target slot.
+    targetRequirements: TargetRequirementList
+
+    /// For CAST_SPELL: mana cost symbols (e.g., ["{1}", "{R}"]).
+    manaCost: StringList
+}
+
+list TargetRequirementList {
+    member: TargetRequirement
+}
+
+/// Valid target kinds for a single target slot.
+structure TargetRequirement {
+    @required
+    validKinds: TargetKindList
+}
+
+list TargetKindList {
+    member: TargetKind
+}
+
+enum TargetKind {
+    PLAYER
+    CREATURE
+    PLANESWALKER
+    ARTIFACT
+    ENCHANTMENT
+    LAND
+    PERMANENT
+    SPELL
 }
 
 enum LegalActionType {

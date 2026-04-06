@@ -217,7 +217,7 @@ fn get_referenced_targets(
     entry: &StackEntry,
 ) -> Vec<SpellTarget> {
     match spec {
-        TargetSpec::Chosen(idx) => entry.targets.get(*idx).cloned().into_iter().collect(),
+        TargetSpec::Chosen { index, .. } => entry.targets.get(*index).cloned().into_iter().collect(),
         TargetSpec::Source => {
             let id = match &entry.kind {
                 StackEntryKind::Spell { object_id } => *object_id,
@@ -375,6 +375,18 @@ pub fn cast_spell(
         .mana_cost
         .clone()
         .ok_or_else(|| ActionError::Illegal("card has no mana cost".into()))?;
+
+    // CR 601.2c — Validate targets
+    if let Some(effect) = &card.definition.spell_effect {
+        let required = crate::game::effect::required_target_count(effect);
+        if targets.len() < required {
+            return Err(ActionError::Illegal(format!(
+                "spell requires {} target(s), got {}",
+                required,
+                targets.len()
+            )));
+        }
+    }
 
     // CR 304.1 — Instants can be cast anytime you have priority
     // CR 307.1 / 302.1 — Everything else is sorcery speed
