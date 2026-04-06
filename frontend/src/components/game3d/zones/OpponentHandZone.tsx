@@ -8,9 +8,9 @@ interface OpponentHandZoneProps {
 function CardBack() {
   const texture = useTexture('/card_back.png');
   return (
-    <mesh position={[0, 0, CARD_DEPTH / 2 + 0.001]}>
+    <mesh position={[0, 0, CARD_DEPTH / 2 + 0.005]}>
       <planeGeometry args={[CARD_WIDTH * 0.95, CARD_HEIGHT * 0.95]} />
-      <meshBasicMaterial map={texture} />
+      <meshBasicMaterial map={texture} polygonOffset polygonOffsetFactor={-1} />
     </mesh>
   );
 }

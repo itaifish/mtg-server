@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, Suspense } from 'react';
-import { Text, useTexture } from '@react-three/drei';
+import { useTexture } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useSpring, animated } from '@react-spring/three';
 import * as THREE from 'three';
@@ -27,9 +27,9 @@ interface Card3DProps {
 function CardFaceTexture({ url }: { url: string }) {
   const texture = useTexture(url);
   return (
-    <mesh position={[0, 0, CARD_DEPTH / 2 + 0.001]} rotation={[0, 0, 0]}>
+    <mesh position={[0, 0, CARD_DEPTH / 2 + 0.005]}>
       <planeGeometry args={[CARD_WIDTH * 0.95, CARD_HEIGHT * 0.95]} />
-      <meshStandardMaterial map={texture} transparent />
+      <meshBasicMaterial map={texture} transparent polygonOffset polygonOffsetFactor={-1} />
     </mesh>
   );
 }
@@ -38,9 +38,9 @@ function CardFaceTexture({ url }: { url: string }) {
 function CardBackTexture() {
   const texture = useTexture('/card_back.png');
   return (
-    <mesh position={[0, 0, -(CARD_DEPTH / 2 + 0.001)]} rotation={[0, Math.PI, 0]}>
+    <mesh position={[0, 0, -(CARD_DEPTH / 2 + 0.005)]} rotation={[0, Math.PI, 0]}>
       <planeGeometry args={[CARD_WIDTH * 0.95, CARD_HEIGHT * 0.95]} />
-      <meshStandardMaterial map={texture} />
+      <meshBasicMaterial map={texture} polygonOffset polygonOffsetFactor={-1} />
     </mesh>
   );
 }
@@ -58,7 +58,7 @@ function PlayableGlow({ color }: { color: string }) {
     meshRef.current.scale.setScalar(1 + Math.sin(t * 2) * 0.03);
   });
   return (
-    <mesh ref={meshRef} position={[0, 0, -0.005]}>
+    <mesh ref={meshRef} position={[0, 0, -CARD_DEPTH]}>
       <planeGeometry args={[CARD_WIDTH + 0.14, CARD_HEIGHT + 0.14]} />
       <meshBasicMaterial color={color} transparent opacity={0.4} />
     </mesh>
@@ -202,10 +202,6 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
     unhoverObject();
   };
 
-  const isCreature = card.cardType === 'creature' && card.power !== undefined;
-  const isDark = card.color === 'black';
-  const textColor = isDark ? scene.cardTextOnDark : scene.cardTextOnLight;
-
   return (
     <group ref={groupRef} position={position} rotation={[rotation[0], rotation[1], 0]}>
       <animated.group scale={spring.scale} position-x={spring.posX} position-y={spring.posY} position-z={spring.posZ}>
@@ -232,37 +228,9 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
           <PlayableGlow color={scene.cardHighlight} />
         )}
 
-        {/* Selection outline */}
+        {/* Selection glow */}
         {selected && (
-          <mesh>
-            <boxGeometry args={[CARD_WIDTH + 0.06, CARD_HEIGHT + 0.06, CARD_DEPTH + 0.01]} />
-            <meshBasicMaterial color={scene.cardGlowSelected} transparent opacity={0.6} />
-          </mesh>
-        )}
-
-        {/* Card name */}
-        <Text
-          position={[0, CARD_HEIGHT * 0.3, CARD_DEPTH / 2 + 0.01]}
-          fontSize={0.1}
-          color={textColor}
-          anchorX="center"
-          anchorY="middle"
-          maxWidth={CARD_WIDTH * 0.85}
-        >
-          {card.name}
-        </Text>
-
-        {/* Power/Toughness */}
-        {isCreature && (
-          <Text
-            position={[CARD_WIDTH * 0.3, -CARD_HEIGHT * 0.35, CARD_DEPTH / 2 + 0.01]}
-            fontSize={0.14}
-            color={textColor}
-            anchorX="center"
-            anchorY="middle"
-          >
-            {`${card.power}/${card.toughness}`}
-          </Text>
+          <PlayableGlow color={scene.cardGlowSelected} />
         )}
 
         {/* Card image texture overlay */}
