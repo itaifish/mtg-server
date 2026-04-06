@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useRef } from 'react';
 import { useSprings, animated } from '@react-spring/three';
 import { useGameStore } from '@/stores/gameStore';
 import { useUiStore } from '@/stores/uiStore';
@@ -21,6 +21,7 @@ export function HandZone({ cards }: HandZoneProps) {
   const draggingObjectId = useUiStore((s) => s.draggingObjectId);
   const { playLand, castSpell } = useGameActions();
   const [dragSlot, setDragSlot] = useState<number | null>(null);
+  const lastDroppedId = useRef<number | null>(null);
 
   const playLandIds = new Set(
     legalActions.filter((a) => a.actionType === LegalActionType.PLAY_LAND && a.objectId != null).map((a) => a.objectId!),
@@ -47,36 +48,35 @@ export function HandZone({ cards }: HandZoneProps) {
     return t * (s / 2);
   }, []);
 
-  // Positions: if dragging, other cards shift to leave a gap at dragSlot
   const springs = useSprings(
     count,
     orderedCards.map((card, i) => {
       const isDragged = card.objectId === draggingObjectId;
       if (isDragged) {
-        // Dragged card keeps its original position (Card3D handles offset)
         const t = count > 1 ? (i / (count - 1)) * 2 - 1 : 0;
         return {
           position: [t * (spread / 2), -Math.abs(t) * 0.15, i * 0.03] as [number, number, number],
           config: SPRING_CONFIG,
         };
       }
-      // When dragging, compute shifted position
       if (draggingObjectId != null && dragSlot != null) {
-        const othersCount = count; // total slots including gap
         const otherIndex = orderedCards.filter((c) => c.objectId !== draggingObjectId).indexOf(card);
-        // Shift index: if at or past dragSlot, shift right by one slot
         const shiftedIndex = otherIndex >= dragSlot ? otherIndex + 1 : otherIndex;
-        const x = slotX(shiftedIndex, othersCount);
-        const t = othersCount > 1 ? (shiftedIndex / (othersCount - 1)) * 2 - 1 : 0;
+        const x = slotX(shiftedIndex, count);
+        const t = count > 1 ? (shiftedIndex / (count - 1)) * 2 - 1 : 0;
         return {
           position: [x, -Math.abs(t) * 0.15, shiftedIndex * 0.03] as [number, number, number],
           config: SPRING_CONFIG,
         };
       }
       const t = count > 1 ? (i / (count - 1)) * 2 - 1 : 0;
+      // Just-dropped card: jump to new slot instantly so Card3D spring handles the visual return
+      const immediate = card.objectId === lastDroppedId.current;
+      if (immediate) lastDroppedId.current = null;
       return {
         position: [t * (spread / 2), -Math.abs(t) * 0.15, i * 0.03] as [number, number, number],
         config: SPRING_CONFIG,
+        immediate,
       };
     }),
   );
@@ -84,8 +84,7 @@ export function HandZone({ cards }: HandZoneProps) {
   const handleCardDrag = useCallback((_card: CardData, _worldY: number, worldX: number) => {
     const slotWidth = count > 1 ? spread / (count - 1) : 1;
     const newSlot = Math.round((worldX + spread / 2) / slotWidth);
-    const clamped = Math.max(0, Math.min(count - 1, newSlot));
-    setDragSlot(clamped);
+    setDragSlot(Math.max(0, Math.min(count - 1, newSlot)));
   }, [count, spread]);
 
   const handleCardDrop = useCallback((card: CardData, worldY: number, worldX: number) => {
@@ -94,7 +93,7 @@ export function HandZone({ cards }: HandZoneProps) {
       if (playLandIds.has(card.objectId)) { playLand(card.objectId); return; }
       if (castSpellIds.has(card.objectId)) { castSpell(card.objectId, []); return; }
     }
-    // Reorder: insert at dragSlot
+    lastDroppedId.current = card.objectId;
     const newOrder = orderedCards.filter((c) => c.objectId !== card.objectId).map((c) => c.objectId);
     const slotWidth = count > 1 ? spread / (count - 1) : 1;
     const slot = Math.max(0, Math.min(count - 1, Math.round((worldX + spread / 2) / slotWidth)));

@@ -1,6 +1,5 @@
 import { Canvas } from '@react-three/fiber';
 import { useUiStore } from '@/stores/uiStore';
-import { useTheme } from '@/theme';
 import { CameraController } from './CameraController';
 import { HandZone } from './zones/HandZone';
 import { OpponentHandZone } from './zones/OpponentHandZone';
@@ -9,14 +8,13 @@ import { GraveyardZone } from './zones/GraveyardZone';
 import { StackZone } from './zones/StackZone';
 import { ExileZone } from './zones/ExileZone';
 import { LibraryZone } from './zones/LibraryZone';
+import { TableSurface } from './TableSurface';
 import { mapGameStateToZones } from '@/types/game3d';
 import { useGameStore } from '@/stores/gameStore';
 import { useLobbyStore } from '@/stores/lobbyStore';
 
 export function GameBoard() {
   const deselectObject = useUiStore((s) => s.deselectObject);
-  const { theme } = useTheme();
-  const { scene } = theme;
   const gameState = useGameStore((s) => s.gameState);
   const playerId = useLobbyStore((s) => s.playerId);
   // TODO: use useLobbyStore playerId for perspective-based zone filtering once mapGameStateToZones supports it
@@ -33,11 +31,7 @@ export function GameBoard() {
     >
       <ambientLight intensity={1.5} />
 
-      {/* Table surface */}
-      <mesh rotation={[0, 0, 0]} position={[0, 0, -0.1]}>
-        <planeGeometry args={[24, 20]} />
-        <meshStandardMaterial color={scene.tableSurface} />
-      </mesh>
+      <TableSurface />
 
       <OpponentHandZone cardCount={opponentHandSize} />
       <HandZone cards={zones.hand} />

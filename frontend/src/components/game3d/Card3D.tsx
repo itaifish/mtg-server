@@ -46,8 +46,6 @@ function CardBackTexture() {
   );
 }
 
-const SPRING_CONFIG = { tension: 170, friction: 26 };
-
 /** Animated pulsing glow ring around playable cards */
 function PlayableGlow({ color }: { color: string }) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -164,10 +162,19 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
     evt.stopPropagation();
     (evt.target as Element).releasePointerCapture(evt.nativeEvent.pointerId);
     if (didDrag.current && onDrop) {
-      const world = pointerToWorld(evt.nativeEvent.clientX, evt.nativeEvent.clientY);
-      onDrop(card, world.y, world.x);
+      // Raycast onto table plane (z=0) for drop position
+      const rect = gl.domElement.getBoundingClientRect();
+      const ndc = new THREE.Vector2(
+        ((evt.nativeEvent.clientX - rect.left) / rect.width) * 2 - 1,
+        -((evt.nativeEvent.clientY - rect.top) / rect.height) * 2 + 1,
+      );
+      const dropRay = new THREE.Raycaster();
+      dropRay.setFromCamera(ndc, camera);
+      const tablePlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+      const tableHit = new THREE.Vector3();
+      dropRay.ray.intersectPlane(tablePlane, tableHit);
+      onDrop(card, tableHit.y, tableHit.x);
     }
-    // Always return to hand position (spring animates back)
     dragStartPointer.current = null;
     didDrag.current = false;
     setDragOffset(null);
@@ -182,7 +189,9 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
     posX: isDragging ? dragOffset![0] : 0,
     posY: isDragging ? dragOffset![1] : hovered ? 0.15 : 0,
     posZ: isDragging ? dragOffset![2] + 1 : 0,
-    config: isDragging ? { tension: 300, friction: 30 } : SPRING_CONFIG,
+    config: isDragging
+      ? { tension: 300, friction: 30 }
+      : { tension: 200, friction: 40, clamp: true },
   });
 
   // Smooth tap/untap rotation via useFrame
