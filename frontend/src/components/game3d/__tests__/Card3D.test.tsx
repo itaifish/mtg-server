@@ -6,10 +6,15 @@ let frameCallback: (() => void) | null = null;
 
 vi.mock('@react-three/fiber', () => ({
   useFrame: (cb: () => void) => { frameCallback = cb; cb(); },
+  useThree: () => ({
+    camera: { position: { set: vi.fn() } },
+    gl: { domElement: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }) } },
+  }),
 }));
 
 vi.mock('@react-three/drei', () => ({
   Text: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+  useTexture: () => null,
 }));
 
 vi.mock('@react-spring/three', () => ({

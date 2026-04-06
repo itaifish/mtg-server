@@ -19,6 +19,22 @@ export const GameStatus = {
 } as const;
 export type GameStatus = (typeof GameStatus)[keyof typeof GameStatus];
 
+export const GamePhase = {
+  UNTAP: 'UNTAP',
+  UPKEEP: 'UPKEEP',
+  DRAW: 'DRAW',
+  PRECOMBAT_MAIN: 'PRECOMBAT_MAIN',
+  BEGINNING_OF_COMBAT: 'BEGINNING_OF_COMBAT',
+  DECLARE_ATTACKERS: 'DECLARE_ATTACKERS',
+  DECLARE_BLOCKERS: 'DECLARE_BLOCKERS',
+  COMBAT_DAMAGE: 'COMBAT_DAMAGE',
+  END_OF_COMBAT: 'END_OF_COMBAT',
+  POSTCOMBAT_MAIN: 'POSTCOMBAT_MAIN',
+  END_STEP: 'END_STEP',
+  CLEANUP: 'CLEANUP',
+} as const;
+export type GamePhase = (typeof GamePhase)[keyof typeof GamePhase];
+
 export const ManaType = {
   WHITE: 'WHITE',
   BLUE: 'BLUE',

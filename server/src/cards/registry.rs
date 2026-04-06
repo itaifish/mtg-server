@@ -188,8 +188,19 @@ static REGISTRY: LazyLock<HashMap<String, CardDefinition>> = LazyLock::new(|| {
     cards.into_iter().map(|c| (c.name.clone(), c)).collect()
 });
 
+static ORACLE_REGISTRY: LazyLock<HashMap<String, &'static CardDefinition>> = LazyLock::new(|| {
+    REGISTRY
+        .values()
+        .map(|c| (c.oracle_id.clone(), c))
+        .collect()
+});
+
 pub fn card_by_name(name: &str) -> Option<&'static CardDefinition> {
     REGISTRY.get(name)
+}
+
+pub fn card_by_oracle_id(oracle_id: &str) -> Option<&'static CardDefinition> {
+    ORACLE_REGISTRY.get(oracle_id).copied()
 }
 
 pub fn all_card_names() -> Vec<&'static str> {

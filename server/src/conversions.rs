@@ -19,7 +19,31 @@ impl From<&crate::game::state::Player> for mtg_server_sdk::model::PlayerInfo {
             name: p.name.clone(),
             life_total: p.life_total,
             ready: p.pregame.ready,
+            hand_size: 0,
+            library_size: 0,
+            poison_counters: p.poison_counters as i32,
+            mulligan_count: p.pregame.mulligan_count as i32,
+            has_kept: p.pregame.has_kept,
         }
+    }
+}
+
+/// PlayerInfo with zone sizes requires GameState access.
+pub fn player_info(
+    p: &crate::game::state::Player,
+    state: &crate::game::state::GameState,
+) -> mtg_server_sdk::model::PlayerInfo {
+    let zones = state.player_zones.get(&p.id);
+    mtg_server_sdk::model::PlayerInfo {
+        player_id: p.id.clone(),
+        name: p.name.clone(),
+        life_total: p.life_total,
+        ready: p.pregame.ready,
+        hand_size: zones.map(|z| z.hand.len() as i32).unwrap_or(0),
+        library_size: zones.map(|z| z.library.len() as i32).unwrap_or(0),
+        poison_counters: p.poison_counters as i32,
+        mulligan_count: p.pregame.mulligan_count as i32,
+        has_kept: p.pregame.has_kept,
     }
 }
 
@@ -142,9 +166,15 @@ impl TryFrom<&crate::game::card::CardInstance> for mtg_server_sdk::model::Perman
         Ok(Self {
             object_id: card.id as i64,
             name: card.definition.name.clone(),
+            oracle_id: card.definition.oracle_id.clone(),
             controller: card.controller.clone().unwrap_or_default(),
             owner: card.owner.clone(),
-            card_types: card.definition.card_types.iter().map(|t| format!("{:?}", t)).collect(),
+            card_types: card
+                .definition
+                .card_types
+                .iter()
+                .map(|t| format!("{:?}", t))
+                .collect(),
             subtypes: card.definition.subtypes.clone(),
             power: card.definition.power,
             toughness: card.definition.toughness,
@@ -194,6 +224,83 @@ impl From<crate::store::GameListItem> for mtg_server_sdk::model::GameSummary {
             },
             player_count: g.player_count,
             format: mtg_server_sdk::model::GameFormat::Standard,
+        }
+    }
+}
+
+impl From<crate::game::phases_and_steps::Phase> for mtg_server_sdk::model::GamePhase {
+    fn from(phase: crate::game::phases_and_steps::Phase) -> Self {
+        use crate::game::phases_and_steps::{BeginningStep, CombatStep, EndingStep, Phase};
+        match phase {
+            Phase::Beginning(BeginningStep::Untap) => Self::Untap,
+            Phase::Beginning(BeginningStep::Upkeep) => Self::Upkeep,
+            Phase::Beginning(BeginningStep::Draw) => Self::Draw,
+            Phase::PrecombatMain => Self::PrecombatMain,
+            Phase::Combat(CombatStep::BeginningOfCombat) => Self::BeginningOfCombat,
+            Phase::Combat(CombatStep::DeclareAttackers) => Self::DeclareAttackers,
+            Phase::Combat(CombatStep::DeclareBlockers) => Self::DeclareBlockers,
+            Phase::Combat(CombatStep::CombatDamage) => Self::CombatDamage,
+            Phase::Combat(CombatStep::EndOfCombat) => Self::EndOfCombat,
+            Phase::PostcombatMain => Self::PostcombatMain,
+            Phase::Ending(EndingStep::End) => Self::EndStep,
+            Phase::Ending(EndingStep::Cleanup) => Self::Cleanup,
+        }
+    }
+}
+
+impl From<&crate::game::state::CombatState> for mtg_server_sdk::model::CombatInfo {
+    fn from(c: &crate::game::state::CombatState) -> Self {
+        Self {
+            attackers: c.attackers.iter().map(Into::into).collect(),
+            blockers: c.blockers.iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl From<&crate::game::state::AttackerInfo> for mtg_server_sdk::model::CombatAttackerInfo {
+    fn from(a: &crate::game::state::AttackerInfo) -> Self {
+        Self {
+            object_id: a.object_id as i64,
+            target_player_id: match &a.target {
+                crate::game::state::AttackTarget::Player(pid) => pid.clone(),
+                _ => String::new(),
+            },
+        }
+    }
+}
+
+impl From<&crate::game::state::BlockerInfo> for mtg_server_sdk::model::CombatBlockerInfo {
+    fn from(b: &crate::game::state::BlockerInfo) -> Self {
+        Self {
+            object_id: b.object_id as i64,
+            blocking_id: b.blocking as i64,
+        }
+    }
+}
+
+impl From<&crate::game::card::CardInstance> for mtg_server_sdk::model::CardInfo {
+    fn from(card: &crate::game::card::CardInstance) -> Self {
+        Self {
+            object_id: card.id as i64,
+            name: card.definition.name.clone(),
+            oracle_id: card.definition.oracle_id.clone(),
+            card_types: card
+                .definition
+                .card_types
+                .iter()
+                .map(|t| format!("{:?}", t))
+                .collect(),
+            mana_cost: card
+                .definition
+                .mana_cost
+                .as_ref()
+                .map(|mc| mc.symbols.iter().map(|s| format!("{:?}", s)).collect()),
+            mana_value: card
+                .definition
+                .mana_cost
+                .as_ref()
+                .map(|mc| mc.mana_value() as i32)
+                .unwrap_or(0),
         }
     }
 }

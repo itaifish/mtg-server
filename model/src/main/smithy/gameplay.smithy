@@ -58,6 +58,29 @@ structure GetGameStateOutput {
 
     /// Cards in the requesting player's hand (only if perspectivePlayerId is set).
     hand: CardInfoList
+
+    /// Each player's graveyard (public zone, visible to all).
+    graveyards: PlayerZoneMap
+
+    /// Exile zone (public, visible to all).
+    exile: CardInfoList
+
+    /// Command zone (public, visible to all).
+    command: CardInfoList
+
+    /// Stack — spells and abilities waiting to resolve.
+    stack: StackEntryList
+
+    /// Current phase/step.
+    @required
+    phase: GamePhase
+
+    /// Lands played this turn by the active player.
+    @required
+    landsPlayedThisTurn: Integer
+
+    /// Current combat state, if in combat.
+    combat: CombatInfo
 }
 
 list CardInfoList {
@@ -72,6 +95,7 @@ structure CardInfo {
     name: String
 
     /// Scryfall oracle ID — used to look up card images from S3.
+    @required
     oracleId: String
 
     @required
@@ -94,6 +118,9 @@ structure PermanentInfo {
 
     @required
     name: String
+
+    @required
+    oracleId: String
 
     @required
     controller: String
@@ -400,4 +427,96 @@ enum LegalActionType {
     KEEP_HAND
     MULLIGAN
     CONCEDE
+}
+
+// --- Card Image ---
+/// Get the image URL for a card by oracle ID.
+@readonly
+@http(method: "GET", uri: "/cards/{oracleId}/image")
+operation GetCardImage {
+    input: GetCardImageInput
+    output: GetCardImageOutput
+    errors: [
+        NotFoundError
+        ServerError
+    ]
+}
+
+@input
+structure GetCardImageInput {
+    @required
+    @httpLabel
+    oracleId: String
+
+    @httpQuery("version")
+    version: String
+}
+
+@output
+structure GetCardImageOutput {
+    @required
+    imageUrl: String
+}
+
+// --- Combat Info ---
+structure CombatInfo {
+    @required
+    attackers: CombatAttackerList
+
+    @required
+    blockers: CombatBlockerList
+}
+
+list CombatAttackerList {
+    member: CombatAttackerInfo
+}
+
+structure CombatAttackerInfo {
+    @required
+    objectId: Long
+
+    @required
+    targetPlayerId: String
+}
+
+list CombatBlockerList {
+    member: CombatBlockerInfo
+}
+
+structure CombatBlockerInfo {
+    @required
+    objectId: Long
+
+    @required
+    blockingId: Long
+}
+
+// --- Stack Info ---
+list StackEntryList {
+    member: StackEntryInfo
+}
+
+structure StackEntryInfo {
+    @required
+    name: String
+
+    @required
+    controller: String
+
+    objectId: Long
+
+    oracleId: String
+}
+
+// --- Player Zone Map ---
+list PlayerZoneMap {
+    member: PlayerZoneEntry
+}
+
+structure PlayerZoneEntry {
+    @required
+    playerId: String
+
+    @required
+    cards: CardInfoList
 }

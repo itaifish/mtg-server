@@ -19,7 +19,9 @@
       "identifier": "http:default",
       "allow": [
         { "url": "https://*.execute-api.us-east-1.amazonaws.com/*" },
-        { "url": "http://localhost:*" }
+        { "url": "http://localhost:*" },
+        { "url": "https://api.scryfall.com/*" },
+        { "url": "https://cards.scryfall.io/*" }
       ]
     }
   ]

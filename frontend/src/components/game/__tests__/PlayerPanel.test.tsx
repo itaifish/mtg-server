@@ -8,7 +8,7 @@ describe('PlayerPanel', () => {
     playerId: 'p1',
     name: 'Alice',
     lifeTotal: 20,
-    ready: true,
+    ready: true, handSize: 7, librarySize: 53, poisonCounters: 0,
   };
 
   it('displays player name and life total', () => {
@@ -17,9 +17,10 @@ describe('PlayerPanel', () => {
     expect(screen.getByLabelText('Life total: 20')).toHaveTextContent('20');
   });
 
-  it('shows mana pool dots', () => {
+  it('shows hand size and library size', () => {
     render(<PlayerPanel player={player} isActive={false} />);
-    expect(screen.getByLabelText('Mana pool')).toBeInTheDocument();
+    expect(screen.getByTitle('Cards in hand')).toHaveTextContent('7');
+    expect(screen.getByTitle('Cards in library')).toHaveTextContent('53');
   });
 
   it('highlights active player', () => {

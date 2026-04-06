@@ -8,7 +8,10 @@ use mtg_server_sdk::error::{
 use mtg_server_sdk::server::request::extension::Extension;
 use mtg_server_sdk::{input, output};
 
-use mtg_server_sdk::model::{ActionInput, PermanentInfo};
+use mtg_server_sdk::model::{
+    ActionInput, CardInfo, CombatAttackerInfo, CombatBlockerInfo, CombatInfo, PermanentInfo,
+    PlayerZoneEntry, StackEntryInfo,
+};
 
 use crate::deck::loader::{load_deck, DeckEntry};
 use crate::engine;
@@ -205,6 +208,28 @@ pub async fn set_ready(
     })
 }
 
+pub async fn get_card_image(
+    input: input::GetCardImageInput,
+) -> Result<output::GetCardImageOutput, mtg_server_sdk::error::GetCardImageError> {
+    let version = input.version.as_deref().unwrap_or("normal");
+    // Scryfall image API uses card name, not oracle_id
+    // First look up the card name from our registry, fall back to oracle_id search
+    let image_url = if let Some(card) = crate::cards::card_by_oracle_id(&input.oracle_id) {
+        format!(
+            "https://api.scryfall.com/cards/named?exact={}&format=image&version={}",
+            urlencoding::encode(&card.name),
+            version,
+        )
+    } else {
+        format!(
+            "https://api.scryfall.com/cards/named?exact={}&format=image&version={}",
+            urlencoding::encode(&input.oracle_id),
+            version,
+        )
+    };
+    Ok(output::GetCardImageOutput { image_url })
+}
+
 pub async fn get_game_state(
     input: input::GetGameStateInput,
     Extension(store): Extension<Arc<GameStore>>,
@@ -214,9 +239,16 @@ pub async fn get_game_state(
     Ok(output::GetGameStateOutput {
         game_id: state.game_id.clone(),
         status: state.status.into(),
-        players: state.players.iter().map(Into::into).collect(),
+        players: state
+            .players
+            .iter()
+            .map(|p| crate::conversions::player_info(p, &state))
+            .collect(),
         turn_number: state.turn_number as i32,
         action_count: state.action_count as i32,
+        phase: state.phase.into(),
+        lands_played_this_turn: state.lands_played_this_turn as i32,
+        combat: state.combat.as_ref().map(Into::into),
         priority_player_id: if state.status == GameStatus::InProgress {
             Some(state.priority_player().id.clone())
         } else {
@@ -232,9 +264,81 @@ pub async fn get_game_state(
             state
                 .battlefield
                 .iter()
-                .filter_map(|id| {
-                    let card = state.objects.get(id)?;
-                    PermanentInfo::try_from(card).ok()
+                .filter_map(|id| PermanentInfo::try_from(state.objects.get(id)?).ok())
+                .collect(),
+        ),
+        hand: input.perspective_player_id.as_ref().and_then(|pid| {
+            state.player_zones.get(pid).map(|zones| {
+                zones
+                    .hand
+                    .iter()
+                    .filter_map(|id| state.objects.get(id).map(CardInfo::from))
+                    .collect()
+            })
+        }),
+        graveyards: Some(
+            state
+                .player_zones
+                .iter()
+                .map(|(pid, zones)| PlayerZoneEntry {
+                    player_id: pid.clone(),
+                    cards: zones
+                        .graveyard
+                        .iter()
+                        .filter_map(|id| state.objects.get(id).map(CardInfo::from))
+                        .collect(),
+                })
+                .collect(),
+        ),
+        exile: Some(
+            state
+                .exile
+                .iter()
+                .filter_map(|id| state.objects.get(id).map(CardInfo::from))
+                .collect(),
+        ),
+        command: Some(
+            state
+                .command
+                .iter()
+                .filter_map(|id| state.objects.get(id).map(CardInfo::from))
+                .collect(),
+        ),
+        stack: Some(
+            state
+                .stack
+                .entries()
+                .iter()
+                .map(|entry| {
+                    use crate::game::stack::StackEntryKind;
+                    let (name, oracle_id, object_id) = match &entry.kind {
+                        StackEntryKind::Spell { object_id } => {
+                            let card = state.objects.get(object_id);
+                            (
+                                card.map(|c| c.definition.name.clone()).unwrap_or_default(),
+                                card.map(|c| c.definition.oracle_id.clone()),
+                                Some(*object_id as i64),
+                            )
+                        }
+                        StackEntryKind::Ability { source_id, .. } => {
+                            let card = state.objects.get(source_id);
+                            (
+                                format!(
+                                    "{} ability",
+                                    card.map(|c| c.definition.name.as_str())
+                                        .unwrap_or("Unknown")
+                                ),
+                                card.map(|c| c.definition.oracle_id.clone()),
+                                None,
+                            )
+                        }
+                    };
+                    StackEntryInfo {
+                        name,
+                        controller: entry.controller.clone(),
+                        object_id,
+                        oracle_id,
+                    }
                 })
                 .collect(),
         ),

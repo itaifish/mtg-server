@@ -10,6 +10,9 @@ export interface PlayerInfo {
   name: string;
   lifeTotal: number;
   ready: boolean;
+  handSize: number;
+  librarySize: number;
+  poisonCounters: number;
 }
 
 export interface LegalAction {

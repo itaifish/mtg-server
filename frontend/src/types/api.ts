@@ -1,4 +1,4 @@
-import type { GameFormat, GameStatus } from './enums';
+import type { GameFormat, GamePhase, GameStatus } from './enums';
 import type { ActionInput } from './actions';
 import type { DecklistEntry, LegalAction, PlayerInfo } from './models';
 
@@ -45,15 +45,68 @@ export interface GetGameStateRequest {
   perspectivePlayerId?: string;
 }
 
+export interface CounterInfo {
+  counterType: string;
+  count: number;
+}
+
+export interface PermanentInfo {
+  objectId: number;
+  name: string;
+  oracleId?: string;
+  controller: string;
+  owner: string;
+  cardTypes: string[];
+  subtypes: string[];
+  power?: number;
+  toughness?: number;
+  effectivePower?: number;
+  effectiveToughness?: number;
+  tapped: boolean;
+  summoningSick: boolean;
+  damageMarked: number;
+  counters: CounterInfo[];
+  keywords: string[];
+}
+
+export interface CardInfo {
+  objectId: number;
+  name: string;
+  oracleId: string;
+  cardTypes: string[];
+  manaCost?: string[];
+  manaValue: number;
+}
+
+export interface PlayerZoneEntry {
+  playerId: string;
+  cards: CardInfo[];
+}
+
+export interface StackEntryInfo {
+  name: string;
+  controller: string;
+  objectId?: number;
+  oracleId?: string;
+}
+
 export interface GetGameStateResponse {
   gameId: string;
   status: GameStatus;
   players: PlayerInfo[];
   turnNumber: number;
   actionCount: number;
+  phase?: GamePhase;
+  landsPlayedThisTurn?: number;
   priorityPlayerId?: string;
   activePlayerId?: string;
   playOrderChooserId?: string;
+  battlefield?: PermanentInfo[];
+  hand?: CardInfo[];
+  graveyards?: PlayerZoneEntry[];
+  exile?: CardInfo[];
+  command?: CardInfo[];
+  stack?: StackEntryInfo[];
 }
 
 // SubmitAction

@@ -185,4 +185,17 @@ export class MtgApiClient {
       playerId: req.playerId,
     });
   }
+
+  async getCardImage(oracleId: string, version?: string): Promise<{ imageUrl: string }> {
+    const params = new URLSearchParams();
+    if (version) params.set('version', version);
+    const qs = params.toString();
+    return this.request('GET', `/cards/${encodeURIComponent(oracleId)}/image${qs ? `?${qs}` : ''}`);
+  }
+
+  /** Fetch a raw URL through the same fetch pipeline (Tauri HTTP plugin in Tauri, native fetch in browser). */
+  async fetchRaw(url: string): Promise<Response> {
+    const fetchFn = await getFetch();
+    return fetchFn(url);
+  }
 }

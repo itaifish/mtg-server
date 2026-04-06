@@ -5,10 +5,13 @@ import * as THREE from 'three';
 import { useUiStore } from '@/stores/uiStore';
 
 const CAMERA_POSITIONS: Record<string, [number, number, number]> = {
-  default: [0, -2, 12],
+  default: [0, -10, 8],
   overhead: [0, 0, 18],
-  closeup: [0, -4, 6],
+  closeup: [0, -6, 5],
 };
+
+/** Where the camera looks — center of the battlefield, slightly toward our side */
+const LOOK_AT: [number, number, number] = [0, 0, 0];
 
 export function CameraController() {
   const cameraPosition = useUiStore((s) => s.cameraPosition);
@@ -19,7 +22,8 @@ export function CameraController() {
     const dest = CAMERA_POSITIONS[cameraPosition] ?? CAMERA_POSITIONS.default;
     target.current.set(...dest);
     camera.position.lerp(target.current, 0.05);
+    camera.lookAt(...LOOK_AT);
   });
 
-  return <OrbitControls enablePan={false} maxDistance={25} minDistance={4} />;
+  return <OrbitControls enablePan={false} enableZoom={false} enableRotate={false} target={LOOK_AT} />;
 }

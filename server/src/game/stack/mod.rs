@@ -51,6 +51,10 @@ impl Stack {
         self.entries.is_empty()
     }
 
+    pub fn entries(&self) -> &[StackEntry] {
+        &self.entries
+    }
+
     pub fn contains(&self, object_id: &ObjectId) -> bool {
         self.entries.iter().any(|e| match &e.kind {
             StackEntryKind::Spell { object_id: oid } => oid == object_id,

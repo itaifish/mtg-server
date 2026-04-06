@@ -28,6 +28,8 @@
   --spacing-xl: 32px;
 }
 
+html, body, #root { height: 100dvh; }
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -35,7 +37,6 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   line-height: 1.5;
-  min-height: 100vh;
 }
 
 h1, h2, h3 { color: var(--color-gold); font-weight: 600; font-family: var(--font-heading, var(--font-main)); }

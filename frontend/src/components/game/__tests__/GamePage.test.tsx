@@ -8,6 +8,7 @@ import { GameStatus, LegalActionType } from '@/types/enums';
 import type { GetGameStateResponse } from '@/types/api';
 
 const mockConcede = vi.fn();
+const mockPassPriority = vi.fn();
 
 vi.mock('@/hooks/useGameActions', () => ({
   useGameActions: () => ({
@@ -16,7 +17,7 @@ vi.mock('@/hooks/useGameActions', () => ({
     declareBlockers: vi.fn(),
     activateManaAbility: vi.fn(),
     castSpell: vi.fn(),
-    passPriority: vi.fn(),
+    passPriority: mockPassPriority,
     playLand: vi.fn(),
     chooseFirstPlayer: vi.fn(),
     keepHand: vi.fn(),
@@ -38,7 +39,7 @@ vi.mock('@/theme', async () => {
 });
 
 // Mock selectOpponentPlayers to return stable reference
-const stableOpponents = [{ playerId: 'p2', name: 'Bob', lifeTotal: 20, ready: true }];
+const stableOpponents = [{ playerId: 'p2', name: 'Bob', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0 }];
 vi.mock('@/stores/gameStore', async () => {
   const actual = await vi.importActual<typeof import('@/stores/gameStore')>('@/stores/gameStore');
   return {
@@ -51,8 +52,8 @@ const baseState: GetGameStateResponse = {
   gameId: 'g1',
   status: GameStatus.IN_PROGRESS,
   players: [
-    { playerId: 'p1', name: 'Alice', lifeTotal: 20, ready: true },
-    { playerId: 'p2', name: 'Bob', lifeTotal: 20, ready: true },
+    { playerId: 'p1', name: 'Alice', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0 },
+    { playerId: 'p2', name: 'Bob', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0 },
   ],
   turnNumber: 1,
   actionCount: 0,
@@ -130,15 +131,13 @@ describe('GamePage', () => {
   });
 
   it('calls submitAction when an action button is clicked', async () => {
-    const submitAction = vi.fn();
     useGameStore.setState({
       gameState: { ...baseState, priorityPlayerId: 'p1' },
       legalActions: [{ actionType: LegalActionType.PASS_PRIORITY }],
-      submitAction,
     });
     renderGamePage();
     const user = (await import('@testing-library/user-event')).default.setup();
     await user.click(screen.getByText('Pass Priority'));
-    expect(submitAction).toHaveBeenCalledWith(expect.anything(), 'g1', 'p1', { passPriority: {} });
+    expect(mockPassPriority).toHaveBeenCalled();
   });
 });

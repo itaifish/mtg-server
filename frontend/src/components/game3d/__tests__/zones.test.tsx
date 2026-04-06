@@ -6,7 +6,10 @@ import type { CardData } from '@/types/game3d';
 vi.mock('@react-three/fiber', () => ({
   Canvas: ({ children }: { children: React.ReactNode }) => <div data-testid="canvas">{children}</div>,
   useFrame: () => {},
-  useThree: () => ({ camera: { position: { lerp: vi.fn() } } }),
+  useThree: () => ({
+    camera: { position: { lerp: vi.fn() } },
+    gl: { domElement: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }) } },
+  }),
 }));
 
 vi.mock('@react-three/drei', () => ({
@@ -41,6 +44,21 @@ vi.mock('../Card3D', () => ({
   Card3D: ({ card }: { card: CardData }) => <div data-testid={`card-${card.objectId}`}>{card.name}</div>,
 }));
 
+vi.mock('@/hooks/useGameActions', () => ({
+  useGameActions: () => ({
+    playLand: vi.fn(),
+    castSpell: vi.fn(),
+    passPriority: vi.fn(),
+    activateManaAbility: vi.fn(),
+    declareAttackers: vi.fn(),
+    declareBlockers: vi.fn(),
+    chooseFirstPlayer: vi.fn(),
+    keepHand: vi.fn(),
+    mulligan: vi.fn(),
+    concede: vi.fn(),
+  }),
+}));
+
 vi.mock('@/theme', async () => {
   const { defaultTheme } = await import('@/theme/defaultTheme');
   return {
@@ -53,7 +71,7 @@ vi.mock('@/theme', async () => {
 // Mock stores
 vi.mock('@/stores/uiStore', () => ({
   useUiStore: (selector: (s: Record<string, unknown>) => unknown) =>
-    selector({ deselectObject: vi.fn(), cameraPosition: 'default', selectedObjectId: null }),
+    selector({ deselectObject: vi.fn(), cameraPosition: 'default', selectedObjectId: null, draggingObjectId: null, handOrder: [], setHandOrder: vi.fn() }),
 }));
 
 vi.mock('@/stores/gameStore', () => ({
@@ -75,14 +93,14 @@ const tapped: CardData = { objectId: 3, name: 'Angel', cardType: 'creature', col
 
 describe('BattlefieldZone', () => {
   it('renders lands and non-lands separately', () => {
-    const { getByTestId } = render(<BattlefieldZone cards={[creature, land, tapped]} />);
+    const { getByTestId } = render(<BattlefieldZone cards={[creature, land, tapped]} playerId="p1" />);
     expect(getByTestId('card-1')).toHaveTextContent('Bear');
     expect(getByTestId('card-2')).toHaveTextContent('Forest');
     expect(getByTestId('card-3')).toHaveTextContent('Angel');
   });
 
   it('renders empty', () => {
-    const { container } = render(<BattlefieldZone cards={[]} />);
+    const { container } = render(<BattlefieldZone cards={[]} playerId="p1" />);
     expect(container).toBeTruthy();
   });
 });

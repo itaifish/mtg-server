@@ -63,11 +63,10 @@ export function App() {
     <ApiClientProvider config={config}>
       <BrowserRouter>
         <ThemeProvider>
-          <Nav />
           <Routes>
-            <Route path="/" element={<LobbyPage />} />
+            <Route path="/" element={<><Nav /><LobbyPage /></>} />
             <Route path="/game/:gameId" element={<GamePage />} />
-            <Route path="/deckbuilder" element={<DeckBuilderPage />} />
+            <Route path="/deckbuilder" element={<><Nav /><DeckBuilderPage /></>} />
           </Routes>
           {showSettings && <SettingsPanel onClose={handleCloseSettings} />}
         </ThemeProvider>

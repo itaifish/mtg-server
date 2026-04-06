@@ -18,6 +18,8 @@ export interface ChatMessage {
 export interface UiState {
   selectedObjectId: number | null;
   hoveredObjectId: number | null;
+  draggingObjectId: number | null;
+  handOrder: number[];
   targetingMode: TargetingMode | null;
   showSettings: boolean;
   showDeckBuilder: boolean;
@@ -30,6 +32,9 @@ export interface UiActions {
   deselectObject: () => void;
   hoverObject: (id: number) => void;
   unhoverObject: () => void;
+  startDrag: (id: number) => void;
+  endDrag: () => void;
+  setHandOrder: (order: number[]) => void;
   enterTargetingMode: (config: Omit<TargetingMode, 'selectedTargets'>) => void;
   addTarget: (target: SpellTarget) => void;
   removeTarget: (target: SpellTarget) => void;
@@ -44,6 +49,8 @@ export interface UiActions {
 const initialState: UiState = {
   selectedObjectId: null,
   hoveredObjectId: null,
+  draggingObjectId: null,
+  handOrder: [],
   targetingMode: null,
   showSettings: false,
   showDeckBuilder: false,
@@ -64,6 +71,9 @@ export const useUiStore = create<UiState & UiActions>()((set, get) => ({
   deselectObject: () => set({ selectedObjectId: null }),
   hoverObject: (id) => set({ hoveredObjectId: id }),
   unhoverObject: () => set({ hoveredObjectId: null }),
+  startDrag: (id) => set({ draggingObjectId: id }),
+  endDrag: () => set({ draggingObjectId: null }),
+  setHandOrder: (order) => set({ handOrder: order }),
 
   enterTargetingMode: (config) =>
     set({ targetingMode: { ...config, selectedTargets: [] } }),

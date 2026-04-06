@@ -36,6 +36,7 @@ async fn main() {
         .leave_game(handlers::leave_game)
         .list_games(handlers::list_games)
         .set_ready(handlers::set_ready)
+        .get_card_image(handlers::get_card_image)
         .get_game_state(handlers::get_game_state)
         .submit_action(handlers::submit_action)
         .get_legal_actions(handlers::get_legal_actions)

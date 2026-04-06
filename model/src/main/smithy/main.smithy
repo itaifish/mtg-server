@@ -19,6 +19,7 @@ service MtgService {
         SetReady
         // Gameplay
         GetGameState
+        GetCardImage
         SubmitAction
         GetLegalActions
     ]
@@ -61,6 +62,21 @@ enum GameStatus {
     FINISHED
 }
 
+enum GamePhase {
+    UNTAP
+    UPKEEP
+    DRAW
+    PRECOMBAT_MAIN
+    BEGINNING_OF_COMBAT
+    DECLARE_ATTACKERS
+    DECLARE_BLOCKERS
+    COMBAT_DAMAGE
+    END_OF_COMBAT
+    POSTCOMBAT_MAIN
+    END_STEP
+    CLEANUP
+}
+
 // --- Shared Structures ---
 structure DecklistEntry {
     @required
@@ -86,6 +102,23 @@ structure PlayerInfo {
 
     @required
     ready: Boolean
+
+    @required
+    handSize: Integer
+
+    @required
+    librarySize: Integer
+
+    @required
+    poisonCounters: Integer
+
+    /// How many times this player has mulliganed (during mulligan phase).
+    @required
+    mulliganCount: Integer
+
+    /// Whether this player has kept their hand (during mulligan phase).
+    @required
+    hasKept: Boolean
 }
 
 list PlayerList {

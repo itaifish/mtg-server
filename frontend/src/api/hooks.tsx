@@ -2,7 +2,7 @@ import { createContext, useContext, useMemo } from 'react';
 import { MtgApiClient } from './client';
 import type { ApiClientConfig } from './client';
 
-const ApiClientContext = createContext<MtgApiClient | null>(null);
+export const ApiClientContext = createContext<MtgApiClient | null>(null);
 
 export function ApiClientProvider({
   config,

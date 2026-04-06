@@ -42,8 +42,8 @@ describe('WaitingRoom', () => {
       gameState: {
         gameId: 'g1', status: GameStatus.WAITING_FOR_PLAYERS,
         players: [
-          { playerId: 'p1', name: 'Alice', lifeTotal: 20, ready: true },
-          { playerId: 'p2', name: 'Bob', lifeTotal: 20, ready: false },
+          { playerId: 'p1', name: 'Alice', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0 },
+          { playerId: 'p2', name: 'Bob', lifeTotal: 20, ready: false, handSize: 7, librarySize: 53, poisonCounters: 0 },
         ],
         turnNumber: 0, actionCount: 0,
       },
