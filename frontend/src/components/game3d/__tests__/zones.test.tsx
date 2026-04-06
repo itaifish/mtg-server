@@ -125,13 +125,13 @@ describe('HandZone', () => {
 
 describe('GraveyardZone', () => {
   it('renders top card and count', () => {
-    const { getByTestId, getByText } = render(<GraveyardZone cards={[creature, land]} />);
+    const { getByTestId, getByText } = render(<GraveyardZone owner="mine" cards={[creature, land]} />);
     expect(getByTestId('card-2')).toBeInTheDocument();
-    expect(getByText('Graveyard (2)')).toBeInTheDocument();
+    expect(getByText('🪦 2')).toBeInTheDocument();
   });
 
   it('renders empty', () => {
-    const { queryByText } = render(<GraveyardZone cards={[]} />);
+    const { queryByText } = render(<GraveyardZone owner="mine" cards={[]} />);
     expect(queryByText(/graveyard/i)).not.toBeInTheDocument();
   });
 });

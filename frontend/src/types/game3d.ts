@@ -23,6 +23,8 @@ export interface ZoneData {
   hand: CardData[];
   battlefield: CardData[];
   graveyard: CardData[];
+  myGraveyard: CardData[];
+  opponentGraveyard: CardData[];
   stack: CardData[];
   exile: CardData[];
 }
@@ -105,11 +107,16 @@ function mapStackEntry(s: StackEntryInfo): CardData {
 }
 
 /** Convert API game state response into zone data for the 3D board. */
-export function mapGameStateToZones(state: GetGameStateResponse): ZoneData {
+export function mapGameStateToZones(state: GetGameStateResponse, playerId?: string): ZoneData {
+  const graveyards = state.graveyards ?? [];
+  const myGy = graveyards.find((g) => g.playerId === playerId);
+  const oppGy = graveyards.find((g) => g.playerId !== playerId);
   return {
     battlefield: state.battlefield?.map(mapPermanent) ?? [],
     hand: state.hand?.map(mapCardInfo) ?? [],
-    graveyard: state.graveyards?.flatMap((entry) => entry.cards.map(mapCardInfo)) ?? [],
+    graveyard: graveyards.flatMap((entry) => entry.cards.map(mapCardInfo)),
+    myGraveyard: myGy?.cards.map(mapCardInfo) ?? [],
+    opponentGraveyard: oppGy?.cards.map(mapCardInfo) ?? [],
     stack: state.stack?.map(mapStackEntry) ?? [],
     exile: state.exile?.map(mapCardInfo) ?? [],
   };

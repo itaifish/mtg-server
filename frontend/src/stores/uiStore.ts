@@ -33,6 +33,7 @@ export interface UiState {
   showDeckBuilder: boolean;
   cameraPosition: 'default' | 'overhead' | 'closeup' | 'topdown';
   autoTapLands: boolean;
+  viewingGraveyard: 'mine' | 'opponent' | null;
   chatMessages: ChatMessage[];
 }
 
@@ -54,6 +55,7 @@ export interface UiActions {
   toggleDeckBuilder: () => void;
   setCameraPosition: (pos: UiState['cameraPosition']) => void;
   toggleAutoTapLands: () => void;
+  setViewingGraveyard: (v: 'mine' | 'opponent' | null) => void;
   addChatMessage: (msg: ChatMessage) => void;
   reset: () => void;
 }
@@ -69,6 +71,7 @@ const initialState: UiState = {
   showDeckBuilder: false,
   cameraPosition: 'default',
   autoTapLands: false,
+  viewingGraveyard: null,
   chatMessages: [],
 };
 
@@ -123,6 +126,7 @@ export const useUiStore = create<UiState & UiActions>()((set, get) => ({
   toggleDeckBuilder: () => set((s) => ({ showDeckBuilder: !s.showDeckBuilder })),
   setCameraPosition: (pos) => set({ cameraPosition: pos }),
   toggleAutoTapLands: () => set((s) => ({ autoTapLands: !s.autoTapLands })),
+  setViewingGraveyard: (v: 'mine' | 'opponent' | null) => set({ viewingGraveyard: v }),
   addChatMessage: (msg) => set((s) => ({ chatMessages: [...s.chatMessages, msg] })),
   reset: () => set(initialState),
 }));

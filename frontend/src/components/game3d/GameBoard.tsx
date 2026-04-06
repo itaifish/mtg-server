@@ -17,7 +17,7 @@ export function GameBoard() {
   const gameState = useGameStore((s) => s.gameState);
   const playerId = useLobbyStore((s) => s.playerId);
   // TODO: use useLobbyStore playerId for perspective-based zone filtering once mapGameStateToZones supports it
-  const zones = gameState ? mapGameStateToZones(gameState) : { hand: [], battlefield: [], graveyard: [], stack: [], exile: [] };
+  const zones = gameState ? mapGameStateToZones(gameState, playerId ?? undefined) : { hand: [], battlefield: [], graveyard: [], myGraveyard: [], opponentGraveyard: [], stack: [], exile: [] };
   const opponentHandSize = gameState?.players.find((p) => p.playerId !== playerId)?.handSize ?? 0;
   const myLibrarySize = gameState?.players.find((p) => p.playerId === playerId)?.librarySize ?? 0;
   const opponentLibrarySize = gameState?.players.find((p) => p.playerId !== playerId)?.librarySize ?? 0;
@@ -35,7 +35,8 @@ export function GameBoard() {
       <OpponentHandZone cardCount={opponentHandSize} />
       <HandZone cards={zones.hand} />
       <BattlefieldZone cards={zones.battlefield} playerId={playerId ?? ''} />
-      <GraveyardZone cards={zones.graveyard} />
+      <GraveyardZone cards={zones.myGraveyard} position={[9, -3.5, 0.1]} owner="mine" />
+      <GraveyardZone cards={zones.opponentGraveyard} position={[-9, 3.5, 0.1]} owner="opponent" />
       <ExileZone cards={zones.exile} />
 
       {/* Libraries — right side, my library near hand, opponent's near their hand */}
