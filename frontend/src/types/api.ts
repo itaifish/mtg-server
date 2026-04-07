@@ -1,5 +1,5 @@
 import type { GameFormat, GamePhase, GameStatus } from './enums';
-import type { ActionInput } from './actions';
+import type { ActionInput, SpellTarget } from './actions';
 import type { DecklistEntry, LegalAction, PlayerInfo } from './models';
 
 // CreateGame
@@ -88,6 +88,7 @@ export interface StackEntryInfo {
   controller: string;
   objectId?: number;
   oracleId?: string;
+  targets?: SpellTarget[];
 }
 
 export interface GetGameStateResponse {

@@ -17,6 +17,7 @@ export interface CardData {
   tapped?: boolean;
   manaValue?: number;
   manaCost?: string[];
+  counters?: { counterType: string; count: number }[];
 }
 
 export interface ZoneData {
@@ -81,6 +82,7 @@ function mapPermanent(p: PermanentInfo): CardData {
     power: p.effectivePower ?? p.power,
     toughness: p.effectiveToughness ?? p.toughness,
     tapped: p.tapped,
+    counters: p.counters?.filter((c) => c.count > 0),
   };
 }
 

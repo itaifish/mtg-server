@@ -18,6 +18,7 @@ import { ManaPanel } from './ManaPanel';
 import { CastingOverlay } from './CastingOverlay';
 import { StackOverlay } from './StackOverlay';
 import { GraveyardOverlay } from './GraveyardOverlay';
+import { TargetArrows } from './TargetArrows';
 import { ManaPoolDisplay, EMPTY_POOL } from './ManaPoolDisplay';
 import { useUiStore } from '@/stores/uiStore';
 import type { ActionInput } from '@/types/actions';
@@ -94,6 +95,7 @@ export function GamePage() {
       <CardPreview />
       <CastingOverlay />
       <StackOverlay />
+      <TargetArrows />
       <GraveyardOverlay />
       {gameState.status === 'FINISHED' && <GameOverOverlay players={gameState.players} />}
     </div>

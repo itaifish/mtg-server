@@ -3,6 +3,7 @@ import type { MtgApiClient } from '../api/client';
 import type { ActionInput } from '../types/actions';
 import type { GetGameStateResponse } from '../types/api';
 import type { LegalAction, PlayerInfo } from '../types/models';
+import { useUiStore } from './uiStore';
 
 export interface GameState {
   gameState: GetGameStateResponse | null;
@@ -130,6 +131,14 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
         if (gs.turnNumber >= autoPassUntilTurn) {
           set({ autoPassUntilTurn: null });
         } else if (la.some((a) => a.actionType === 'PASS_PRIORITY')) {
+          get().submitAction(client, gameId, playerId, { passPriority: {} });
+        }
+      }
+      // Auto-pass priority: if only actions are PASS_PRIORITY and CONCEDE, game is in progress, and we have priority
+      if (!isSubmitting && gs && gs.status === 'IN_PROGRESS' && gs.priorityPlayerId === playerId
+        && la.length > 0 && la.every((a) => a.actionType === 'PASS_PRIORITY' || a.actionType === 'CONCEDE')) {
+        const { autoPassPriority } = useUiStore.getState();
+        if (autoPassPriority) {
           get().submitAction(client, gameId, playerId, { passPriority: {} });
         }
       }

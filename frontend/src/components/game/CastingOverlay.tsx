@@ -37,9 +37,9 @@ export function CastingOverlay() {
   const targetReqs = pendingCast?.targetRequirements ?? [];
   const needsTargets = targetReqs.length > 0;
 
-  const doSubmit = (targets?: SpellTarget[]) => {
+  const doSubmit = async (targets?: SpellTarget[]) => {
     const payment = pendingCast!.manaCost ? buildManaPayment(pendingCast!.manaCost, pool) : [];
-    castSpell(pendingCast!.objectId, payment, targets);
+    await castSpell(pendingCast!.objectId, payment, targets);
     exitTargetingMode();
     cancelCasting();
   };
@@ -54,7 +54,12 @@ export function CastingOverlay() {
 
   // Auto-tap
   useEffect(() => {
-    if (!pendingCast || !autoTapLands || autoTapping.current || targetingMode) return;
+    if (!pendingCast || !autoTapLands || targetingMode) return;
+    if (autoTapping.current) {
+      // Still waiting for mana ability to resolve
+      autoTapping.current = false;
+      return;
+    }
     if (totalPoolMana >= neededMana) {
       proceedAfterMana();
     } else if (firstManaAbilityId != null) {
@@ -63,9 +68,9 @@ export function CastingOverlay() {
     } else {
       proceedAfterMana();
     }
-  }, [pendingCast, autoTapLands, firstManaAbilityId, totalPoolMana, neededMana, targetingMode]);
+  }, [pendingCast, autoTapLands, firstManaAbilityId, totalPoolMana, neededMana, targetingMode, legalActions]);
 
-  useEffect(() => { autoTapping.current = false; }, [legalActions]);
+  // No separate reset effect needed — handled above
 
   // Listen for target clicks from Card3D / PlayerPanel
   useEffect(() => {

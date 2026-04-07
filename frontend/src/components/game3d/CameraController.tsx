@@ -1,6 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useUiStore } from '@/stores/uiStore';
+import { setGlobalCamera } from './cardPositions';
 
 const CAMERA_POSITIONS: Record<string, [number, number, number]> = {
   default: [0, -13, 11],
@@ -20,6 +21,7 @@ export function CameraController() {
     const dest = CAMERA_POSITIONS[pos] ?? CAMERA_POSITIONS.default;
     camera.position.set(...dest);
     camera.lookAt(LOOK_AT);
+    setGlobalCamera(camera);
   });
 
   return null;

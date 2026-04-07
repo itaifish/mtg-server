@@ -1,8 +1,9 @@
 import { useRef, useState, useCallback, Suspense } from 'react';
-import { useTexture } from '@react-three/drei';
+import { useTexture, Html } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useSpring, animated } from '@react-spring/three';
 import * as THREE from 'three';
+import { cardWorldPositions } from './cardPositions';
 import { useUiStore } from '@/stores/uiStore';
 import { useTheme } from '@/theme';
 import {
@@ -205,6 +206,12 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
     if (parent) {
       parent.rotation.z = THREE.MathUtils.lerp(parent.rotation.z, targetRotZ.current, 0.12);
     }
+    // Register world position for target arrows
+    if (groupRef.current?.getWorldPosition) {
+      const pos = new THREE.Vector3();
+      groupRef.current.getWorldPosition(pos);
+      cardWorldPositions.set(card.objectId, pos);
+    }
   });
 
   const handleClick = (e: THREE.Event) => {
@@ -275,6 +282,21 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
         <Suspense fallback={null}>
           <CardBackTexture />
         </Suspense>
+
+        {/* Counter badges */}
+        {card.counters && card.counters.length > 0 && (
+          <Html position={[0, 0, CARD_DEPTH / 2 + 0.01]} center style={{ pointerEvents: 'none' }} zIndexRange={[1, 0]}>
+            <div style={{
+              background: 'var(--color-surface)', color: 'var(--color-gold)', borderRadius: '8px',
+              padding: '1px 5px', fontSize: '10px', fontWeight: 700,
+              whiteSpace: 'nowrap', border: '1px solid var(--color-gold-dim)',
+            }}>
+              {card.counters.map((c) =>
+                c.counterType.startsWith('PowerToughness') ? `+${c.count}/+${c.count}` : `${c.counterType} ×${c.count}`
+              ).join(', ')}
+            </div>
+          </Html>
+        )}
       </animated.group>
     </group>
   );

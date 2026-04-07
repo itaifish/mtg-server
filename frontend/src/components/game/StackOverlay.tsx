@@ -9,7 +9,7 @@ export function StackOverlay() {
   if (!stack || stack.length === 0) return null;
 
   return (
-    <div style={{
+    <div data-stack-panel style={{
       position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
       background: 'var(--color-surface)', border: '1px solid var(--color-border)',
       borderRadius: 'var(--radius)', padding: '8px', zIndex: 30,

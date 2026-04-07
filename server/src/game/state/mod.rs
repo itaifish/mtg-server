@@ -215,7 +215,7 @@ impl GameState {
 
     /// Returns true if the given player has priority.
     pub fn has_priority(&self, player_id: &str) -> bool {
-        self.priority_player().id == player_id
+        self.status == GameStatus::InProgress && self.priority_player().id == player_id
     }
 
     /// CR 117.3b — After a player takes an action, they receive priority again.

@@ -1,4 +1,5 @@
 import { useUiStore } from '@/stores/uiStore';
+import { useGameStore } from '@/stores/gameStore';
 import { useTheme } from '@/theme';
 import { Card3D } from '../Card3D';
 import type { CardData } from '@/types/game3d';
@@ -8,13 +9,13 @@ interface BattlefieldZoneProps {
   playerId: string;
 }
 
-function CardRow({ cards, y, flipZ = false }: { cards: CardData[]; y: number; flipZ?: boolean }) {
+function CardRow({ cards, y, flipZ = false, targetedIds }: { cards: CardData[]; y: number; flipZ?: boolean; targetedIds: Set<number> }) {
   return (
     <group position={[0, y, 0]}>
       {cards.map((card, i) => {
         const x = (i - (cards.length - 1) / 2) * 1.3;
         const rotZ = card.tapped ? -Math.PI / 2 : flipZ ? Math.PI : 0;
-        return <Card3D key={card.objectId} card={card} position={[x, 0, i * 0.01]} rotation={[0, 0, rotZ]} />;
+        return <Card3D key={card.objectId} card={card} position={[x, 0, i * 0.01]} rotation={[0, 0, rotZ]} highlighted={targetedIds.has(card.objectId)} />;
       })}
     </group>
   );
@@ -23,6 +24,14 @@ function CardRow({ cards, y, flipZ = false }: { cards: CardData[]; y: number; fl
 export function BattlefieldZone({ cards, playerId }: BattlefieldZoneProps) {
   const draggingObjectId = useUiStore((s) => s.draggingObjectId);
   const { theme } = useTheme();
+  const stack = useGameStore((s) => s.gameState?.stack);
+
+  const targetedIds = new Set<number>();
+  for (const entry of stack ?? []) {
+    for (const t of entry.targets ?? []) {
+      if ('object' in t) targetedIds.add(t.object.objectId);
+    }
+  }
 
   const mine = cards.filter((c) => c.controller === playerId);
   const theirs = cards.filter((c) => c.controller !== playerId);
@@ -43,13 +52,13 @@ export function BattlefieldZone({ cards, playerId }: BattlefieldZoneProps) {
       )}
 
       {/* Top: opponent's lands */}
-      <CardRow cards={theirLands} y={2.8} flipZ />
+      <CardRow cards={theirLands} y={2.8} flipZ targetedIds={targetedIds} />
       {/* Opponent's non-land permanents */}
-      <CardRow cards={theirPermanents} y={1.2} flipZ />
+      <CardRow cards={theirPermanents} y={1.2} flipZ targetedIds={targetedIds} />
       {/* Our non-land permanents */}
-      <CardRow cards={myPermanents} y={-0.4} />
+      <CardRow cards={myPermanents} y={-0.4} targetedIds={targetedIds} />
       {/* Bottom: our lands (closest to hand) */}
-      <CardRow cards={myLands} y={-2.0} />
+      <CardRow cards={myLands} y={-2.0} targetedIds={targetedIds} />
     </group>
   );
 }

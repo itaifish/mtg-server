@@ -49,6 +49,20 @@ function PreviewContent({ card }: { card: CardData }) {
             )}
           </div>
         )}
+        {(card.power != null || (card.counters && card.counters.length > 0)) && (
+          <div style={{ padding: '6px 10px', fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-border)' }}>
+            {card.power != null && card.toughness != null && (
+              <span style={{ fontWeight: 700 }}>{card.power}/{card.toughness}</span>
+            )}
+            {card.counters && card.counters.length > 0 && (
+              <span style={{ color: 'var(--color-gold)', fontWeight: 600 }}>
+                {card.counters.map((c) =>
+                  c.counterType.startsWith('PowerToughness') ? `+${c.count}/+${c.count}` : `${c.counterType} ×${c.count}`
+                ).join(', ')}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
