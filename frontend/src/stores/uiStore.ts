@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { LegalActionType } from '../types/enums';
+import type { AutoPassMode, GamePhase, LegalActionType } from '../types/enums';
 import type { SpellTarget } from '../types/actions';
 import type { TargetRequirement } from '../types/models';
 
@@ -31,11 +31,15 @@ export interface UiState {
   handOrder: number[];
   targetingMode: TargetingMode | null;
   pendingCast: PendingCast | null;
+  manaAbilityIds: Set<number>;
+  mulliganCount: number;
   showSettings: boolean;
   showDeckBuilder: boolean;
   cameraPosition: 'default' | 'overhead' | 'closeup' | 'topdown';
   autoTapLands: boolean;
   autoPassPriority: boolean;
+  autoPassMode: AutoPassMode;
+  autoPassStopAtPhase: GamePhase | null;
   viewingGraveyard: 'mine' | 'opponent' | null;
   chatMessages: ChatMessage[];
 }
@@ -54,11 +58,14 @@ export interface UiActions {
   exitTargetingMode: () => void;
   startCasting: (pending: PendingCast) => void;
   cancelCasting: () => void;
+  setManaAbilityIds: (ids: Set<number>) => void;
   toggleSettings: () => void;
   toggleDeckBuilder: () => void;
   setCameraPosition: (pos: UiState['cameraPosition']) => void;
   toggleAutoTapLands: () => void;
   toggleAutoPassPriority: () => void;
+  setAutoPassMode: (mode: AutoPassMode, stopAtPhase?: GamePhase) => void;
+  cancelAutoPass: () => void;
   setViewingGraveyard: (v: 'mine' | 'opponent' | null) => void;
   addChatMessage: (msg: ChatMessage) => void;
   reset: () => void;
@@ -71,11 +78,15 @@ const initialState: UiState = {
   handOrder: [],
   targetingMode: null,
   pendingCast: null,
+  manaAbilityIds: new Set<number>(),
+  mulliganCount: 0,
   showSettings: false,
   showDeckBuilder: false,
   cameraPosition: 'default',
   autoTapLands: false,
-  autoPassPriority: true,
+  autoPassPriority: false,
+  autoPassMode: 'NONE' as AutoPassMode,
+  autoPassStopAtPhase: null,
   viewingGraveyard: null,
   chatMessages: [],
 };
@@ -126,12 +137,15 @@ export const useUiStore = create<UiState & UiActions>()((set, get) => ({
 
   exitTargetingMode: () => set({ targetingMode: null }),
   startCasting: (pending) => set({ pendingCast: pending }),
-  cancelCasting: () => set({ pendingCast: null }),
+  cancelCasting: () => set({ pendingCast: null, manaAbilityIds: new Set<number>() }),
+  setManaAbilityIds: (ids) => set({ manaAbilityIds: ids }),
   toggleSettings: () => set((s) => ({ showSettings: !s.showSettings })),
   toggleDeckBuilder: () => set((s) => ({ showDeckBuilder: !s.showDeckBuilder })),
   setCameraPosition: (pos) => set({ cameraPosition: pos }),
   toggleAutoTapLands: () => set((s) => ({ autoTapLands: !s.autoTapLands })),
   toggleAutoPassPriority: () => set((s) => ({ autoPassPriority: !s.autoPassPriority })),
+  setAutoPassMode: (mode: AutoPassMode, stopAtPhase?: GamePhase) => set({ autoPassMode: mode, autoPassPriority: mode !== 'NONE', autoPassStopAtPhase: stopAtPhase ?? null }),
+  cancelAutoPass: () => set({ autoPassMode: 'NONE' as AutoPassMode, autoPassPriority: false, autoPassStopAtPhase: null }),
   setViewingGraveyard: (v: 'mine' | 'opponent' | null) => set({ viewingGraveyard: v }),
   addChatMessage: (msg) => set((s) => ({ chatMessages: [...s.chatMessages, msg] })),
   reset: () => set(initialState),

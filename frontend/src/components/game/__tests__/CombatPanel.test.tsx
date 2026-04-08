@@ -21,8 +21,8 @@ vi.mock('@/hooks/useGameActions', () => ({
 vi.mock('@/api/hooks', () => ({ useApiClient: () => ({}) }));
 
 const players: PlayerInfo[] = [
-  { playerId: 'p1', name: 'Alice', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0 },
-  { playerId: 'p2', name: 'Bob', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0 },
+  { playerId: 'p1', name: 'Alice', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0, mulliganCount: 0, hasKept: false },
+  { playerId: 'p2', name: 'Bob', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0, mulliganCount: 0, hasKept: false },
 ];
 
 // Mock selectOpponentPlayers to return a stable reference

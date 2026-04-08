@@ -119,7 +119,10 @@ pub enum Value {
 pub enum TargetSpec {
     /// The Nth target chosen when the spell was cast (0-indexed).
     /// Includes what kinds of targets are valid.
-    Chosen { index: usize, valid_kinds: Vec<TargetKind> },
+    Chosen {
+        index: usize,
+        valid_kinds: Vec<TargetKind>,
+    },
     /// Each object/player matching a selector.
     Each(Selector),
     /// The source object itself (e.g., "this creature gets +3/+3").
@@ -229,13 +232,20 @@ fn collect_target_reqs(effect: &Effect, reqs: &mut Vec<(usize, Vec<TargetKind>)>
                 }
             }
         }
-        Effect::Sequence(effects) | Effect::Choose { options: effects, .. } => {
+        Effect::Sequence(effects)
+        | Effect::Choose {
+            options: effects, ..
+        } => {
             for e in effects {
                 collect_target_reqs(e, reqs);
             }
         }
         Effect::ForEach { effect, .. } => collect_target_reqs(effect, reqs),
-        Effect::Conditional { then_effect, else_effect, .. } => {
+        Effect::Conditional {
+            then_effect,
+            else_effect,
+            ..
+        } => {
             collect_target_reqs(then_effect, reqs);
             if let Some(e) = else_effect {
                 collect_target_reqs(e, reqs);
@@ -275,11 +285,16 @@ fn max_chosen_index(effect: &Effect) -> Option<usize> {
             PlayerSpec::TargetPlayer(n) => Some(*n),
             _ => None,
         },
-        Effect::Sequence(effects) | Effect::Choose { options: effects, .. } => {
-            effects.iter().filter_map(max_chosen_index).max()
-        }
+        Effect::Sequence(effects)
+        | Effect::Choose {
+            options: effects, ..
+        } => effects.iter().filter_map(max_chosen_index).max(),
         Effect::ForEach { effect, .. } => max_chosen_index(effect),
-        Effect::Conditional { then_effect, else_effect, .. } => {
+        Effect::Conditional {
+            then_effect,
+            else_effect,
+            ..
+        } => {
             let a = max_chosen_index(then_effect);
             let b = else_effect.as_ref().and_then(|e| max_chosen_index(e));
             a.max(b)

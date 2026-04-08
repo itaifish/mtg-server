@@ -12,7 +12,6 @@ export interface GameState {
   isSubmitting: boolean;
   error: string | null;
   pollingInterval: number | null;
-  autoPassUntilTurn: number | null;
 }
 
 export interface GameActions {
@@ -40,7 +39,6 @@ export interface GameActions {
     intervalMs: number,
   ) => void;
   stopPolling: () => void;
-  setAutoPassUntilTurn: (turn: number) => void;
   reset: () => void;
   clearError: () => void;
 }
@@ -71,7 +69,6 @@ const initialState: GameState = {
   isSubmitting: false,
   error: null,
   pollingInterval: null,
-  autoPassUntilTurn: null,
 };
 
 export const useGameStore = create<GameState & GameActions>()((set, get) => ({
@@ -91,6 +88,10 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     try {
       const res = await client.getLegalActions({ gameId, playerId });
       set({ legalActions: res.actions });
+      // Clear auto-pass indicator when server gives us meaningful actions
+      if (res.actions.some((a) => a.actionType !== 'PASS_PRIORITY' && a.actionType !== 'CONCEDE')) {
+        useUiStore.getState().cancelAutoPass();
+      }
     } catch (e) {
       set({ error: e instanceof Error ? e.message : 'Failed to fetch legal actions' });
     }
@@ -98,7 +99,6 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
 
   submitAction: async (client, gameId, playerId, action, holdPriority?) => {
     set({ isSubmitting: true, error: null });
-    const isPassPriority = 'passPriority' in action;
     try {
       await client.submitAction({ gameId, playerId, action, holdPriority });
       set({ isSubmitting: false });
@@ -106,15 +106,6 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
       const gameState = await client.getGameState({ gameId, perspectivePlayerId: playerId });
       const legalRes = await client.getLegalActions({ gameId, playerId });
       set({ gameState, legalActions: legalRes.actions });
-      // Auto-pass only continues after pass priority actions
-      const { autoPassUntilTurn } = get();
-      if (autoPassUntilTurn != null && isPassPriority) {
-        if (gameState.turnNumber >= autoPassUntilTurn) {
-          set({ autoPassUntilTurn: null });
-        } else if (legalRes.actions.some((a) => a.actionType === 'PASS_PRIORITY')) {
-          get().submitAction(client, gameId, playerId, { passPriority: {} });
-        }
-      }
     } catch (e) {
       set({ isSubmitting: false, error: e instanceof Error ? e.message : 'Failed to submit action' });
     }
@@ -125,23 +116,6 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     const id = window.setInterval(async () => {
       await get().fetchGameState(client, gameId, playerId);
       await get().fetchLegalActions(client, gameId, playerId);
-      // Auto-pass during polling
-      const { autoPassUntilTurn, gameState: gs, legalActions: la, isSubmitting } = get();
-      if (autoPassUntilTurn != null && gs && !isSubmitting) {
-        if (gs.turnNumber >= autoPassUntilTurn) {
-          set({ autoPassUntilTurn: null });
-        } else if (la.some((a) => a.actionType === 'PASS_PRIORITY')) {
-          get().submitAction(client, gameId, playerId, { passPriority: {} });
-        }
-      }
-      // Auto-pass priority: if only actions are PASS_PRIORITY and CONCEDE, game is in progress, and we have priority
-      if (!isSubmitting && gs && gs.status === 'IN_PROGRESS' && gs.priorityPlayerId === playerId
-        && la.length > 0 && la.every((a) => a.actionType === 'PASS_PRIORITY' || a.actionType === 'CONCEDE')) {
-        const { autoPassPriority } = useUiStore.getState();
-        if (autoPassPriority) {
-          get().submitAction(client, gameId, playerId, { passPriority: {} });
-        }
-      }
     }, intervalMs);
     set({ pollingInterval: id });
   },
@@ -153,8 +127,6 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
       set({ pollingInterval: null });
     }
   },
-
-  setAutoPassUntilTurn: (turn) => set({ autoPassUntilTurn: turn }),
 
   reset: () => {
     get().stopPolling();

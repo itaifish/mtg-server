@@ -9,13 +9,13 @@ interface BattlefieldZoneProps {
   playerId: string;
 }
 
-function CardRow({ cards, y, flipZ = false, targetedIds }: { cards: CardData[]; y: number; flipZ?: boolean; targetedIds: Set<number> }) {
+function CardRow({ cards, y, flipZ = false, targetedIds, manaAbilityIds }: { cards: CardData[]; y: number; flipZ?: boolean; targetedIds: Set<number>; manaAbilityIds: Set<number> }) {
   return (
     <group position={[0, y, 0]}>
       {cards.map((card, i) => {
         const x = (i - (cards.length - 1) / 2) * 1.3;
         const rotZ = card.tapped ? -Math.PI / 2 : flipZ ? Math.PI : 0;
-        return <Card3D key={card.objectId} card={card} position={[x, 0, i * 0.01]} rotation={[0, 0, rotZ]} highlighted={targetedIds.has(card.objectId)} />;
+        return <Card3D key={card.objectId} card={card} position={[x, 0, i * 0.01]} rotation={[0, 0, rotZ]} highlighted={targetedIds.has(card.objectId) || manaAbilityIds.has(card.objectId)} />;
       })}
     </group>
   );
@@ -32,6 +32,8 @@ export function BattlefieldZone({ cards, playerId }: BattlefieldZoneProps) {
       if ('object' in t) targetedIds.add(t.object.objectId);
     }
   }
+
+  const manaAbilityIds = useUiStore((s) => s.manaAbilityIds) ?? new Set<number>();
 
   const mine = cards.filter((c) => c.controller === playerId);
   const theirs = cards.filter((c) => c.controller !== playerId);
@@ -52,13 +54,13 @@ export function BattlefieldZone({ cards, playerId }: BattlefieldZoneProps) {
       )}
 
       {/* Top: opponent's lands */}
-      <CardRow cards={theirLands} y={2.8} flipZ targetedIds={targetedIds} />
+      <CardRow cards={theirLands} y={2.8} flipZ targetedIds={targetedIds} manaAbilityIds={manaAbilityIds} />
       {/* Opponent's non-land permanents */}
-      <CardRow cards={theirPermanents} y={1.2} flipZ targetedIds={targetedIds} />
+      <CardRow cards={theirPermanents} y={1.2} flipZ targetedIds={targetedIds} manaAbilityIds={manaAbilityIds} />
       {/* Our non-land permanents */}
-      <CardRow cards={myPermanents} y={-0.4} targetedIds={targetedIds} />
+      <CardRow cards={myPermanents} y={-0.4} targetedIds={targetedIds} manaAbilityIds={manaAbilityIds} />
       {/* Bottom: our lands (closest to hand) */}
-      <CardRow cards={myLands} y={-2.0} targetedIds={targetedIds} />
+      <CardRow cards={myLands} y={-2.0} targetedIds={targetedIds} manaAbilityIds={manaAbilityIds} />
     </group>
   );
 }

@@ -171,14 +171,8 @@ pub fn trigger_matches(
 ) -> bool {
     // Check event type matches
     let event_matches = match (&trigger.trigger, event) {
-        (
-            TriggerEvent::EntersZone { zone },
-            GameEvent::ZoneChange { to, .. },
-        ) => zone == to,
-        (
-            TriggerEvent::LeavesZone { zone },
-            GameEvent::ZoneChange { from, .. },
-        ) => zone == from,
+        (TriggerEvent::EntersZone { zone }, GameEvent::ZoneChange { to, .. }) => zone == to,
+        (TriggerEvent::LeavesZone { zone }, GameEvent::ZoneChange { from, .. }) => zone == from,
         (
             TriggerEvent::ZoneTransition { from: tf, to: tt },
             GameEvent::ZoneChange { from, to, .. },
@@ -188,10 +182,9 @@ pub fn trigger_matches(
         (TriggerEvent::LifeLost, GameEvent::LifeLost { .. }) => true,
         (TriggerEvent::CardDrawn, GameEvent::CardDrawn { .. }) => true,
         (TriggerEvent::SpellCast, GameEvent::SpellCast { .. }) => true,
-        (
-            TriggerEvent::PhaseStarted { phase: tp },
-            GameEvent::PhaseStarted { phase: ep, .. },
-        ) => tp == ep,
+        (TriggerEvent::PhaseStarted { phase: tp }, GameEvent::PhaseStarted { phase: ep, .. }) => {
+            tp == ep
+        }
         _ => false,
     };
 
@@ -239,10 +232,22 @@ fn check_filter(
             }
         }
         TriggerFilter::IsCombatDamage => {
-            matches!(event, GameEvent::DamageDealt { is_combat: true, .. })
+            matches!(
+                event,
+                GameEvent::DamageDealt {
+                    is_combat: true,
+                    ..
+                }
+            )
         }
         TriggerFilter::DamageTargetIsPlayer => {
-            matches!(event, GameEvent::DamageDealt { target: DamageTarget::Player(_), .. })
+            matches!(
+                event,
+                GameEvent::DamageDealt {
+                    target: DamageTarget::Player(_),
+                    ..
+                }
+            )
         }
         TriggerFilter::ObjectMatches(filters) => {
             let obj_id = match event_object_id(event) {
@@ -295,9 +300,11 @@ fn card_matches_filters(def: &super::card::CardDefinition, filters: &[Filter]) -
         Filter::PowerLessOrEqual(n) => def.power.map(|p| p <= *n).unwrap_or(false),
         Filter::PowerGreaterOrEqual(n) => def.power.map(|p| p >= *n).unwrap_or(false),
         Filter::ToughnessLessOrEqual(n) => def.toughness.map(|t| t <= *n).unwrap_or(false),
-        Filter::ManaValueLessOrEqual(n) => {
-            def.mana_cost.as_ref().map(|c| c.mana_value() <= *n).unwrap_or(false)
-        }
+        Filter::ManaValueLessOrEqual(n) => def
+            .mana_cost
+            .as_ref()
+            .map(|c| c.mana_value() <= *n)
+            .unwrap_or(false),
     })
 }
 

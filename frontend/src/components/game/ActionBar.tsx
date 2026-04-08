@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { LegalActionType, GameStatus } from '@/types/enums';
 import type { LegalAction } from '@/types/models';
 import type { ActionInput } from '@/types/actions';
 import { useGameActions } from '@/hooks/useGameActions';
-import { useGameStore } from '@/stores/gameStore';
+import { useUiStore } from '@/stores/uiStore';
 import { Button } from '@/components/shared';
 
 interface ActionBarProps {
@@ -53,12 +54,21 @@ function buildSimpleAction(action: LegalAction): ActionInput | null {
 }
 
 export function ActionBar({ legalActions, isMyTurn, isSubmitting, onAction, gameStatus }: ActionBarProps) {
-  const { passPriority, concede, isLoading } = useGameActions();
-  const gameState = useGameStore((s) => s.gameState);
-  const setAutoPassUntilTurn = useGameStore((s) => s.setAutoPassUntilTurn);
+  const { passPriority, concede, setAutoPass, isLoading } = useGameActions();
+  const autoPassMode = useUiStore((s) => s.autoPassMode);
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (menuOpen && menuBtnRef.current) {
+      const rect = menuBtnRef.current.getBoundingClientRect();
+      setMenuPos({ top: rect.top - 4, left: rect.right - 120 });
+    }
+  }, [menuOpen]);
   const isPregame = gameStatus === GameStatus.CHOOSING_PLAY_ORDER || gameStatus === GameStatus.MULLIGAN;
   const canPass = legalActions.some((la) => la.actionType === LegalActionType.PASS_PRIORITY);
+  const isAutoPassing = autoPassMode !== 'NONE';
 
   // During pregame, show all actions as buttons
   const visibleActions = isPregame
@@ -86,32 +96,41 @@ export function ActionBar({ legalActions, isMyTurn, isSubmitting, onAction, game
         );
       })}
 
-      {/* Pass Priority + Pass Turn buttons */}
-      {!isPregame && canPass && (
+      {/* Pass Priority + Pass Turn + Cancel buttons */}
+      {!isPregame && canPass && !isAutoPassing && (
         <>
           <Button variant="primary" disabled={isLoading} onClick={() => passPriority()} style={{ fontSize: '0.8rem', padding: '4px 10px' }}>
             Pass Priority
           </Button>
           <Button variant="primary" disabled={isLoading} onClick={() => {
-            if (gameState) setAutoPassUntilTurn(gameState.turnNumber + 1);
-            passPriority();
+            useUiStore.getState().setAutoPassMode('UNTIL_STACK_OR_TURN');
+            setAutoPass('UNTIL_STACK_OR_TURN');
           }} style={{ fontSize: '0.8rem', padding: '4px 10px' }}>
-            Pass until next turn
+            Pass Turn
           </Button>
         </>
+      )}
+      {!isPregame && isAutoPassing && (
+        <Button variant="secondary" onClick={() => {
+          useUiStore.getState().cancelAutoPass();
+          setAutoPass('NONE');
+        }} style={{ fontSize: '0.8rem', padding: '4px 10px', color: 'var(--color-danger)' }}>
+          Cancel Auto-Pass
+        </Button>
       )}
 
       {/* Menu button with concede hidden inside */}
       {!isPregame && (
-        <div style={{ position: 'relative' }}>
-          <Button variant="secondary" onClick={() => setMenuOpen(!menuOpen)} style={{ fontSize: '0.8rem', padding: '4px 8px' }}>
+        <>
+          <button ref={menuBtnRef} onClick={() => setMenuOpen(!menuOpen)} style={{ fontSize: '0.8rem', padding: '4px 8px', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius)', color: 'var(--color-text)', cursor: 'pointer' }}>
             ⋯
-          </Button>
-          {menuOpen && (
+          </button>
+          {menuOpen && createPortal(
             <div style={{
-              position: 'absolute', bottom: '100%', right: 0, marginBottom: '4px',
+              position: 'fixed', top: menuPos.top, left: menuPos.left, transform: 'translateY(-100%)',
               background: 'var(--color-surface)', border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius)', padding: '4px', zIndex: 50, minWidth: '120px',
+              borderRadius: '4px', padding: '4px', zIndex: 9999, minWidth: '120px',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
             }}>
               <button
                 onClick={() => { concede(); setMenuOpen(false); }}
@@ -119,16 +138,17 @@ export function ActionBar({ legalActions, isMyTurn, isSubmitting, onAction, game
                 style={{
                   width: '100%', padding: '6px 12px', background: 'none', border: 'none',
                   color: 'var(--color-danger)', cursor: 'pointer', fontSize: '0.8rem', textAlign: 'left',
-                  borderRadius: 'var(--radius)',
+                  borderRadius: '4px',
                 }}
                 onMouseOver={(e) => { e.currentTarget.style.background = 'var(--color-bg-secondary)'; }}
                 onMouseOut={(e) => { e.currentTarget.style.background = 'none'; }}
               >
                 Concede
               </button>
-            </div>
+            </div>,
+            document.body,
           )}
-        </div>
+        </>
       )}
     </div>
   );

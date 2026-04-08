@@ -417,6 +417,10 @@ pub async fn submit_action(
         ActionInput::Concede(_) => {
             engine::actions::concede(&mut state, &input.player_id)?;
         }
+        ActionInput::SetAutoPass(auto_pass) => {
+            let mode = crate::conversions::auto_pass_mode_from(auto_pass, state.turn_number);
+            state.set_auto_pass(&input.player_id, mode);
+        }
         _ => {
             return Err(engine::actions::ActionError::Illegal("unsupported action".into()).into());
         }

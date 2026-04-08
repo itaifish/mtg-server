@@ -6,9 +6,9 @@ use super::ability::{Ability, AbilityEffect};
 use super::counter::{CounterEntry, CounterType, PtModifier};
 use super::effect::Effect;
 use super::event::TriggeredAbility;
-use super::zone::ZoneType;
 use super::keyword::Keyword;
 use super::mana::{Color, ManaCost};
+use super::zone::ZoneType;
 
 /// Unique identifier for a card instance within a game.
 /// Different from a card definition — this represents a specific physical card

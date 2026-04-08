@@ -8,16 +8,25 @@ fn empty_objects() -> HashMap<ObjectId, CardInstance> {
 
 fn objects_with_creature(id: ObjectId) -> HashMap<ObjectId, CardInstance> {
     let mut map = HashMap::new();
-    map.insert(id, CardInstance::new(id, "alice", CardDefinition {
-        card_types: vec![CardType::Creature],
-        ..Default::default()
-    }));
+    map.insert(
+        id,
+        CardInstance::new(
+            id,
+            "alice",
+            CardDefinition {
+                card_types: vec![CardType::Creature],
+                ..Default::default()
+            },
+        ),
+    );
     map
 }
 
 fn etb_self_trigger(effect: Effect) -> TriggeredAbility {
     TriggeredAbility {
-        trigger: TriggerEvent::EntersZone { zone: ZoneType::Battlefield },
+        trigger: TriggerEvent::EntersZone {
+            zone: ZoneType::Battlefield,
+        },
         filters: vec![TriggerFilter::IsSelf],
         effect,
         needs_targets: false,
@@ -31,9 +40,9 @@ fn any_creature_dies_trigger(effect: Effect) -> TriggeredAbility {
             from: ZoneType::Battlefield,
             to: ZoneType::Graveyard,
         },
-        filters: vec![
-            TriggerFilter::ObjectMatches(vec![Filter::HasType("Creature".into())]),
-        ],
+        filters: vec![TriggerFilter::ObjectMatches(vec![Filter::HasType(
+            "Creature".into(),
+        )])],
         effect,
         needs_targets: false,
         description: "whenever a creature dies".into(),
@@ -42,7 +51,9 @@ fn any_creature_dies_trigger(effect: Effect) -> TriggeredAbility {
 
 fn your_creature_etb_trigger(effect: Effect) -> TriggeredAbility {
     TriggeredAbility {
-        trigger: TriggerEvent::EntersZone { zone: ZoneType::Battlefield },
+        trigger: TriggerEvent::EntersZone {
+            zone: ZoneType::Battlefield,
+        },
         filters: vec![
             TriggerFilter::ObjectMatches(vec![Filter::HasType("Creature".into())]),
             TriggerFilter::ControlledBy(TriggerPlayerRef::You),
@@ -68,7 +79,13 @@ fn etb_self_matches_own_etb() {
         controller: Some("alice".into()),
     };
 
-    assert!(trigger_matches(&trigger, &event, 42, "alice", &objects_with_creature(10)));
+    assert!(trigger_matches(
+        &trigger,
+        &event,
+        42,
+        "alice",
+        &objects_with_creature(10)
+    ));
 }
 
 #[test]
@@ -86,7 +103,13 @@ fn etb_self_does_not_match_other_object() {
         controller: Some("alice".into()),
     };
 
-    assert!(!trigger_matches(&trigger, &event, 42, "alice", &objects_with_creature(10)));
+    assert!(!trigger_matches(
+        &trigger,
+        &event,
+        42,
+        "alice",
+        &objects_with_creature(10)
+    ));
 }
 
 #[test]
@@ -104,7 +127,13 @@ fn your_creature_etb_matches_your_creature() {
         controller: Some("alice".into()),
     };
 
-    assert!(trigger_matches(&trigger, &event, 42, "alice", &objects_with_creature(10)));
+    assert!(trigger_matches(
+        &trigger,
+        &event,
+        42,
+        "alice",
+        &objects_with_creature(10)
+    ));
 }
 
 #[test]
@@ -122,16 +151,20 @@ fn your_creature_etb_does_not_match_opponent_creature() {
         controller: Some("bob".into()),
     };
 
-    assert!(!trigger_matches(&trigger, &event, 42, "alice", &objects_with_creature(10)));
+    assert!(!trigger_matches(
+        &trigger,
+        &event,
+        42,
+        "alice",
+        &objects_with_creature(10)
+    ));
 }
 
 #[test]
 fn dies_trigger_matches_battlefield_to_graveyard() {
     let trigger = any_creature_dies_trigger(Effect::DealDamage {
         amount: Value::Constant(1),
-        target: TargetSpec::Each(crate::game::effect::Selector::Players {
-            filters: vec![],
-        }),
+        target: TargetSpec::Each(crate::game::effect::Selector::Players { filters: vec![] }),
     });
 
     let event = GameEvent::ZoneChange {
@@ -142,7 +175,13 @@ fn dies_trigger_matches_battlefield_to_graveyard() {
         controller: Some("bob".into()),
     };
 
-    assert!(trigger_matches(&trigger, &event, 42, "alice", &objects_with_creature(10)));
+    assert!(trigger_matches(
+        &trigger,
+        &event,
+        42,
+        "alice",
+        &objects_with_creature(10)
+    ));
 }
 
 #[test]
@@ -160,7 +199,13 @@ fn dies_trigger_does_not_match_hand_to_graveyard() {
         controller: Some("bob".into()),
     };
 
-    assert!(!trigger_matches(&trigger, &event, 42, "alice", &objects_with_creature(10)));
+    assert!(!trigger_matches(
+        &trigger,
+        &event,
+        42,
+        "alice",
+        &objects_with_creature(10)
+    ));
 }
 
 #[test]
@@ -186,7 +231,13 @@ fn combat_damage_filter_works() {
         amount: 3,
         is_combat: true,
     };
-    assert!(trigger_matches(&trigger, &combat_to_player, 42, "alice", &empty_objects()));
+    assert!(trigger_matches(
+        &trigger,
+        &combat_to_player,
+        42,
+        "alice",
+        &empty_objects()
+    ));
 
     let noncombat = GameEvent::DamageDealt {
         source_id: 42,
@@ -194,7 +245,13 @@ fn combat_damage_filter_works() {
         amount: 3,
         is_combat: false,
     };
-    assert!(!trigger_matches(&trigger, &noncombat, 42, "alice", &empty_objects()));
+    assert!(!trigger_matches(
+        &trigger,
+        &noncombat,
+        42,
+        "alice",
+        &empty_objects()
+    ));
 
     let combat_to_creature = GameEvent::DamageDealt {
         source_id: 42,
@@ -202,5 +259,11 @@ fn combat_damage_filter_works() {
         amount: 3,
         is_combat: true,
     };
-    assert!(!trigger_matches(&trigger, &combat_to_creature, 42, "alice", &empty_objects()));
+    assert!(!trigger_matches(
+        &trigger,
+        &combat_to_creature,
+        42,
+        "alice",
+        &empty_objects()
+    ));
 }

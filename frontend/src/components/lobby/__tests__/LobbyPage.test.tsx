@@ -40,7 +40,7 @@ describe('LobbyPage', () => {
     useGameStore.setState({
       gameState: {
         gameId: 'g1', status: GameStatus.WAITING_FOR_PLAYERS,
-        players: [{ playerId: 'p1', name: 'Alice', lifeTotal: 20, ready: false, handSize: 7, librarySize: 53, poisonCounters: 0 }],
+        players: [{ playerId: 'p1', name: 'Alice', lifeTotal: 20, ready: false, handSize: 7, librarySize: 53, poisonCounters: 0, mulliganCount: 0, hasKept: false }],
         turnNumber: 0, actionCount: 0,
       },
     });

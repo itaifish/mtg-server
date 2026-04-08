@@ -222,6 +222,11 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
       window.dispatchEvent(new CustomEvent('target-selected', { detail: { object: { objectId: card.objectId } } }));
       return;
     }
+    // If this card has a mana ability during casting, tap it
+    if (useUiStore.getState().manaAbilityIds.has(card.objectId)) {
+      window.dispatchEvent(new CustomEvent('mana-tap', { detail: { objectId: card.objectId } }));
+      return;
+    }
     if (selected) {
       deselectObject();
     } else {

@@ -71,3 +71,10 @@ export const TargetKind = {
   SPELL: 'SPELL',
 } as const;
 export type TargetKind = (typeof TargetKind)[keyof typeof TargetKind];
+
+export const AutoPassMode = {
+  NONE: 'NONE',
+  UNTIL_PHASE: 'UNTIL_PHASE',
+  UNTIL_STACK_OR_TURN: 'UNTIL_STACK_OR_TURN',
+} as const;
+export type AutoPassMode = (typeof AutoPassMode)[keyof typeof AutoPassMode];

@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ActionBar } from '../ActionBar';
 import { LegalActionType, GameStatus } from '@/types/enums';
+import { useUiStore } from '@/stores/uiStore';
 import type { LegalAction } from '@/types/models';
 
 vi.mock('@/api/hooks', () => ({
@@ -40,10 +41,11 @@ describe('ActionBar', () => {
   });
 
   it('shows pass priority and pass turn when can pass', () => {
+    useUiStore.getState().cancelAutoPass();
     const actions: LegalAction[] = [{ actionType: LegalActionType.PASS_PRIORITY }];
     render(<ActionBar {...baseProps} legalActions={actions} gameStatus={GameStatus.IN_PROGRESS} />);
     expect(screen.getByRole('button', { name: /pass priority/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /pass until next turn/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /pass turn/i })).toBeInTheDocument();
   });
 
   it('hides concede in menu', async () => {

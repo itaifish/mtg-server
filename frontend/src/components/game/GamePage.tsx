@@ -22,6 +22,8 @@ import { TargetArrows } from './TargetArrows';
 import { ManaPoolDisplay, EMPTY_POOL } from './ManaPoolDisplay';
 import { useUiStore } from '@/stores/uiStore';
 import type { ActionInput } from '@/types/actions';
+import { createSetAutoPass } from '@/types/actions';
+import type { GamePhase } from '@/types/enums';
 
 export function GamePage() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -29,6 +31,8 @@ export function GamePage() {
   const playerId = useLobbyStore((s) => s.playerId);
   const { gameState, legalActions, isSubmitting, error, clearError, startPolling, stopPolling, submitAction } = useGameStore();
   const isMyTurn = useGameStore((s) => selectIsMyTurn(s, playerId ?? ''));
+  const autoPassMode = useUiStore((s) => s.autoPassMode);
+  const autoPassStopAtPhase = useUiStore((s) => s.autoPassStopAtPhase);
 
   useEffect(() => {
     if (!gameId || !playerId) return;
@@ -38,6 +42,13 @@ export function GamePage() {
 
   const handleAction = (action: ActionInput) => {
     if (gameId && playerId) submitAction(client, gameId, playerId, action);
+  };
+
+  const handlePassUntilPhase = (phase: GamePhase) => {
+    if (gameId && playerId) {
+      useUiStore.getState().setAutoPassMode('UNTIL_PHASE', phase);
+      submitAction(client, gameId, playerId, createSetAutoPass('UNTIL_PHASE', phase));
+    }
   };
 
   if (!gameState) return <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}><LoadingSpinner /></div>;
@@ -59,7 +70,7 @@ export function GamePage() {
           ))}
         </div>
         <PriorityIndicator />
-        <PhaseIndicator currentStatus={gameState.status} currentPhase={gameState.phase} landsPlayedThisTurn={gameState.landsPlayedThisTurn} />
+        <PhaseIndicator currentStatus={gameState.status} currentPhase={gameState.phase} landsPlayedThisTurn={gameState.landsPlayedThisTurn} onPassUntilPhase={handlePassUntilPhase} autoPassMode={autoPassMode} autoPassStopAtPhase={autoPassStopAtPhase} />
         <button onClick={useUiStore.getState().toggleSettings} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: '4px', color: 'var(--color-text-muted)' }} aria-label="Settings">⚙</button>
       </div>
 

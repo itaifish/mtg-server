@@ -393,3 +393,56 @@ impl From<crate::game::effect::TargetKind> for mtg_server_sdk::model::TargetKind
         }
     }
 }
+
+impl From<mtg_server_sdk::model::GamePhase> for crate::game::phases_and_steps::Phase {
+    fn from(phase: mtg_server_sdk::model::GamePhase) -> Self {
+        use crate::game::phases_and_steps::{BeginningStep, CombatStep, EndingStep};
+        match phase {
+            mtg_server_sdk::model::GamePhase::Untap => Self::Beginning(BeginningStep::Untap),
+            mtg_server_sdk::model::GamePhase::Upkeep => Self::Beginning(BeginningStep::Upkeep),
+            mtg_server_sdk::model::GamePhase::Draw => Self::Beginning(BeginningStep::Draw),
+            mtg_server_sdk::model::GamePhase::PrecombatMain => Self::PrecombatMain,
+            mtg_server_sdk::model::GamePhase::BeginningOfCombat => {
+                Self::Combat(CombatStep::BeginningOfCombat)
+            }
+            mtg_server_sdk::model::GamePhase::DeclareAttackers => {
+                Self::Combat(CombatStep::DeclareAttackers)
+            }
+            mtg_server_sdk::model::GamePhase::DeclareBlockers => {
+                Self::Combat(CombatStep::DeclareBlockers)
+            }
+            mtg_server_sdk::model::GamePhase::CombatDamage => {
+                Self::Combat(CombatStep::CombatDamage)
+            }
+            mtg_server_sdk::model::GamePhase::EndOfCombat => Self::Combat(CombatStep::EndOfCombat),
+            mtg_server_sdk::model::GamePhase::PostcombatMain => Self::PostcombatMain,
+            mtg_server_sdk::model::GamePhase::EndStep => Self::Ending(EndingStep::End),
+            mtg_server_sdk::model::GamePhase::Cleanup => Self::Ending(EndingStep::Cleanup),
+            _ => Self::PrecombatMain,
+        }
+    }
+}
+
+pub fn auto_pass_mode_from(
+    action: &mtg_server_sdk::model::SetAutoPassAction,
+    current_turn: u32,
+) -> crate::game::state::AutoPassMode {
+    use crate::game::state::AutoPassMode;
+    match action.mode {
+        mtg_server_sdk::model::AutoPassModeEnum::None => AutoPassMode::None,
+        mtg_server_sdk::model::AutoPassModeEnum::UntilStackOrTurn => {
+            AutoPassMode::UntilStackOrTurn {
+                set_on_turn: current_turn,
+            }
+        }
+        mtg_server_sdk::model::AutoPassModeEnum::UntilPhase => {
+            let phase = action
+                .stop_at_phase
+                .clone()
+                .map(Into::into)
+                .unwrap_or(crate::game::phases_and_steps::Phase::PrecombatMain);
+            AutoPassMode::UntilPhase(phase)
+        }
+        _ => AutoPassMode::None,
+    }
+}

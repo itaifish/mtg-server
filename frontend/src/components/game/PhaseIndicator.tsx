@@ -1,9 +1,12 @@
-import type { GameStatus, GamePhase } from '@/types/enums';
+import type { GameStatus, GamePhase, AutoPassMode } from '@/types/enums';
 
 interface PhaseIndicatorProps {
   currentStatus: GameStatus;
   currentPhase?: GamePhase;
   landsPlayedThisTurn?: number;
+  onPassUntilPhase?: (phase: GamePhase) => void;
+  autoPassMode?: AutoPassMode;
+  autoPassStopAtPhase?: GamePhase | null;
 }
 
 const pregameLabels: Record<string, string> = {
@@ -28,8 +31,7 @@ const phaseLabels: { key: GamePhase; label: string; short: string }[] = [
   { key: 'CLEANUP', label: 'Cleanup', short: 'CLN' },
 ];
 
-export function PhaseIndicator({ currentStatus, currentPhase, landsPlayedThisTurn }: PhaseIndicatorProps) {
-  // Show pregame label if not in progress
+export function PhaseIndicator({ currentStatus, currentPhase, landsPlayedThisTurn, onPassUntilPhase, autoPassMode, autoPassStopAtPhase }: PhaseIndicatorProps) {
   if (currentStatus !== 'IN_PROGRESS') {
     const label = pregameLabels[currentStatus] ?? currentStatus;
     return (
@@ -41,18 +43,29 @@ export function PhaseIndicator({ currentStatus, currentPhase, landsPlayedThisTur
     );
   }
 
+  const isPassingUntilPhase = autoPassMode === 'UNTIL_PHASE' && autoPassStopAtPhase;
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
       <div style={{ display: 'flex', gap: '2px', padding: '6px', background: 'var(--color-surface)', borderRadius: 'var(--radius)' }} role="status" aria-label={`Current phase: ${currentPhase ?? 'unknown'}`}>
         {phaseLabels.map((p) => {
           const active = p.key === currentPhase;
+          const isStop = isPassingUntilPhase && p.key === autoPassStopAtPhase;
           return (
-            <span key={p.key} title={p.label} style={{
-              padding: '3px 6px', borderRadius: 'var(--radius)', fontSize: '0.65rem', fontWeight: 600,
-              background: active ? 'var(--color-gold)' : 'transparent',
-              color: active ? 'var(--color-bg)' : 'var(--color-text-muted)',
-              opacity: active ? 1 : 0.5,
-            }}>
+            <span
+              key={p.key}
+              title={`Pass until ${p.label}`}
+              onClick={() => onPassUntilPhase?.(p.key)}
+              style={{
+                padding: '3px 6px', borderRadius: 'var(--radius)', fontSize: '0.65rem', fontWeight: 600,
+                background: active ? 'var(--color-gold)' : 'transparent',
+                color: active ? 'var(--color-bg)' : 'var(--color-text-muted)',
+                opacity: active ? 1 : 0.5,
+                cursor: onPassUntilPhase ? 'pointer' : 'default',
+                outline: isStop ? '2px solid var(--color-danger)' : 'none',
+                outlineOffset: '1px',
+              }}
+            >
               {p.short}
             </span>
           );

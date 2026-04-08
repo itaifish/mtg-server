@@ -54,8 +54,6 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const setCameraPosition = useUiStore((s) => s.setCameraPosition);
   const autoTapLands = useUiStore((s) => s.autoTapLands);
   const toggleAutoTapLands = useUiStore((s) => s.toggleAutoTapLands);
-  const autoPassPriority = useUiStore((s) => s.autoPassPriority);
-  const toggleAutoPassPriority = useUiStore((s) => s.toggleAutoPassPriority);
 
   return (
     <Modal title="Settings" onClose={onClose}>
@@ -69,10 +67,6 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <label htmlFor="auto-tap" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Auto-tap lands</label>
           <input id="auto-tap" type="checkbox" checked={autoTapLands} onChange={toggleAutoTapLands} />
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <label htmlFor="auto-pass" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Auto-pass priority</label>
-          <input id="auto-pass" type="checkbox" checked={autoPassPriority} onChange={toggleAutoPassPriority} />
         </div>
         <Select label="Theme" options={themeOptions} value={theme.id} onChange={(e) => setTheme(e.target.value)} />
         {selectedTheme && (

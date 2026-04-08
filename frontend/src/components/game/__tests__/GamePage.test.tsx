@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { GamePage } from '../GamePage';
 import { useGameStore } from '@/stores/gameStore';
+import { useUiStore } from '@/stores/uiStore';
 import { useLobbyStore } from '@/stores/lobbyStore';
 import { GameStatus, LegalActionType } from '@/types/enums';
 import type { GetGameStateResponse } from '@/types/api';
@@ -39,7 +40,7 @@ vi.mock('@/theme', async () => {
 });
 
 // Mock selectOpponentPlayers to return stable reference
-const stableOpponents = [{ playerId: 'p2', name: 'Bob', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0 }];
+const stableOpponents = [{ playerId: 'p2', name: 'Bob', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0, mulliganCount: 0, hasKept: false }];
 vi.mock('@/stores/gameStore', async () => {
   const actual = await vi.importActual<typeof import('@/stores/gameStore')>('@/stores/gameStore');
   return {
@@ -52,8 +53,8 @@ const baseState: GetGameStateResponse = {
   gameId: 'g1',
   status: GameStatus.IN_PROGRESS,
   players: [
-    { playerId: 'p1', name: 'Alice', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0 },
-    { playerId: 'p2', name: 'Bob', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0 },
+    { playerId: 'p1', name: 'Alice', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0, mulliganCount: 0, hasKept: false },
+    { playerId: 'p2', name: 'Bob', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0, mulliganCount: 0, hasKept: false },
   ],
   turnNumber: 1,
   actionCount: 0,
@@ -131,6 +132,7 @@ describe('GamePage', () => {
   });
 
   it('calls submitAction when an action button is clicked', async () => {
+    useUiStore.getState().cancelAutoPass();
     useGameStore.setState({
       gameState: { ...baseState, priorityPlayerId: 'p1' },
       legalActions: [{ actionType: LegalActionType.PASS_PRIORITY }],

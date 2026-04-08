@@ -8,7 +8,7 @@ describe('PlayerPanel', () => {
     playerId: 'p1',
     name: 'Alice',
     lifeTotal: 20,
-    ready: true, handSize: 7, librarySize: 53, poisonCounters: 0,
+    ready: true, handSize: 7, librarySize: 53, poisonCounters: 0, mulliganCount: 0, hasKept: false,
   };
 
   it('displays player name and life total', () => {

@@ -26,6 +26,8 @@ export interface PlayerInfo {
   handSize: number;
   librarySize: number;
   poisonCounters: number;
+  mulliganCount: number;
+  hasKept: boolean;
   manaPool?: ManaPoolInfo;
 }
 

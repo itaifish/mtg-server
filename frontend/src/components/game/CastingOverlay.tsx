@@ -27,6 +27,26 @@ export function CastingOverlay() {
   );
   const firstManaAbilityId = manaAbilities[0]?.objectId;
 
+  // Sync mana ability IDs to store so Card3D can highlight tappable lands
+  useEffect(() => {
+    if (pendingCast && !autoTapLands) {
+      useUiStore.getState().setManaAbilityIds(new Set(manaAbilities.map((a) => a.objectId!)));
+    } else {
+      useUiStore.getState().setManaAbilityIds(new Set());
+    }
+  }, [pendingCast, autoTapLands, legalActions]);
+
+  // Listen for land clicks during casting
+  useEffect(() => {
+    if (!pendingCast) return;
+    const handler = (e: Event) => {
+      const objectId = (e as CustomEvent).detail?.objectId;
+      if (objectId != null) activateManaAbility(objectId, 0);
+    };
+    window.addEventListener('mana-tap', handler);
+    return () => window.removeEventListener('mana-tap', handler);
+  }, [pendingCast, activateManaAbility]);
+
   const player = gameState?.players.find((p) => p.playerId === gameState.priorityPlayerId);
   const pool = player?.manaPool ?? EMPTY_POOL;
 
@@ -182,13 +202,8 @@ export function CastingOverlay() {
         <ManaPoolDisplay pool={pool} compact />
       </div>
       {manaAbilities.length > 0 && (
-        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-          {manaAbilities.map((a) => (
-            <Button key={a.objectId} variant="secondary" onClick={() => activateManaAbility(a.objectId!, 0)}
-              style={{ fontSize: '0.7rem', padding: '2px 8px' }}>
-              Tap #{a.objectId}
-            </Button>
-          ))}
+        <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>
+          Click lands to tap for mana
         </div>
       )}
       <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>

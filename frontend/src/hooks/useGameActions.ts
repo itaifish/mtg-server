@@ -13,9 +13,11 @@ import {
   createKeepHand,
   createMulligan,
   createConcede,
+  createSetAutoPass,
 } from '@/types/actions';
 import type { SpellTarget } from '@/types/actions';
 import type { AttackerEntry, BlockerEntry, SymbolPaymentEntry } from '@/types/models';
+import type { AutoPassMode, GamePhase } from '@/types/enums';
 
 interface UseGameActionsReturn {
   isLoading: boolean;
@@ -30,6 +32,7 @@ interface UseGameActionsReturn {
   keepHand: (cardsToBottom?: number[]) => Promise<void>;
   mulligan: () => Promise<void>;
   concede: () => Promise<void>;
+  setAutoPass: (mode: AutoPassMode, stopAtPhase?: GamePhase) => Promise<void>;
 }
 
 export function useGameActions(): UseGameActionsReturn {
@@ -89,5 +92,9 @@ export function useGameActions(): UseGameActionsReturn {
     ),
     mulligan: useCallback(() => submit(createMulligan), [submit]),
     concede: useCallback(() => submit(createConcede), [submit]),
+    setAutoPass: useCallback(
+      (mode: AutoPassMode, stopAtPhase?: GamePhase) => submit(() => createSetAutoPass(mode, stopAtPhase)),
+      [submit],
+    ),
   };
 }

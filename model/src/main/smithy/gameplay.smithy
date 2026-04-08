@@ -217,6 +217,21 @@ union ActionInput {
     keepHand: KeepHandAction
     mulligan: MulliganAction
     concede: ConcedeAction
+    setAutoPass: SetAutoPassAction
+}
+
+structure SetAutoPassAction {
+    @required
+    mode: AutoPassModeEnum
+
+    /// For UNTIL_PHASE: which phase to stop at.
+    stopAtPhase: GamePhase
+}
+
+enum AutoPassModeEnum {
+    NONE
+    UNTIL_PHASE
+    UNTIL_STACK_OR_TURN
 }
 
 structure PassPriorityAction {}

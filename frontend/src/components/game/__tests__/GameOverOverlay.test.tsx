@@ -15,8 +15,8 @@ describe('GameOverOverlay', () => {
     render(
       <MemoryRouter>
         <GameOverOverlay players={[
-          { playerId: 'p1', name: 'Alice', lifeTotal: 5, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0 },
-          { playerId: 'p2', name: 'Bob', lifeTotal: 0, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0 },
+          { playerId: 'p1', name: 'Alice', lifeTotal: 5, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0, mulliganCount: 0, hasKept: false },
+          { playerId: 'p2', name: 'Bob', lifeTotal: 0, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0, mulliganCount: 0, hasKept: false },
         ]} />
       </MemoryRouter>,
     );
@@ -28,8 +28,8 @@ describe('GameOverOverlay', () => {
     render(
       <MemoryRouter>
         <GameOverOverlay players={[
-          { playerId: 'p1', name: 'Alice', lifeTotal: 0, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0 },
-          { playerId: 'p2', name: 'Bob', lifeTotal: 0, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0 },
+          { playerId: 'p1', name: 'Alice', lifeTotal: 0, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0, mulliganCount: 0, hasKept: false },
+          { playerId: 'p2', name: 'Bob', lifeTotal: 0, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0, mulliganCount: 0, hasKept: false },
         ]} />
       </MemoryRouter>,
     );
@@ -42,7 +42,7 @@ describe('GameOverOverlay', () => {
     render(
       <MemoryRouter>
         <GameOverOverlay players={[
-          { playerId: 'p1', name: 'Alice', lifeTotal: 10, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0 },
+          { playerId: 'p1', name: 'Alice', lifeTotal: 10, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0, mulliganCount: 0, hasKept: false },
         ]} />
       </MemoryRouter>,
     );

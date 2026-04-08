@@ -5,6 +5,7 @@ import type {
   PlayerTarget,
   SymbolPaymentEntry,
 } from './models';
+import type { AutoPassMode, GamePhase } from './enums';
 
 // Individual action interfaces
 export interface PassPriorityAction {}
@@ -45,6 +46,11 @@ export interface MulliganAction {}
 
 export interface ConcedeAction {}
 
+export interface SetAutoPassAction {
+  mode: AutoPassMode;
+  stopAtPhase?: GamePhase;
+}
+
 // SpellTarget discriminated union
 export type SpellTarget =
   | { player: PlayerTarget }
@@ -61,7 +67,8 @@ export type ActionInput =
   | { chooseFirstPlayer: ChooseFirstPlayerAction }
   | { keepHand: KeepHandAction }
   | { mulligan: MulliganAction }
-  | { concede: ConcedeAction };
+  | { concede: ConcedeAction }
+  | { setAutoPass: SetAutoPassAction };
 
 // Helper functions
 export function createPassPriority(): ActionInput {
@@ -112,6 +119,10 @@ export function createMulligan(): ActionInput {
 
 export function createConcede(): ActionInput {
   return { concede: {} };
+}
+
+export function createSetAutoPass(mode: AutoPassMode, stopAtPhase?: GamePhase): ActionInput {
+  return { setAutoPass: { mode, stopAtPhase } };
 }
 
 // Type guard helpers

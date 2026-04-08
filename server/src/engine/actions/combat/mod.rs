@@ -215,7 +215,8 @@ pub fn resolve_combat_damage(state: &mut GameState) -> Result<(), ActionError> {
     }
 
     state.record_action();
-    state_based::check(state); triggers::process_pending_triggers(state);
+    state_based::check(state);
+    triggers::process_pending_triggers(state);
     Ok(())
 }
 

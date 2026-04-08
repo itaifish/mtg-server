@@ -109,6 +109,22 @@ pub struct Player {
     pub pregame: PregameInfo,
     /// CR 106.4 — Mana pool. Empties at the end of each step and phase.
     pub mana_pool: ManaPool,
+    /// Auto-pass mode — server automatically passes priority for this player
+    /// until the stop condition is met.
+    pub auto_pass: AutoPassMode,
+}
+
+/// Controls when the server auto-passes priority for a player.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum AutoPassMode {
+    /// No auto-pass — player must explicitly pass each time.
+    #[default]
+    None,
+    /// Pass until a specific phase/step is reached.
+    UntilPhase(Phase),
+    /// Pass unless something is added to the stack or the turn changes.
+    /// Stores the turn number when auto-pass was set.
+    UntilStackOrTurn { set_on_turn: u32 },
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -128,6 +144,7 @@ impl Player {
             poison_counters: 0,
             pregame: PregameInfo::default(),
             mana_pool: ManaPool::default(),
+            auto_pass: AutoPassMode::None,
         }
     }
 }
@@ -216,6 +233,35 @@ impl GameState {
     /// Returns true if the given player has priority.
     pub fn has_priority(&self, player_id: &str) -> bool {
         self.status == GameStatus::InProgress && self.priority_player().id == player_id
+    }
+
+    /// Check if the player with priority should auto-pass.
+    pub fn should_auto_pass(&self, player_id: &str) -> bool {
+        let player = match self.get_player(player_id) {
+            Some(p) => p,
+            None => return false,
+        };
+        match &player.auto_pass {
+            AutoPassMode::None => false,
+            AutoPassMode::UntilPhase(target_phase) => self.phase != *target_phase,
+            AutoPassMode::UntilStackOrTurn { set_on_turn } => {
+                self.stack.is_empty() && self.turn_number == *set_on_turn
+            }
+        }
+    }
+
+    /// Clear auto-pass for a player.
+    pub fn clear_auto_pass(&mut self, player_id: &str) {
+        if let Some(player) = self.get_player_mut(player_id) {
+            player.auto_pass = AutoPassMode::None;
+        }
+    }
+
+    /// Set auto-pass mode for a player.
+    pub fn set_auto_pass(&mut self, player_id: &str, mode: AutoPassMode) {
+        if let Some(player) = self.get_player_mut(player_id) {
+            player.auto_pass = mode;
+        }
     }
 
     /// CR 117.3b — After a player takes an action, they receive priority again.
@@ -446,9 +492,15 @@ impl GameState {
             self.advance_turn();
         }
         self.reset_priority_to_active();
-    }
 
-    /// Perform automatic actions when entering a phase/step.
+        // CR 514.3 — No player receives priority during cleanup unless a
+        // triggered ability goes on the stack.
+        if matches!(self.phase, Phase::Ending(EndingStep::Cleanup))
+            && self.pending_triggers.is_empty()
+        {
+            self.advance_phase();
+        }
+    }
     fn on_phase_enter(&mut self) {
         let active_id = self.active_player().id.clone();
         match self.phase {

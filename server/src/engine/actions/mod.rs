@@ -52,6 +52,12 @@ pub fn pass_priority(state: &mut GameState, player_id: &str) -> Result<(), Actio
 
     let all_passed = state.pass_priority_to_next(player_id);
 
+    tracing::info!(
+        "{} has passed priority. All players passed? {}",
+        &player_id,
+        &all_passed
+    );
+
     if all_passed {
         if state.stack.is_empty() {
             state.advance_phase();
@@ -62,6 +68,25 @@ pub fn pass_priority(state: &mut GameState, player_id: &str) -> Result<(), Actio
     }
 
     check_state_and_triggers(state);
+    process_auto_passes(state)?;
+    Ok(())
+}
+
+/// Repeatedly auto-pass for players whose auto-pass mode is active.
+fn process_auto_passes(state: &mut GameState) -> Result<(), ActionError> {
+    for i in 0..1000 {
+        if state.status != GameStatus::InProgress {
+            break;
+        }
+        let priority_id = state.priority_player().id.clone();
+        if !state.should_auto_pass(&priority_id) {
+            break;
+        }
+        if i == 999 {
+            tracing::warn!("auto-pass loop hit 1000 iterations, breaking");
+        }
+        pass_priority(state, &priority_id)?;
+    }
     Ok(())
 }
 
@@ -217,7 +242,9 @@ fn get_referenced_targets(
     entry: &StackEntry,
 ) -> Vec<SpellTarget> {
     match spec {
-        TargetSpec::Chosen { index, .. } => entry.targets.get(*index).cloned().into_iter().collect(),
+        TargetSpec::Chosen { index, .. } => {
+            entry.targets.get(*index).cloned().into_iter().collect()
+        }
         TargetSpec::Source => {
             let id = match &entry.kind {
                 StackEntryKind::Spell { object_id } => *object_id,

@@ -4,7 +4,12 @@ use crate::game::event::PendingTrigger;
 use crate::game::state::{GameState, Player};
 
 fn two_player_game() -> GameState {
-    let mut state = GameState::new("test", "Test Game", vec![Player::new("alice", "Alice"), Player::new("bob", "Bob")], 42);
+    let mut state = GameState::new(
+        "test",
+        "Test Game",
+        vec![Player::new("alice", "Alice"), Player::new("bob", "Bob")],
+        42,
+    );
     state.status = crate::game::state::GameStatus::InProgress;
     state
 }
@@ -15,14 +20,20 @@ fn identical_triggers_dont_need_ordering() {
         PendingTrigger {
             source_id: 1,
             controller: "alice".into(),
-            effect: Effect::GainLife { amount: Value::Constant(1), player: PlayerSpec::Controller },
+            effect: Effect::GainLife {
+                amount: Value::Constant(1),
+                player: PlayerSpec::Controller,
+            },
             needs_targets: false,
             description: "gain 1 life".into(),
         },
         PendingTrigger {
             source_id: 2,
             controller: "alice".into(),
-            effect: Effect::GainLife { amount: Value::Constant(1), player: PlayerSpec::Controller },
+            effect: Effect::GainLife {
+                amount: Value::Constant(1),
+                player: PlayerSpec::Controller,
+            },
             needs_targets: false,
             description: "gain 1 life".into(),
         },
@@ -36,14 +47,20 @@ fn different_triggers_need_ordering() {
         PendingTrigger {
             source_id: 1,
             controller: "alice".into(),
-            effect: Effect::GainLife { amount: Value::Constant(1), player: PlayerSpec::Controller },
+            effect: Effect::GainLife {
+                amount: Value::Constant(1),
+                player: PlayerSpec::Controller,
+            },
             needs_targets: false,
             description: "gain 1 life".into(),
         },
         PendingTrigger {
             source_id: 2,
             controller: "alice".into(),
-            effect: Effect::DrawCards { count: Value::Constant(1), player: PlayerSpec::Controller },
+            effect: Effect::DrawCards {
+                count: Value::Constant(1),
+                player: PlayerSpec::Controller,
+            },
             needs_targets: false,
             description: "draw 1 card".into(),
         },
@@ -57,7 +74,10 @@ fn process_puts_triggers_on_stack() {
     state.pending_triggers.push(PendingTrigger {
         source_id: 10,
         controller: "alice".into(),
-        effect: Effect::GainLife { amount: Value::Constant(1), player: PlayerSpec::Controller },
+        effect: Effect::GainLife {
+            amount: Value::Constant(1),
+            player: PlayerSpec::Controller,
+        },
         needs_targets: false,
         description: "gain 1 life".into(),
     });
