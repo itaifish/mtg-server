@@ -11,7 +11,9 @@
 		"format": "prettier --write 'src/**/*.ts'"
 	},
 	"dependencies": {
-		"@mtg-server/client": "file:./mtg-client"
+		"@mtg-server/client": "file:./mtg-client",
+		"@smithy/types": "^4.14.0",
+		"@smithy/protocol-http": "^5.3.12"
 	},
 	"devDependencies": {
 		"@types/jest": "^30",

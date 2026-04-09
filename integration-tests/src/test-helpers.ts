@@ -15,7 +15,9 @@ function apiKeyMiddleware(apiKey: string): BuildMiddleware<ServiceInputTypes, Se
 	};
 }
 
-export function createClient({ withApiKey = true }: { withApiKey?: boolean } = {}): MtgServiceClient {
+export function createClient({
+	withApiKey = true,
+}: { withApiKey?: boolean } = {}): MtgServiceClient {
 	const client = new MtgServiceClient({ endpoint: API_URL });
 	if (withApiKey && API_KEY) {
 		client.middlewareStack.add(apiKeyMiddleware(API_KEY), {
