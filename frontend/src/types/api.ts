@@ -88,6 +88,7 @@ export interface StackEntryInfo {
   controller: string;
   objectId?: number;
   oracleId?: string;
+  abilityText?: string;
   targets?: SpellTarget[];
 }
 

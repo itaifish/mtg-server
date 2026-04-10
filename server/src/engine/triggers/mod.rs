@@ -74,6 +74,7 @@ fn put_triggers_on_stack(state: &mut GameState, triggers: &[PendingTrigger]) {
             kind: StackEntryKind::Ability {
                 source_id: trigger.source_id,
                 effect: trigger.effect.clone(),
+                description: trigger.description.clone(),
             },
             controller: trigger.controller.clone(),
             targets: vec![],

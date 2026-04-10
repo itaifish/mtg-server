@@ -111,12 +111,19 @@ export function ActionBar({ legalActions, isMyTurn, isSubmitting, onAction, game
         </>
       )}
       {!isPregame && isAutoPassing && (
-        <Button variant="secondary" onClick={() => {
+        <>
+          {canPass && (
+            <Button variant="primary" disabled={isLoading} onClick={() => passPriority()} style={{ fontSize: '0.8rem', padding: '4px 10px' }}>
+              Pass Priority
+            </Button>
+          )}
+          <Button variant="secondary" onClick={() => {
           useUiStore.getState().cancelAutoPass();
           setAutoPass('NONE');
         }} style={{ fontSize: '0.8rem', padding: '4px 10px', color: 'var(--color-danger)' }}>
           Cancel Auto-Pass
         </Button>
+        </>
       )}
 
       {/* Menu button with concede hidden inside */}

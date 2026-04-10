@@ -73,6 +73,19 @@ pub fn pass_priority(state: &mut GameState, player_id: &str) -> Result<(), Actio
 }
 
 /// Repeatedly auto-pass for players whose auto-pass mode is active.
+/// Set auto-pass mode for a player and immediately process if they have priority.
+pub fn set_auto_pass(
+    state: &mut GameState,
+    player_id: &str,
+    mode: crate::game::state::AutoPassMode,
+) -> Result<(), ActionError> {
+    state.set_auto_pass(player_id, mode);
+    if state.has_priority(player_id) && state.should_auto_pass(player_id) {
+        pass_priority(state, player_id)?;
+    }
+    Ok(())
+}
+
 fn process_auto_passes(state: &mut GameState) -> Result<(), ActionError> {
     for i in 0..1000 {
         if state.status != GameStatus::InProgress {
@@ -80,6 +93,7 @@ fn process_auto_passes(state: &mut GameState) -> Result<(), ActionError> {
         }
         let priority_id = state.priority_player().id.clone();
         if !state.should_auto_pass(&priority_id) {
+            state.clear_auto_pass(&priority_id);
             break;
         }
         if i == 999 {
@@ -526,5 +540,7 @@ pub(crate) fn validate_player(state: &GameState, player_id: &str) -> Result<(), 
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_auto_pass;
 #[cfg(test)]
 mod tests_triggered;

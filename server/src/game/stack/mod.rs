@@ -21,7 +21,7 @@ pub enum StackEntryKind {
     /// A spell (card on the stack). The card moves zones.
     Spell { object_id: ObjectId },
     /// A triggered or activated ability. The source stays where it is.
-    Ability { source_id: ObjectId, effect: Effect },
+    Ability { source_id: ObjectId, effect: Effect, description: String },
 }
 
 /// A target for a spell or ability on the stack.

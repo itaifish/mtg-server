@@ -554,6 +554,9 @@ structure StackEntryInfo {
 
     oracleId: String
 
+    /// Human-readable ability text (for triggered/activated abilities on the stack).
+    abilityText: String
+
     @required
     targets: TargetList
 }

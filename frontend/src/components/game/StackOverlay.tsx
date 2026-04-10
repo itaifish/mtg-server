@@ -4,7 +4,7 @@ import { StackCard } from './StackCard';
 
 export function StackOverlay() {
   const stack = useGameStore((s) => s.gameState?.stack);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   if (!stack || stack.length === 0) return null;
 
@@ -23,7 +23,7 @@ export function StackOverlay() {
         <span>Stack ({stack.length})</span>
         <span style={{ fontSize: '0.65rem' }}>{expanded ? '▾' : '▸'}</span>
       </div>
-      {stack.map((entry, i) => (
+      {[...stack].reverse().map((entry, i) => (
         expanded ? (
           <StackCard key={entry.objectId ?? i} entry={entry} index={i} total={stack.length} />
         ) : (

@@ -311,16 +311,17 @@ pub async fn get_game_state(
                 .iter()
                 .map(|entry| {
                     use crate::game::stack::StackEntryKind;
-                    let (name, oracle_id, object_id) = match &entry.kind {
+                    let (name, oracle_id, object_id, ability_text) = match &entry.kind {
                         StackEntryKind::Spell { object_id } => {
                             let card = state.objects.get(object_id);
                             (
                                 card.map(|c| c.definition.name.clone()).unwrap_or_default(),
                                 card.map(|c| c.definition.oracle_id.clone()),
                                 Some(*object_id as i64),
+                                None,
                             )
                         }
-                        StackEntryKind::Ability { source_id, .. } => {
+                        StackEntryKind::Ability { source_id, description, .. } => {
                             let card = state.objects.get(source_id);
                             (
                                 format!(
@@ -330,6 +331,7 @@ pub async fn get_game_state(
                                 ),
                                 card.map(|c| c.definition.oracle_id.clone()),
                                 None,
+                                Some(description.clone()),
                             )
                         }
                     };
@@ -338,6 +340,7 @@ pub async fn get_game_state(
                         controller: entry.controller.clone(),
                         object_id,
                         oracle_id,
+                        ability_text,
                         targets: entry.targets.iter().map(Into::into).collect(),
                     }
                 })
@@ -419,7 +422,7 @@ pub async fn submit_action(
         }
         ActionInput::SetAutoPass(auto_pass) => {
             let mode = crate::conversions::auto_pass_mode_from(auto_pass, state.turn_number);
-            state.set_auto_pass(&input.player_id, mode);
+            engine::actions::set_auto_pass(&mut state, &input.player_id, mode)?;
         }
         _ => {
             return Err(engine::actions::ActionError::Illegal("unsupported action".into()).into());

@@ -42,6 +42,9 @@ export function StackCard({ entry, index, total }: StackCardProps) {
       )}
       <div style={{ fontSize: '0.7rem', lineHeight: 1.3 }}>
         <div style={{ fontWeight: 600 }}>{entry.name}</div>
+        {entry.abilityText && (
+          <div style={{ color: 'var(--color-text-muted)', marginTop: '2px', fontStyle: 'italic' }}>{entry.abilityText}</div>
+        )}
         {targetNames.length > 0 && (
           <div style={{ color: 'var(--color-gold)', marginTop: '2px' }}>
             → {targetNames.join(', ')}
