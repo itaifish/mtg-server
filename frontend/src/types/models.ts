@@ -38,6 +38,7 @@ export interface TargetRequirement {
 export interface LegalAction {
   actionType: LegalActionType;
   objectId?: number;
+  abilityIndex?: number;
   targetRequirements?: TargetRequirement[];
   manaCost?: string[];
 }

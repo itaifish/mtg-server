@@ -87,7 +87,17 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
   fetchLegalActions: async (client, gameId, playerId) => {
     try {
       const res = await client.getLegalActions({ gameId, playerId });
-      set({ legalActions: res.actions });
+      // Compute abilityIndex for duplicate ACTIVATE_MANA_ABILITY entries (same objectId)
+      const indexCounters = new Map<number, number>();
+      const actions = res.actions.map((a) => {
+        if (a.actionType === 'ACTIVATE_MANA_ABILITY' && a.objectId != null) {
+          const count = indexCounters.get(a.objectId) ?? 0;
+          indexCounters.set(a.objectId, count + 1);
+          return { ...a, abilityIndex: count };
+        }
+        return a;
+      });
+      set({ legalActions: actions });
       // Clear auto-pass indicator when server gives us meaningful actions
       if (res.actions.some((a) => a.actionType !== 'PASS_PRIORITY' && a.actionType !== 'CONCEDE')) {
         useUiStore.getState().cancelAutoPass();
@@ -105,7 +115,16 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
       // Refresh state after action
       const gameState = await client.getGameState({ gameId, perspectivePlayerId: playerId });
       const legalRes = await client.getLegalActions({ gameId, playerId });
-      set({ gameState, legalActions: legalRes.actions });
+      const idxCounters = new Map<number, number>();
+      const legalActions = legalRes.actions.map((a) => {
+        if (a.actionType === 'ACTIVATE_MANA_ABILITY' && a.objectId != null) {
+          const count = idxCounters.get(a.objectId) ?? 0;
+          idxCounters.set(a.objectId, count + 1);
+          return { ...a, abilityIndex: count };
+        }
+        return a;
+      });
+      set({ gameState, legalActions });
     } catch (e) {
       set({ isSubmitting: false, error: e instanceof Error ? e.message : 'Failed to submit action' });
     }

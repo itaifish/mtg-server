@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use super::card::{CardDefinition, ObjectId};
 use super::effect::Effect;
-use super::event::{TriggerEvent, TriggerFilter};
+use super::event::{EventModification, TriggerEvent, TriggerFilter};
 use super::mana::{ManaProduction, ManaType};
 use super::zone::ZoneType;
 
@@ -13,7 +13,7 @@ use super::zone::ZoneType;
 pub struct Abilities {
     pub activated: HashMap<ZoneType, Vec<ActivatedAbility>>,
     pub triggered: HashMap<ZoneType, Vec<TriggeredAbility>>,
-    // TODO: pub static_abilities: HashMap<ZoneType, Vec<StaticAbility>>,
+    pub static_abilities: HashMap<ZoneType, Vec<StaticAbility>>,
 }
 
 impl Abilities {
@@ -30,6 +30,26 @@ impl Abilities {
             .map(|v| v.as_slice())
             .unwrap_or(&[])
     }
+
+    pub fn static_in(&self, zone: ZoneType) -> &[StaticAbility] {
+        self.static_abilities
+            .get(&zone)
+            .map(|v| v.as_slice())
+            .unwrap_or(&[])
+    }
+}
+
+/// A static ability. CR 604
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum StaticAbility {
+    /// CR 614 — Replacement effect.
+    Replacement {
+        applies_to: TriggerEvent,
+        filters: Vec<TriggerFilter>,
+        modification: EventModification,
+        /// CR 614.15 — Self-replacement effects apply first (616.1a).
+        is_self_replacement: bool,
+    },
 }
 
 /// An activated ability. CR 602

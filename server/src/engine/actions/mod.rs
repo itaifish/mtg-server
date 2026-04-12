@@ -1,11 +1,12 @@
 use crate::engine::triggers::process_pending_triggers;
-use crate::game::ability::{all_activated, AbilityCost, AbilityEffect};
-use crate::game::card::CardType;
-use crate::game::effect::{CounterSpec, Effect, PlayerSpec, TargetSpec, Value};
+use crate::game::ability::{all_activated, AbilityCost, AbilityEffect, StaticAbility};
+use crate::game::card::{CardDefinition, CardInstance, CardType, ObjectId};
+use crate::game::effect::{Condition, ControllerFilter, CounterSpec, Effect, PlayerSpec, Selector, TargetSpec, TokenSource, Value};
+use crate::game::event::EventModification;
 use crate::game::mana::SymbolPayment;
 use crate::game::phases_and_steps::Phase;
 use crate::game::stack::{SpellTarget, StackEntry, StackEntryKind};
-use crate::game::state::{GameState, GameStatus};
+use crate::game::state::{ChoiceEffect, ChoiceKind, GameState, GameStatus, PendingChoice};
 use crate::game::zone::ZoneType;
 
 use super::state_based;
@@ -124,7 +125,7 @@ fn resolve_top_of_stack(state: &mut GameState) -> Result<(), ActionError> {
             let spell_effect = card.definition.spell_effect.clone();
 
             if card_types.iter().any(|t| t.is_permanent()) {
-                state.move_object(object_id, ZoneType::Battlefield);
+                enter_battlefield(state, object_id, ZoneType::Stack);
             } else {
                 if let Some(effect) = spell_effect {
                     resolve_effect(state, &effect, &entry)?;
@@ -232,6 +233,24 @@ fn resolve_effect(
                 resolve_effect(state, e, entry)?;
             }
         }
+        Effect::GainEnergy { amount, player } => {
+            let amount = eval_value(state, amount);
+            for pid in get_referenced_players(state, player, entry) {
+                state.gain_energy(&pid, amount);
+            }
+        }
+        Effect::CreateToken {
+            token,
+            count,
+            player,
+        } => {
+            let count = eval_value(state, count);
+            for pid in get_referenced_players(state, player, entry) {
+                for _ in 0..count {
+                    create_token(state, &pid, token);
+                }
+            }
+        }
         Effect::Custom { name } => {
             tracing::warn!(%name, "unimplemented custom effect");
         }
@@ -240,6 +259,156 @@ fn resolve_effect(
         }
     }
     Ok(())
+}
+
+/// CR 614.12 — Apply replacement effects, then move the object to the battlefield.
+/// If a player choice is needed, sets `pending_choice` and returns without moving.
+pub(crate) fn enter_battlefield(state: &mut GameState, object_id: ObjectId, _from: ZoneType) {
+    let mut enters_tapped = false;
+
+    if let Some(card) = state.objects.get(&object_id) {
+        let controller = card.controller.clone().unwrap_or_else(|| card.owner.clone());
+
+        for ability in card.definition.abilities.static_in(ZoneType::Battlefield) {
+            if let StaticAbility::Replacement { modification, is_self_replacement: true, .. } = ability {
+                match modification {
+                    EventModification::EntersTapped => {
+                        enters_tapped = true;
+                    }
+                    EventModification::EntersTappedUnless(condition) => {
+                        if !evaluate_condition(state, condition, &controller) {
+                            enters_tapped = true;
+                        }
+                    }
+                    EventModification::ChooseOrElse { cost, fallback } => {
+                        let tapped_on_no = matches!(fallback.as_ref(), EventModification::EntersTapped);
+                        let cost_desc = cost.iter().map(|c| format!("{:?}", c)).collect::<Vec<_>>().join(", ");
+                        state.pending_choice = Some(PendingChoice {
+                            player_id: controller.clone(),
+                            kind: ChoiceKind::YesNo {
+                                yes: ChoiceEffect::EnterBattlefield { object_id, tapped: false, costs: cost.clone() },
+                                no: ChoiceEffect::EnterBattlefield { object_id, tapped: tapped_on_no, costs: vec![] },
+                            },
+                            prompt: format!("Pay {}?", cost_desc),
+                        });
+                        return;
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    state.move_object(object_id, ZoneType::Battlefield);
+
+    if enters_tapped {
+        if let Some(card) = state.objects.get_mut(&object_id) {
+            card.tapped = true;
+        }
+    }
+}
+
+/// Evaluate a condition against the current game state.
+fn evaluate_condition(
+    state: &GameState,
+    condition: &crate::game::effect::Condition,
+    controller: &str,
+) -> bool {
+    use crate::game::effect::{Condition, ControllerFilter, Selector};
+
+    match condition {
+        Condition::ControlPermanent(selector) => match selector {
+            Selector::Permanents { controller: cf, filters } => {
+                let check_controller = match cf {
+                    ControllerFilter::You => Some(controller),
+                    ControllerFilter::Any => None,
+                    ControllerFilter::Opponent => return false, // TODO
+                };
+                state.battlefield.iter().any(|&oid| {
+                    let Some(card) = state.objects.get(&oid) else { return false };
+                    if let Some(pid) = check_controller {
+                        if card.controller.as_deref() != Some(pid) {
+                            return false;
+                        }
+                    }
+                    crate::game::event::card_matches_filters(&card.definition, filters)
+                })
+            }
+            _ => false,
+        },
+        Condition::LifeAtOrBelow(n) => {
+            state.get_player(controller).map(|p| p.life_total <= *n as i32).unwrap_or(false)
+        }
+        Condition::LifeAtOrAbove(n) => {
+            state.get_player(controller).map(|p| p.life_total >= *n as i32).unwrap_or(false)
+        }
+        _ => false,
+    }
+}
+
+/// Resolve a pending yes/no choice.
+pub fn resolve_choice(state: &mut GameState, player_id: &str, answer: bool) -> Result<(), ActionError> {
+    let choice = state.pending_choice.take()
+        .ok_or_else(|| ActionError::Illegal("no pending choice".into()))?;
+
+    if choice.player_id != player_id {
+        state.pending_choice = Some(choice);
+        return Err(ActionError::Illegal("not your choice to make".into()));
+    }
+
+    let effect = match choice.kind {
+        ChoiceKind::YesNo { yes, no } => if answer { yes } else { no },
+        _ => return Err(ActionError::Illegal("expected a yes/no choice".into())),
+    };
+
+    apply_choice_effect(state, player_id, &effect);
+    check_state_and_triggers(state);
+    Ok(())
+}
+
+fn apply_choice_effect(state: &mut GameState, player_id: &str, effect: &ChoiceEffect) {
+    match effect {
+        ChoiceEffect::EnterBattlefield { object_id, tapped, costs } => {
+            for cost in costs {
+                match cost {
+                    AbilityCost::PayLife(n) => {
+                        if let Some(p) = state.get_player_mut(player_id) {
+                            p.life_total -= *n as i32;
+                        }
+                    }
+                    _ => {
+                        tracing::warn!(?cost, "unhandled replacement cost");
+                    }
+                }
+            }
+            state.move_object(*object_id, ZoneType::Battlefield);
+            if *tapped {
+                if let Some(card) = state.objects.get_mut(object_id) {
+                    card.tapped = true;
+                }
+            }
+        }
+        ChoiceEffect::ResolveEffect(_effect) => {
+            // TODO: resolve arbitrary effects
+        }
+        ChoiceEffect::Nothing => {}
+    }
+}
+
+fn create_token(state: &mut GameState, controller: &str, source: &TokenSource) {
+    let def: CardDefinition = match source {
+        TokenSource::Defined(td) => td.clone().into(),
+        TokenSource::CopyOf(_) => {
+            tracing::warn!("CopyOf tokens not yet implemented");
+            return;
+        }
+    };
+
+    let id = state.new_object_id();
+    let mut instance = CardInstance::new(id, controller, def);
+    instance.controller = Some(controller.to_string());
+    state.objects.insert(id, instance);
+    enter_battlefield(state, id, ZoneType::None);
 }
 
 fn eval_value(_state: &GameState, value: &Value) -> u32 {
@@ -457,7 +626,7 @@ pub fn cast_spell(
     });
 
     // Caster gets priority back after casting. CR 117.3b
-    state.reset_priority_to_active();
+    state.players_passed.clear();
     state.record_action();
     check_state_and_triggers(state);
     Ok(())
@@ -508,7 +677,7 @@ pub fn play_land(
         return Err(ActionError::Illegal("card is not a land".into()));
     }
 
-    state.move_object(object_id, ZoneType::Battlefield);
+    enter_battlefield(state, object_id, ZoneType::Hand);
     state.lands_played_this_turn += 1;
     state.record_action();
 
@@ -542,5 +711,7 @@ pub(crate) fn validate_player(state: &GameState, player_id: &str) -> Result<(), 
 mod tests;
 #[cfg(test)]
 mod tests_auto_pass;
+#[cfg(test)]
+mod tests_replacement;
 #[cfg(test)]
 mod tests_triggered;

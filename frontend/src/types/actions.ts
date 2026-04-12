@@ -68,7 +68,12 @@ export type ActionInput =
   | { keepHand: KeepHandAction }
   | { mulligan: MulliganAction }
   | { concede: ConcedeAction }
-  | { setAutoPass: SetAutoPassAction };
+  | { setAutoPass: SetAutoPassAction }
+  | { makeChoice: MakeChoiceAction };
+
+export interface MakeChoiceAction {
+  yesNo: boolean;
+}
 
 // Helper functions
 export function createPassPriority(): ActionInput {
@@ -119,6 +124,10 @@ export function createMulligan(): ActionInput {
 
 export function createConcede(): ActionInput {
   return { concede: {} };
+}
+
+export function createMakeChoice(yesNo: boolean): ActionInput {
+  return { makeChoice: { yesNo } };
 }
 
 export function createSetAutoPass(mode: AutoPassMode, stopAtPhase?: GamePhase): ActionInput {

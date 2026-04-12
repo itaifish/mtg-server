@@ -24,7 +24,7 @@ export function CombatPanel() {
   const eligibleAttackers = useMemo(() =>
     (gameState?.battlefield ?? []).filter((p) =>
       p.controller === playerId &&
-      p.cardTypes.includes('creature') &&
+      p.cardTypes.some((t) => t.toLowerCase() === 'creature') &&
       !p.tapped &&
       !p.summoningSick
     ), [gameState?.battlefield, playerId]);
@@ -33,7 +33,7 @@ export function CombatPanel() {
   const eligibleBlockers = useMemo(() =>
     (gameState?.battlefield ?? []).filter((p) =>
       p.controller === playerId &&
-      p.cardTypes.includes('creature') &&
+      p.cardTypes.some((t) => t.toLowerCase() === 'creature') &&
       !p.tapped
     ), [gameState?.battlefield, playerId]);
 

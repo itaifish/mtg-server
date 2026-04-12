@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::game::phases_and_steps::{BeginningStep, EndingStep};
 
+use super::ability::AbilityCost;
 use super::card::{CardInstance, CardType, ObjectId, PlayerId};
 use super::event::{trigger_matches, GameEvent, PendingTrigger};
 use super::mana::{ManaPool, ManaRestriction, ManaType};
@@ -62,6 +63,54 @@ pub struct GameState {
     pub combat: Option<CombatState>,
     /// CR 103.1 — The player randomly chosen to decide who goes first.
     pub play_order_chooser: Option<PlayerId>,
+    /// A choice the game is waiting for a player to make (e.g., shock land ETB).
+    pub pending_choice: Option<PendingChoice>,
+}
+
+/// A choice the game is waiting for a player to make.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PendingChoice {
+    pub player_id: PlayerId,
+    pub kind: ChoiceKind,
+    pub prompt: String,
+}
+
+/// Composable choice types.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ChoiceKind {
+    /// Yes or no (e.g., "pay 2 life?").
+    YesNo {
+        yes: ChoiceEffect,
+        no: ChoiceEffect,
+    },
+    /// Pick one of N options (e.g., modal spells).
+    PickOne { options: Vec<ChoiceOption> },
+    /// Choose N objects matching a filter.
+    ChooseObjects {
+        count: u32,
+        from: Vec<ObjectId>,
+    },
+}
+
+/// What happens as a result of a choice.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ChoiceEffect {
+    /// Complete a pending ETB — pay costs, then move to the battlefield.
+    EnterBattlefield {
+        object_id: ObjectId,
+        tapped: bool,
+        costs: Vec<AbilityCost>,
+    },
+    /// Resolve an effect from the effect DSL.
+    ResolveEffect(super::effect::Effect),
+    /// No additional effect.
+    Nothing,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChoiceOption {
+    pub label: String,
+    pub effect: ChoiceEffect,
 }
 
 /// Tracks the state of an ongoing combat.
@@ -219,6 +268,7 @@ impl GameState {
             lands_played_this_turn: 0,
             combat: None,
             play_order_chooser: None,
+            pending_choice: None,
         }
     }
     /// Get the active player. CR 102.1
@@ -340,6 +390,7 @@ impl GameState {
             ZoneType::Command => {
                 self.command.insert(object_id);
             }
+            ZoneType::None => {}
             ZoneType::Library | ZoneType::Hand | ZoneType::Graveyard => {
                 let player_id = self
                     .objects
@@ -579,6 +630,7 @@ impl GameState {
                 ZoneType::Stack => ZoneType::Stack,
                 ZoneType::Exile => ZoneType::Exile,
                 ZoneType::Command => ZoneType::Command,
+                ZoneType::None => ZoneType::None,
             }
         };
 

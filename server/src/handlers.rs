@@ -249,6 +249,7 @@ pub async fn get_game_state(
         phase: state.phase.into(),
         lands_played_this_turn: state.lands_played_this_turn as i32,
         combat: state.combat.as_ref().map(Into::into),
+        pending_choice: state.pending_choice.as_ref().map(Into::into),
         priority_player_id: if state.status == GameStatus::InProgress {
             Some(state.priority_player().id.clone())
         } else {
@@ -423,6 +424,9 @@ pub async fn submit_action(
         ActionInput::SetAutoPass(auto_pass) => {
             let mode = crate::conversions::auto_pass_mode_from(auto_pass, state.turn_number);
             engine::actions::set_auto_pass(&mut state, &input.player_id, mode)?;
+        }
+        ActionInput::MakeChoice(choice) => {
+            engine::actions::resolve_choice(&mut state, &input.player_id, choice.yes_no)?;
         }
         _ => {
             return Err(engine::actions::ActionError::Illegal("unsupported action".into()).into());

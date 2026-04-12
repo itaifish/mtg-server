@@ -1,4 +1,19 @@
-use crate::game::state::GameStatus;
+use crate::game::state::{ChoiceKind, GameStatus, PendingChoice};
+
+impl From<&PendingChoice> for mtg_server_sdk::model::PendingChoiceInfo {
+    fn from(c: &PendingChoice) -> Self {
+        use mtg_server_sdk::model::ChoiceType;
+        Self {
+            player_id: c.player_id.clone(),
+            prompt: c.prompt.clone(),
+            choice_type: match &c.kind {
+                ChoiceKind::YesNo { .. } => ChoiceType::YesNo,
+                ChoiceKind::PickOne { .. } => ChoiceType::PickOne,
+                ChoiceKind::ChooseObjects { .. } => ChoiceType::ChooseObjects,
+            },
+        }
+    }
+}
 
 impl From<GameStatus> for mtg_server_sdk::model::GameStatus {
     fn from(status: GameStatus) -> Self {
@@ -24,6 +39,7 @@ impl From<&crate::game::state::Player> for mtg_server_sdk::model::PlayerInfo {
             poison_counters: p.poison_counters as i32,
             mulligan_count: p.pregame.mulligan_count as i32,
             has_kept: p.pregame.has_kept,
+            energy: p.energy as i32,
             mana_pool: (&p.mana_pool).into(),
         }
     }
@@ -45,6 +61,7 @@ pub fn player_info(
         poison_counters: p.poison_counters as i32,
         mulligan_count: p.pregame.mulligan_count as i32,
         has_kept: p.pregame.has_kept,
+        energy: p.energy as i32,
         mana_pool: (&p.mana_pool).into(),
     }
 }

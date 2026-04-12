@@ -14,13 +14,11 @@ export function TargetArrows() {
   const rafRef = useRef(0);
 
   useEffect(() => {
-    const targetObjectIds = new Set<number>();
-    for (const entry of stack ?? []) {
-      for (const t of entry.targets ?? []) {
-        if ('object' in t) targetObjectIds.add(t.object.objectId);
-      }
-    }
-    if (targetObjectIds.size === 0) { setArrows([]); return; }
+    // Build map: target objectId -> stack entry indices (reversed display order)
+    const entries = stack ?? [];
+    const reversed = [...entries].reverse();
+    const hasTargets = reversed.some((e) => e.targets?.some((t) => 'object' in t));
+    if (!hasTargets) { setArrows([]); return; }
 
     const update = () => {
       const camera = globalCamera;
@@ -29,19 +27,30 @@ export function TargetArrows() {
       const rect = canvas.getBoundingClientRect();
 
       const stackEl = document.querySelector('[data-stack-panel]');
-      const stackRect = stackEl?.getBoundingClientRect();
-      const stackX = stackRect ? stackRect.left : rect.right - 20;
-      const stackCenterY = stackRect ? stackRect.top + stackRect.height / 2 : rect.top + rect.height / 2;
+      if (!stackEl) { rafRef.current = requestAnimationFrame(update); return; }
+      const stackRect = stackEl.getBoundingClientRect();
+
+      // Find all entry elements inside the stack panel (children after the header)
+      const entryEls = stackEl.querySelectorAll('[data-stack-entry]');
 
       const newArrows: Arrow[] = [];
-      for (const objId of targetObjectIds) {
-        const worldPos = cardWorldPositions.get(objId);
-        if (!worldPos) continue;
-        const projected = worldPos.clone().project(camera);
-        const screenX = (projected.x * 0.5 + 0.5) * rect.width + rect.left;
-        const screenY = (-projected.y * 0.5 + 0.5) * rect.height + rect.top;
-        newArrows.push({ key: `${objId}`, x1: stackX, y1: stackCenterY, x2: screenX, y2: screenY });
-      }
+      reversed.forEach((entry, i) => {
+        const entryEl = entryEls[i];
+        const entryRect = entryEl?.getBoundingClientRect();
+        const sourceX = stackRect.left;
+        const sourceY = entryRect ? entryRect.top + entryRect.height / 2 : stackRect.top + stackRect.height / 2;
+
+        for (const t of entry.targets ?? []) {
+          if (!('object' in t)) continue;
+          const objId = t.object.objectId;
+          const worldPos = cardWorldPositions.get(objId);
+          if (!worldPos) continue;
+          const projected = worldPos.clone().project(camera);
+          const screenX = (projected.x * 0.5 + 0.5) * rect.width + rect.left;
+          const screenY = (-projected.y * 0.5 + 0.5) * rect.height + rect.top;
+          newArrows.push({ key: `${entry.objectId ?? i}-${objId}`, x1: sourceX, y1: sourceY, x2: screenX, y2: screenY });
+        }
+      });
       setArrows(newArrows);
       rafRef.current = requestAnimationFrame(update);
     };

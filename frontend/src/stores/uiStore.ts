@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { AutoPassMode, GamePhase, LegalActionType } from '../types/enums';
 import type { SpellTarget } from '../types/actions';
-import type { TargetRequirement } from '../types/models';
+import type { LegalAction, TargetRequirement } from '../types/models';
 
 export interface TargetingMode {
   actionType: LegalActionType;
@@ -32,6 +32,7 @@ export interface UiState {
   targetingMode: TargetingMode | null;
   pendingCast: PendingCast | null;
   manaAbilityIds: Set<number>;
+  manaAbilityPicker: { objectId: number; abilities: LegalAction[] } | null;
   mulliganCount: number;
   showSettings: boolean;
   showDeckBuilder: boolean;
@@ -59,6 +60,7 @@ export interface UiActions {
   startCasting: (pending: PendingCast) => void;
   cancelCasting: () => void;
   setManaAbilityIds: (ids: Set<number>) => void;
+  setManaAbilityPicker: (picker: { objectId: number; abilities: LegalAction[] } | null) => void;
   toggleSettings: () => void;
   toggleDeckBuilder: () => void;
   setCameraPosition: (pos: UiState['cameraPosition']) => void;
@@ -79,6 +81,7 @@ const initialState: UiState = {
   targetingMode: null,
   pendingCast: null,
   manaAbilityIds: new Set<number>(),
+  manaAbilityPicker: null,
   mulliganCount: 0,
   showSettings: false,
   showDeckBuilder: false,
@@ -137,8 +140,9 @@ export const useUiStore = create<UiState & UiActions>()((set, get) => ({
 
   exitTargetingMode: () => set({ targetingMode: null }),
   startCasting: (pending) => set({ pendingCast: pending }),
-  cancelCasting: () => set({ pendingCast: null, manaAbilityIds: new Set<number>() }),
+  cancelCasting: () => set({ pendingCast: null, manaAbilityIds: new Set<number>(), manaAbilityPicker: null }),
   setManaAbilityIds: (ids) => set({ manaAbilityIds: ids }),
+  setManaAbilityPicker: (picker) => set({ manaAbilityPicker: picker }),
   toggleSettings: () => set((s) => ({ showSettings: !s.showSettings })),
   toggleDeckBuilder: () => set((s) => ({ showDeckBuilder: !s.showDeckBuilder })),
   setCameraPosition: (pos) => set({ cameraPosition: pos }),

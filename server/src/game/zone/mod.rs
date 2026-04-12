@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 /// graveyard, stack, exile, and command.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ZoneType {
+    /// Outside the game (e.g., tokens before creation).
+    None,
     /// CR 401 — Hidden zone. Each player has their own library.
     Library,
     /// CR 402 — Hidden zone. Each player has their own hand.

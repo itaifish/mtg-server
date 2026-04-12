@@ -2,9 +2,10 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use super::ability::TriggeredAbility;
+use super::ability::{AbilityCost, TriggeredAbility};
 use super::card::{CardInstance, CardType, ObjectId, PlayerId};
-use super::effect::{Effect, Filter, PlayerSpec, Selector};
+use super::counter::CounterType;
+use super::effect::{Condition, Effect, Filter, PlayerSpec, Selector};
 use super::mana::ManaType;
 use super::zone::ZoneType;
 
@@ -117,30 +118,25 @@ pub struct PendingTrigger {
     pub description: String,
 }
 
-/// A replacement effect — modifies an event before it happens.
+/// How a replacement effect modifies an event. CR 614.1a
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ReplacementEffect {
-    /// What event type this replaces.
-    pub replaces: TriggerEvent,
-    /// Additional filters (same as trigger filters).
-    pub filters: Vec<TriggerFilter>,
-    /// What happens instead.
-    pub replacement: ReplacementAction,
-    /// The source permanent providing this replacement.
-    pub source_id: ObjectId,
-    /// The controller of the source.
-    pub controller: PlayerId,
-}
-
-/// What a replacement effect does instead.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum ReplacementAction {
-    /// Prevent the event entirely (e.g., indestructible prevents destruction).
+pub enum EventModification {
+    /// Prevent the event entirely.
     Prevent,
-    /// Exile instead of the original zone change (e.g., Rest in Peace).
-    ExileInstead,
-    /// Modify the amount (e.g., double damage).
-    MultiplyAmount(u32),
+    /// The permanent enters tapped. CR 614.1d
+    EntersTapped,
+    /// The permanent enters with counters. CR 614.1c
+    EntersWith { counter: CounterType, count: u32 },
+    /// The permanent enters tapped unless a condition is met.
+    EntersTappedUnless(Condition),
+    /// The affected player may pay a cost. If they don't, apply the fallback.
+    /// CR 614.12a — choice is made before the permanent enters.
+    ChooseOrElse {
+        cost: Vec<AbilityCost>,
+        fallback: Box<EventModification>,
+    },
+    /// Redirect to a different zone (e.g., Rest in Peace exiles instead).
+    RedirectToZone(ZoneType),
     /// Replace with a different effect entirely.
     ReplaceWith(Effect),
 }
@@ -276,7 +272,7 @@ fn event_player(event: &GameEvent) -> Option<String> {
     }
 }
 
-fn card_matches_filters(def: &super::card::CardDefinition, filters: &[Filter]) -> bool {
+pub fn card_matches_filters(def: &super::card::CardDefinition, filters: &[Filter]) -> bool {
     filters.iter().all(|f| match f {
         Filter::HasType(t) => def.card_types.iter().any(|ct| format!("{:?}", ct) == *t),
         Filter::HasSubtype(s) => def.subtypes.contains(s),

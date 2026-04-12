@@ -18,7 +18,7 @@ describe('CreateGameForm', () => {
     render(<CreateGameForm />);
     expect(screen.getByLabelText('Player Name')).toBeInTheDocument();
     expect(screen.getByLabelText('Format')).toBeInTheDocument();
-    expect(screen.getByLabelText('Decklist')).toBeInTheDocument();
+    expect(screen.getByLabelText('Or paste a decklist')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /create game/i })).toBeInTheDocument();
   });
 
@@ -44,7 +44,7 @@ describe('CreateGameForm', () => {
     useLobbyStore.setState({ playerName: 'Test Player', createGame });
     render(<CreateGameForm />);
     await user.type(screen.getByLabelText('Game Name'), 'My Game');
-    await user.type(screen.getByLabelText('Decklist'), '4 Lightning Bolt');
+    await user.type(screen.getByLabelText('Or paste a decklist'), '4 Lightning Bolt');
     await user.click(screen.getByRole('button', { name: /create game/i }));
     expect(createGame).toHaveBeenCalledWith(
       expect.anything(),

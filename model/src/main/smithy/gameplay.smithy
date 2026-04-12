@@ -81,6 +81,26 @@ structure GetGameStateOutput {
 
     /// Current combat state, if in combat.
     combat: CombatInfo
+
+    /// A pending choice waiting for a player's response (e.g., shock land ETB).
+    pendingChoice: PendingChoiceInfo
+}
+
+structure PendingChoiceInfo {
+    @required
+    playerId: String
+
+    @required
+    prompt: String
+
+    @required
+    choiceType: ChoiceType
+}
+
+enum ChoiceType {
+    YES_NO
+    PICK_ONE
+    CHOOSE_OBJECTS
 }
 
 list CardInfoList {
@@ -218,6 +238,7 @@ union ActionInput {
     mulligan: MulliganAction
     concede: ConcedeAction
     setAutoPass: SetAutoPassAction
+    makeChoice: MakeChoiceAction
 }
 
 structure SetAutoPassAction {
@@ -370,6 +391,13 @@ structure KeepHandAction {
 structure MulliganAction {}
 
 structure ConcedeAction {}
+
+/// Respond to a pending choice (e.g., shock land ETB).
+structure MakeChoiceAction {
+    /// For yes/no choices: true = yes, false = no.
+    @required
+    yesNo: Boolean
+}
 
 list ObjectIdList {
     member: Long

@@ -26,6 +26,9 @@ export function CastingOverlay() {
     (a) => a.actionType === LegalActionType.ACTIVATE_MANA_ABILITY && a.objectId != null,
   );
   const firstManaAbilityId = manaAbilities[0]?.objectId;
+  const firstManaAbilityIndex = manaAbilities[0]?.abilityIndex ?? 0;
+  const manaAbilityPicker = useUiStore((s) => s.manaAbilityPicker);
+  const setManaAbilityPicker = useUiStore((s) => s.setManaAbilityPicker);
 
   // Sync mana ability IDs to store so Card3D can highlight tappable lands
   useEffect(() => {
@@ -41,11 +44,18 @@ export function CastingOverlay() {
     if (!pendingCast) return;
     const handler = (e: Event) => {
       const objectId = (e as CustomEvent).detail?.objectId;
-      if (objectId != null) activateManaAbility(objectId, 0);
+      if (objectId == null) return;
+      const abilities = manaAbilities.filter((a) => a.objectId === objectId);
+      if (abilities.length === 1) {
+        activateManaAbility(objectId, abilities[0].abilityIndex ?? 0);
+      } else if (abilities.length > 1) {
+        // Show ability picker via store
+        useUiStore.getState().setManaAbilityPicker({ objectId, abilities });
+      }
     };
     window.addEventListener('mana-tap', handler);
     return () => window.removeEventListener('mana-tap', handler);
-  }, [pendingCast, activateManaAbility]);
+  }, [pendingCast, activateManaAbility, manaAbilities]);
 
   const player = gameState?.players.find((p) => p.playerId === gameState.priorityPlayerId);
   const pool = player?.manaPool ?? EMPTY_POOL;
@@ -84,7 +94,7 @@ export function CastingOverlay() {
       proceedAfterMana();
     } else if (firstManaAbilityId != null) {
       autoTapping.current = true;
-      activateManaAbility(firstManaAbilityId, 0);
+      activateManaAbility(firstManaAbilityId, firstManaAbilityIndex);
     } else {
       proceedAfterMana();
     }
@@ -204,6 +214,20 @@ export function CastingOverlay() {
       {manaAbilities.length > 0 && (
         <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>
           Click lands to tap for mana
+        </div>
+      )}
+      {manaAbilityPicker && (
+        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', padding: '6px', background: 'var(--color-bg-secondary)', borderRadius: 'var(--radius)', border: '1px solid var(--color-gold)' }}>
+          <span style={{ fontSize: '0.75rem', width: '100%', marginBottom: '2px' }}>Choose mana ability:</span>
+          {manaAbilityPicker.abilities.map((a, i) => (
+            <Button key={i} variant="secondary" style={{ fontSize: '0.75rem', padding: '4px 10px' }}
+              onClick={() => { activateManaAbility(manaAbilityPicker.objectId, a.abilityIndex ?? i); setManaAbilityPicker(null); }}>
+              Ability {(a.abilityIndex ?? i) + 1}
+            </Button>
+          ))}
+          <Button variant="secondary" style={{ fontSize: '0.7rem', padding: '2px 8px' }} onClick={() => setManaAbilityPicker(null)}>
+            Cancel
+          </Button>
         </div>
       )}
       <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>

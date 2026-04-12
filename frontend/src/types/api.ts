@@ -110,6 +110,15 @@ export interface GetGameStateResponse {
   command?: CardInfo[];
   stack?: StackEntryInfo[];
   combat?: CombatInfo;
+  pendingChoice?: PendingChoiceInfo;
+}
+
+export type ChoiceType = 'YES_NO' | 'PICK_ONE' | 'CHOOSE_OBJECTS';
+
+export interface PendingChoiceInfo {
+  playerId: string;
+  prompt: string;
+  choiceType: ChoiceType;
 }
 
 export interface CombatInfo {

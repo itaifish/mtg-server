@@ -1,25 +1,31 @@
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
-use crate::game::ability::{Abilities, ActivatedAbility, AbilityCost, AbilityEffect, TriggeredAbility};
+use crate::game::ability::{
+    Abilities, AbilityCost, AbilityEffect, ActivatedAbility, TriggeredAbility,
+};
 use crate::game::card::{CardDefinition, CardType, Supertype};
-use crate::game::effect::{CounterSpec, Effect, Filter, PlayerSpec, TargetKind, TargetSpec, Value};
+use crate::game::effect::{
+    CounterSpec, Effect, Filter, PlayerSpec, TargetKind, TargetSpec, TokenDefinition, TokenSource,
+    Value,
+};
 use crate::game::event::{TriggerEvent, TriggerFilter, TriggerPlayerRef};
+use crate::game::keyword::Keyword;
 use crate::game::mana::{Color, ManaCost, ManaProduction, ManaSymbol, ManaType};
 use crate::game::zone::ZoneType;
 
 // Mana symbol shorthands
-const W: ManaSymbol = ManaSymbol::Colored(Color::White);
+pub(super) const W: ManaSymbol = ManaSymbol::Colored(Color::White);
 const U: ManaSymbol = ManaSymbol::Colored(Color::Blue);
 const B: ManaSymbol = ManaSymbol::Colored(Color::Black);
-const R: ManaSymbol = ManaSymbol::Colored(Color::Red);
-const G: ManaSymbol = ManaSymbol::Colored(Color::Green);
-const M1: ManaSymbol = ManaSymbol::Generic(1);
-const M2: ManaSymbol = ManaSymbol::Generic(2);
-const M3: ManaSymbol = ManaSymbol::Generic(3);
-const M4: ManaSymbol = ManaSymbol::Generic(4);
+pub(super) const R: ManaSymbol = ManaSymbol::Colored(Color::Red);
+pub(super) const G: ManaSymbol = ManaSymbol::Colored(Color::Green);
+pub(super) const M1: ManaSymbol = ManaSymbol::Generic(1);
+pub(super) const M2: ManaSymbol = ManaSymbol::Generic(2);
+pub(super) const M3: ManaSymbol = ManaSymbol::Generic(3);
+pub(super) const M4: ManaSymbol = ManaSymbol::Generic(4);
 
-fn cost(symbols: &[ManaSymbol]) -> ManaCost {
+pub(super) fn cost(symbols: &[ManaSymbol]) -> ManaCost {
     ManaCost {
         symbols: symbols.to_vec(),
     }
@@ -151,6 +157,10 @@ static REGISTRY: LazyLock<HashMap<String, CardDefinition>> = LazyLock::new(|| {
         // --- Creatures with triggered abilities ---
         soul_warden(),
         ajanis_pridemate(),
+        // --- Boros Energy ---
+        super::boros_energy::sacred_foundry(),
+        super::boros_energy::arena_of_glory(),
+        super::boros_energy::guide_of_souls(),
         // --- Instants ---
         instant(
             "Lightning Bolt",
@@ -313,11 +323,14 @@ fn mana_dork(
             }
         ),
         abilities: Abilities {
-            activated: HashMap::from([(ZoneType::Battlefield, vec![ActivatedAbility {
-                costs: vec![AbilityCost::TapSelf],
-                effect: AbilityEffect::AddMana(vec![ManaProduction::new(produces, 1)]),
-                is_mana_ability: true,
-            }])]),
+            activated: HashMap::from([(
+                ZoneType::Battlefield,
+                vec![ActivatedAbility {
+                    costs: vec![AbilityCost::TapSelf],
+                    effect: AbilityEffect::AddMana(vec![ManaProduction::new(produces, 1)]),
+                    is_mana_ability: true,
+                }],
+            )]),
             ..Default::default()
         },
         ..Default::default()
@@ -354,7 +367,10 @@ fn soul_warden() -> CardDefinition {
         subtypes: vec!["Human".into(), "Cleric".into()],
         power: Some(1),
         toughness: Some(1),
-        abilities: Abilities { triggered: triggers, ..Default::default() },
+        abilities: Abilities {
+            triggered: triggers,
+            ..Default::default()
+        },
         ..Default::default()
     }
 }
@@ -384,7 +400,10 @@ fn ajanis_pridemate() -> CardDefinition {
         subtypes: vec!["Cat".into(), "Soldier".into()],
         power: Some(2),
         toughness: Some(2),
-        abilities: Abilities { triggered: triggers, ..Default::default() },
+        abilities: Abilities {
+            triggered: triggers,
+            ..Default::default()
+        },
         ..Default::default()
     }
 }
@@ -411,7 +430,10 @@ mod tests {
     #[test]
     fn basic_lands_have_intrinsic_abilities() {
         let forest = card_by_name("Forest").unwrap();
-        assert!(forest.abilities.activated_in(ZoneType::Battlefield).is_empty());
+        assert!(forest
+            .abilities
+            .activated_in(ZoneType::Battlefield)
+            .is_empty());
         let all = crate::game::ability::all_activated(forest, ZoneType::Battlefield);
         assert_eq!(all.len(), 1);
         assert!(all[0].is_mana_ability);

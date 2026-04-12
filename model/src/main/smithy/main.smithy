@@ -120,6 +120,10 @@ structure PlayerInfo {
     @required
     hasKept: Boolean
 
+    /// CR 107.14 — Energy counters.
+    @required
+    energy: Integer
+
     /// Current mana in the player's mana pool.
     @required
     manaPool: ManaPoolInfo

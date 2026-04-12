@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use super::ability::Abilities;
 use super::counter::{CounterEntry, CounterType, PtModifier};
-use super::effect::Effect;
+use super::effect::{Effect, TokenDefinition};
 use super::keyword::Keyword;
 use super::mana::{Color, ManaCost};
 use super::zone::ZoneType;
@@ -91,6 +91,25 @@ pub struct CardDefinition {
     pub keywords: HashMap<Keyword, u32>,
     /// Effect when this spell resolves (instants/sorceries only).
     pub spell_effect: Option<Effect>,
+    /// If this card is a token, the definition it was created from.
+    pub token_source: Option<TokenDefinition>,
+}
+
+impl From<TokenDefinition> for CardDefinition {
+    fn from(td: TokenDefinition) -> Self {
+        Self {
+            name: td.name.clone(),
+            card_types: td.card_types.clone(),
+            subtypes: td.subtypes.clone(),
+            colors: td.colors.clone(),
+            power: td.power,
+            toughness: td.toughness,
+            keywords: td.keywords.clone(),
+            abilities: td.abilities.clone(),
+            token_source: Some(td),
+            ..Default::default()
+        }
+    }
 }
 
 /// A card instance in a game — a specific object with a definition and

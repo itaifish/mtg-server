@@ -14,6 +14,7 @@ import {
   createMulligan,
   createConcede,
   createSetAutoPass,
+  createMakeChoice,
 } from '@/types/actions';
 import type { SpellTarget } from '@/types/actions';
 import type { AttackerEntry, BlockerEntry, SymbolPaymentEntry } from '@/types/models';
@@ -32,6 +33,7 @@ interface UseGameActionsReturn {
   keepHand: (cardsToBottom?: number[]) => Promise<void>;
   mulligan: () => Promise<void>;
   concede: () => Promise<void>;
+  makeChoice: (yesNo: boolean) => Promise<void>;
   setAutoPass: (mode: AutoPassMode, stopAtPhase?: GamePhase) => Promise<void>;
 }
 
@@ -92,6 +94,7 @@ export function useGameActions(): UseGameActionsReturn {
     ),
     mulligan: useCallback(() => submit(createMulligan), [submit]),
     concede: useCallback(() => submit(createConcede), [submit]),
+    makeChoice: useCallback((yesNo: boolean) => submit(() => createMakeChoice(yesNo)), [submit]),
     setAutoPass: useCallback(
       (mode: AutoPassMode, stopAtPhase?: GamePhase) => submit(() => createSetAutoPass(mode, stopAtPhase)),
       [submit],

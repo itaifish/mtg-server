@@ -14,6 +14,7 @@ import { CardPreview } from './CardPreview';
 import { PriorityIndicator } from './PriorityIndicator';
 import { PregamePanel } from './PregamePanel';
 import { CombatPanel } from './CombatPanel';
+import { ChoicePanel } from './ChoicePanel';
 import { ManaPanel } from './ManaPanel';
 import { CastingOverlay } from './CastingOverlay';
 import { StackOverlay } from './StackOverlay';
@@ -92,6 +93,7 @@ export function GamePage() {
           <PlayerPanel key={p.playerId} player={p} isActive={gameState.activePlayerId === p.playerId} />
         ))}
         {hasCombat && <CombatPanel />}
+        <ChoicePanel />
         {isInGame && <ManaPanel />}
         {isInGame && (() => {
           const me = gameState.players.find((p) => p.playerId === playerId);

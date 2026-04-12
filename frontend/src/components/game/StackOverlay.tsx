@@ -24,17 +24,19 @@ export function StackOverlay() {
         <span style={{ fontSize: '0.65rem' }}>{expanded ? '▾' : '▸'}</span>
       </div>
       {[...stack].reverse().map((entry, i) => (
-        expanded ? (
-          <StackCard key={entry.objectId ?? i} entry={entry} index={i} total={stack.length} />
+        <div key={entry.objectId ?? i} data-stack-entry>
+        {expanded ? (
+          <StackCard entry={entry} index={i} total={stack.length} />
         ) : (
-          <div key={entry.objectId ?? i} style={{
+          <div style={{
             background: 'var(--color-bg-secondary)', borderRadius: '4px', padding: '4px 8px',
             marginBottom: i < stack.length - 1 ? '4px' : 0,
             fontSize: '0.75rem', borderLeft: '3px solid var(--color-gold)',
           }}>
             {entry.name}
           </div>
-        )
+        )}
+        </div>
       ))}
     </div>
   );

@@ -10,7 +10,7 @@ interface BattlefieldZoneProps {
 }
 
 const MAX_PILE = 5;
-const PILE_OFFSET_Y = 0.18; // vertical offset per card in a pile so title shows
+const PILE_OFFSET_Y = 0.36; // vertical offset per card in a pile so title shows
 
 interface LandPile {
   name: string;
@@ -50,7 +50,7 @@ function LandRow({ lands, y, flipZ = false, targetedIds, manaAbilityIds }: { lan
                 <Card3D
                   key={card.objectId}
                   card={card}
-                  position={[0, ci * PILE_OFFSET_Y, ci * 0.01]}
+                  position={[0, -ci * PILE_OFFSET_Y, ci * 0.01]}
                   rotation={[0, 0, rotZ]}
                   highlighted={targetedIds.has(card.objectId) || manaAbilityIds.has(card.objectId)}
                 />

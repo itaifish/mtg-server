@@ -25,8 +25,8 @@ export interface GameSetup {
 	bobId: string;
 }
 
-export async function getState(gameId: string): Promise<GetGameStateCommandOutput> {
-	return client.send(new GetGameStateCommand({ gameId }));
+export async function getState(gameId: string, perspectivePlayerId?: string): Promise<GetGameStateCommandOutput> {
+	return client.send(new GetGameStateCommand({ gameId, perspectivePlayerId }));
 }
 
 export async function getLegalActions(gameId: string, playerId: string): Promise<LegalAction[]> {
