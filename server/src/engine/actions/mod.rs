@@ -81,8 +81,13 @@ pub fn set_auto_pass(
     mode: crate::game::state::AutoPassMode,
 ) -> Result<(), ActionError> {
     state.set_auto_pass(player_id, mode);
-    if state.has_priority(player_id) && state.should_auto_pass(player_id) {
-        pass_priority(state, player_id)?;
+    if state.should_auto_pass(player_id) {
+        if state.has_priority(player_id) {
+            pass_priority(state, player_id)?;
+        }
+    } else {
+        // Condition already met — clear immediately
+        state.clear_auto_pass(player_id);
     }
     Ok(())
 }
