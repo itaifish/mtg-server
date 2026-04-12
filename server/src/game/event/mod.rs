@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
+use super::ability::TriggeredAbility;
 use super::card::{CardInstance, CardType, ObjectId, PlayerId};
 use super::effect::{Effect, Filter, PlayerSpec, Selector};
 use super::mana::ManaType;
@@ -53,23 +54,6 @@ pub enum GameEvent {
 pub enum DamageTarget {
     Player(PlayerId),
     Object(ObjectId),
-}
-
-/// A triggered ability — an event pattern + filters + effect.
-/// Composable: the event type says *what* happened, the filters say
-/// *which objects/players* it applies to.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TriggeredAbility {
-    /// What kind of event triggers this.
-    pub trigger: TriggerEvent,
-    /// Additional filters on the event (e.g., "creature", "you control").
-    pub filters: Vec<TriggerFilter>,
-    /// The effect to put on the stack.
-    pub effect: Effect,
-    /// Whether the effect requires choosing targets when put on the stack.
-    pub needs_targets: bool,
-    /// Human-readable description.
-    pub description: String,
 }
 
 /// The type of event that triggers an ability.

@@ -109,6 +109,23 @@ export interface GetGameStateResponse {
   exile?: CardInfo[];
   command?: CardInfo[];
   stack?: StackEntryInfo[];
+  combat?: CombatInfo;
+}
+
+export interface CombatInfo {
+  attackers: CombatAttackerInfo[];
+  blockers: CombatBlockerInfo[];
+}
+
+export interface CombatAttackerInfo {
+  objectId: number;
+  targetPlayerId: string;
+  name?: string;
+}
+
+export interface CombatBlockerInfo {
+  objectId: number;
+  blockingId: number;
 }
 
 // SubmitAction

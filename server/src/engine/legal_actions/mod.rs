@@ -1,7 +1,8 @@
-use crate::game::ability::{all_abilities, AbilityCost};
+use crate::game::ability::{all_activated, AbilityCost};
 use crate::game::card::CardType;
 use crate::game::phases_and_steps::{CombatStep, Phase};
 use crate::game::state::GameState;
+use crate::game::zone::ZoneType;
 
 use super::actions::can_play_at_sorcery_speed;
 
@@ -48,7 +49,7 @@ pub fn for_player(state: &GameState, player_id: &str) -> Vec<LegalAction> {
         if card.controller.as_deref() != Some(player_id) {
             continue;
         }
-        for (idx, ability) in all_abilities(&card.definition).iter().enumerate() {
+        for (idx, ability) in all_activated(&card.definition, ZoneType::Battlefield).iter().enumerate() {
             if !ability.is_mana_ability {
                 continue;
             }

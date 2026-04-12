@@ -1,10 +1,15 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
-use super::mana::ManaType;
+use super::ability::Abilities;
+use super::card::CardType;
+use super::keyword::Keyword;
+use super::mana::{Color, ManaType};
 
 /// A composable effect — the core of the effect DSL.
 /// Cards define their behavior as a tree of these nodes.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Effect {
     // --- Damage ---
     DealDamage {
@@ -98,6 +103,19 @@ pub enum Effect {
     Choose {
         count: u32,
         options: Vec<Effect>,
+    },
+
+    // --- Energy (CR 107.14) ---
+    GainEnergy {
+        amount: Value,
+        player: PlayerSpec,
+    },
+
+    // --- Tokens ---
+    CreateToken {
+        token: TokenSource,
+        count: Value,
+        player: PlayerSpec,
     },
 
     // --- Fallback for truly unique cards ---
@@ -203,6 +221,27 @@ pub enum Condition {
     LifeAtOrAbove(u32),
     OpponentControlsPermanent(Selector),
     StackIsEmpty,
+}
+
+/// Where a token's characteristics come from.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum TokenSource {
+    Defined(TokenDefinition),
+    /// A copy of a target or source permanent (CR 707.2).
+    CopyOf(TargetSpec),
+}
+
+/// Predefined token characteristics.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TokenDefinition {
+    pub name: String,
+    pub card_types: Vec<CardType>,
+    pub subtypes: Vec<String>,
+    pub colors: Vec<Color>,
+    pub power: Option<i32>,
+    pub toughness: Option<i32>,
+    pub keywords: HashMap<Keyword, u32>,
+    pub abilities: Abilities,
 }
 
 /// Get the target requirements for an effect — one entry per chosen target,

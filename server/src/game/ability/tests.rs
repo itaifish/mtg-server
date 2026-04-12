@@ -1,11 +1,14 @@
 use super::*;
 use crate::game::mana::{ManaProduction, ManaType};
 
-fn expect_mana(ability: &Ability, mana_type: ManaType) {
-    assert_eq!(
-        ability.effect,
-        AbilityEffect::AddMana(vec![ManaProduction::new(mana_type, 1)])
-    );
+fn expect_mana(ability: &ActivatedAbility, mana_type: ManaType) {
+    match &ability.effect {
+        AbilityEffect::AddMana(prods) => {
+            assert_eq!(prods.len(), 1);
+            assert_eq!(prods[0], ManaProduction::new(mana_type, 1));
+        }
+        _ => panic!("expected AddMana effect"),
+    }
 }
 
 #[test]
@@ -43,9 +46,8 @@ fn nonbasic_subtype_returns_none() {
 }
 
 #[test]
-fn all_abilities_includes_intrinsic() {
+fn all_activated_includes_intrinsic() {
     use crate::game::card::{CardDefinition, CardType, Supertype};
-    use crate::game::mana::Color;
 
     let def = CardDefinition {
         name: "Forest".into(),
@@ -55,7 +57,7 @@ fn all_abilities_includes_intrinsic() {
         ..Default::default()
     };
 
-    let abilities = all_abilities(&def);
+    let abilities = all_activated(&def, ZoneType::Battlefield);
     assert_eq!(abilities.len(), 1);
     assert!(abilities[0].is_mana_ability);
     expect_mana(&abilities[0], ManaType::Green);

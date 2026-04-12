@@ -1,5 +1,5 @@
 use crate::engine::triggers::process_pending_triggers;
-use crate::game::ability::{all_abilities, AbilityCost, AbilityEffect};
+use crate::game::ability::{all_activated, AbilityCost, AbilityEffect};
 use crate::game::card::CardType;
 use crate::game::effect::{CounterSpec, Effect, PlayerSpec, TargetSpec, Value};
 use crate::game::mana::SymbolPayment;
@@ -314,7 +314,7 @@ pub fn activate_mana_ability(
         ));
     }
 
-    let abilities = all_abilities(&card.definition);
+    let abilities = all_activated(&card.definition, ZoneType::Battlefield);
     let ability = abilities
         .get(ability_index)
         .ok_or_else(|| ActionError::Illegal("invalid ability index".into()))?

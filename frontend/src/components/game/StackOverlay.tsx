@@ -10,10 +10,10 @@ export function StackOverlay() {
 
   return (
     <div data-stack-panel style={{
-      position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
+      position: 'absolute', right: '8px', top: '64px',
       background: 'var(--color-surface)', border: '1px solid var(--color-border)',
       borderRadius: 'var(--radius)', padding: '8px', zIndex: 30,
-      minWidth: expanded ? '160px' : '120px',
+      maxWidth: '240px', width: 'max-content',
       boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
     }}>
       <div

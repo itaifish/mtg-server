@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
-use crate::game::ability::{Ability, AbilityCost, AbilityEffect};
+use crate::game::ability::{Abilities, ActivatedAbility, AbilityCost, AbilityEffect, TriggeredAbility};
 use crate::game::card::{CardDefinition, CardType, Supertype};
 use crate::game::effect::{CounterSpec, Effect, Filter, PlayerSpec, TargetKind, TargetSpec, Value};
-use crate::game::event::{TriggerEvent, TriggerFilter, TriggerPlayerRef, TriggeredAbility};
+use crate::game::event::{TriggerEvent, TriggerFilter, TriggerPlayerRef};
 use crate::game::mana::{Color, ManaCost, ManaProduction, ManaSymbol, ManaType};
 use crate::game::zone::ZoneType;
 
@@ -312,11 +312,14 @@ fn mana_dork(
                 ManaType::Colorless => "C",
             }
         ),
-        abilities: vec![Ability {
-            costs: vec![AbilityCost::TapSelf],
-            effect: AbilityEffect::AddMana(vec![ManaProduction::new(produces, 1)]),
-            is_mana_ability: true,
-        }],
+        abilities: Abilities {
+            activated: HashMap::from([(ZoneType::Battlefield, vec![ActivatedAbility {
+                costs: vec![AbilityCost::TapSelf],
+                effect: AbilityEffect::AddMana(vec![ManaProduction::new(produces, 1)]),
+                is_mana_ability: true,
+            }])]),
+            ..Default::default()
+        },
         ..Default::default()
     }
 }
@@ -351,7 +354,7 @@ fn soul_warden() -> CardDefinition {
         subtypes: vec!["Human".into(), "Cleric".into()],
         power: Some(1),
         toughness: Some(1),
-        triggered_abilities: triggers,
+        abilities: Abilities { triggered: triggers, ..Default::default() },
         ..Default::default()
     }
 }
@@ -381,7 +384,7 @@ fn ajanis_pridemate() -> CardDefinition {
         subtypes: vec!["Cat".into(), "Soldier".into()],
         power: Some(2),
         toughness: Some(2),
-        triggered_abilities: triggers,
+        abilities: Abilities { triggered: triggers, ..Default::default() },
         ..Default::default()
     }
 }
@@ -400,15 +403,16 @@ mod tests {
     #[test]
     fn llanowar_elves_has_mana_ability() {
         let def = card_by_name("Llanowar Elves").unwrap();
-        assert_eq!(def.abilities.len(), 1);
-        assert!(def.abilities[0].is_mana_ability);
+        let activated = def.abilities.activated_in(ZoneType::Battlefield);
+        assert_eq!(activated.len(), 1);
+        assert!(activated[0].is_mana_ability);
     }
 
     #[test]
     fn basic_lands_have_intrinsic_abilities() {
         let forest = card_by_name("Forest").unwrap();
-        assert!(forest.abilities.is_empty());
-        let all = crate::game::ability::all_abilities(forest);
+        assert!(forest.abilities.activated_in(ZoneType::Battlefield).is_empty());
+        let all = crate::game::ability::all_activated(forest, ZoneType::Battlefield);
         assert_eq!(all.len(), 1);
         assert!(all[0].is_mana_ability);
     }

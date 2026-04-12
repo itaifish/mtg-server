@@ -33,7 +33,6 @@ fn concede_unknown_player_errors() {
     assert!(matches!(result, Err(ActionError::PlayerNotFound(_))));
 }
 
-use crate::game::ability::Ability;
 use crate::game::card::{CardDefinition, CardInstance, CardType, Supertype};
 use crate::game::mana::{Color, ManaCost, ManaSymbol, ManaType, SymbolPayment};
 use crate::game::phases_and_steps::Phase;

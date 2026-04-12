@@ -112,6 +112,8 @@ pub struct Player {
     /// Auto-pass mode — server automatically passes priority for this player
     /// until the stop condition is met.
     pub auto_pass: AutoPassMode,
+    /// CR 107.14 — Energy counters.
+    pub energy: u32,
 }
 
 /// Controls when the server auto-passes priority for a player.
@@ -145,6 +147,7 @@ impl Player {
             pregame: PregameInfo::default(),
             mana_pool: ManaPool::default(),
             auto_pass: AutoPassMode::None,
+            energy: 0,
         }
     }
 }
@@ -590,21 +593,15 @@ impl GameState {
                     .controller
                     .clone()
                     .unwrap_or_else(|| card.owner.clone());
-                if let Some(triggers) = card
-                    .definition
-                    .triggered_abilities
-                    .get(&ZoneType::Battlefield)
-                {
-                    for trigger in triggers {
-                        if trigger_matches(trigger, event, obj_id, &controller, &self.objects) {
-                            new_triggers.push(PendingTrigger {
-                                source_id: obj_id,
-                                controller: controller.clone(),
-                                effect: trigger.effect.clone(),
-                                needs_targets: trigger.needs_targets,
-                                description: trigger.description.clone(),
-                            });
-                        }
+                for trigger in card.definition.abilities.triggered_in(ZoneType::Battlefield) {
+                    if trigger_matches(trigger, event, obj_id, &controller, &self.objects) {
+                        new_triggers.push(PendingTrigger {
+                            source_id: obj_id,
+                            controller: controller.clone(),
+                            effect: trigger.effect.clone(),
+                            needs_targets: trigger.needs_targets,
+                            description: trigger.description.clone(),
+                        });
                     }
                 }
             }
@@ -614,21 +611,15 @@ impl GameState {
         for (player_id, zones) in &self.player_zones.clone() {
             for &obj_id in &zones.graveyard {
                 if let Some(card) = self.objects.get(&obj_id) {
-                    if let Some(triggers) = card
-                        .definition
-                        .triggered_abilities
-                        .get(&ZoneType::Graveyard)
-                    {
-                        for trigger in triggers {
-                            if trigger_matches(trigger, event, obj_id, player_id, &self.objects) {
-                                new_triggers.push(PendingTrigger {
-                                    source_id: obj_id,
-                                    controller: player_id.clone(),
-                                    effect: trigger.effect.clone(),
-                                    needs_targets: trigger.needs_targets,
-                                    description: trigger.description.clone(),
-                                });
-                            }
+                    for trigger in card.definition.abilities.triggered_in(ZoneType::Graveyard) {
+                        if trigger_matches(trigger, event, obj_id, player_id, &self.objects) {
+                            new_triggers.push(PendingTrigger {
+                                source_id: obj_id,
+                                controller: player_id.clone(),
+                                effect: trigger.effect.clone(),
+                                needs_targets: trigger.needs_targets,
+                                description: trigger.description.clone(),
+                            });
                         }
                     }
                 }
@@ -722,6 +713,24 @@ impl GameState {
             player_id: player_id.to_string(),
             amount,
         });
+    }
+
+    /// CR 107.14 — Give energy counters to a player.
+    pub fn gain_energy(&mut self, player_id: &str, amount: u32) {
+        if let Some(player) = self.get_player_mut(player_id) {
+            player.energy += amount;
+        }
+    }
+
+    /// CR 107.14 — Spend energy counters. Returns false if insufficient.
+    pub fn pay_energy(&mut self, player_id: &str, amount: u32) -> bool {
+        if let Some(player) = self.get_player_mut(player_id) {
+            if player.energy >= amount {
+                player.energy -= amount;
+                return true;
+            }
+        }
+        false
     }
 
     /// Move an object to its owner's graveyard.

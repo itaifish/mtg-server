@@ -9,11 +9,65 @@ interface BattlefieldZoneProps {
   playerId: string;
 }
 
+const MAX_PILE = 5;
+const PILE_OFFSET_Y = 0.18; // vertical offset per card in a pile so title shows
+
+interface LandPile {
+  name: string;
+  tapped: boolean;
+  cards: CardData[];
+}
+
+function stackLands(lands: CardData[]): LandPile[] {
+  const piles: LandPile[] = [];
+  const map = new Map<string, LandPile>();
+  for (const card of lands) {
+    const key = `${card.name}:${card.tapped ? 't' : 'u'}`;
+    const existing = map.get(key);
+    if (existing && existing.cards.length < MAX_PILE) {
+      existing.cards.push(card);
+    } else {
+      const pile: LandPile = { name: card.name, tapped: !!card.tapped, cards: [card] };
+      const mapKey = existing ? `${key}:${piles.length}` : key;
+      map.set(mapKey, pile);
+      piles.push(pile);
+    }
+  }
+  return piles;
+}
+
+function LandRow({ lands, y, flipZ = false, targetedIds, manaAbilityIds }: { lands: CardData[]; y: number; flipZ?: boolean; targetedIds: Set<number>; manaAbilityIds: Set<number> }) {
+  const piles = stackLands(lands);
+  return (
+    <group position={[0, y, 0]}>
+      {piles.map((pile, pi) => {
+        const x = (pi - (piles.length - 1) / 2) * 1.7;
+        return (
+          <group key={pile.cards[0].objectId} position={[x, 0, 0]}>
+            {pile.cards.map((card, ci) => {
+              const rotZ = card.tapped ? -Math.PI / 2 : flipZ ? Math.PI : 0;
+              return (
+                <Card3D
+                  key={card.objectId}
+                  card={card}
+                  position={[0, ci * PILE_OFFSET_Y, ci * 0.01]}
+                  rotation={[0, 0, rotZ]}
+                  highlighted={targetedIds.has(card.objectId) || manaAbilityIds.has(card.objectId)}
+                />
+              );
+            })}
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
 function CardRow({ cards, y, flipZ = false, targetedIds, manaAbilityIds }: { cards: CardData[]; y: number; flipZ?: boolean; targetedIds: Set<number>; manaAbilityIds: Set<number> }) {
   return (
     <group position={[0, y, 0]}>
       {cards.map((card, i) => {
-        const x = (i - (cards.length - 1) / 2) * 1.3;
+        const x = (i - (cards.length - 1) / 2) * 1.7;
         const rotZ = card.tapped ? -Math.PI / 2 : flipZ ? Math.PI : 0;
         return <Card3D key={card.objectId} card={card} position={[x, 0, i * 0.01]} rotation={[0, 0, rotZ]} highlighted={targetedIds.has(card.objectId) || manaAbilityIds.has(card.objectId)} />;
       })}
@@ -54,13 +108,13 @@ export function BattlefieldZone({ cards, playerId }: BattlefieldZoneProps) {
       )}
 
       {/* Top: opponent's lands */}
-      <CardRow cards={theirLands} y={2.8} flipZ targetedIds={targetedIds} manaAbilityIds={manaAbilityIds} />
+      <LandRow lands={theirLands} y={5.0} flipZ targetedIds={targetedIds} manaAbilityIds={manaAbilityIds} />
       {/* Opponent's non-land permanents */}
-      <CardRow cards={theirPermanents} y={1.2} flipZ targetedIds={targetedIds} manaAbilityIds={manaAbilityIds} />
+      <CardRow cards={theirPermanents} y={2.6} flipZ targetedIds={targetedIds} manaAbilityIds={manaAbilityIds} />
       {/* Our non-land permanents */}
-      <CardRow cards={myPermanents} y={-0.4} targetedIds={targetedIds} manaAbilityIds={manaAbilityIds} />
+      <CardRow cards={myPermanents} y={0.2} targetedIds={targetedIds} manaAbilityIds={manaAbilityIds} />
       {/* Bottom: our lands (closest to hand) */}
-      <CardRow cards={myLands} y={-2.0} targetedIds={targetedIds} manaAbilityIds={manaAbilityIds} />
+      <LandRow lands={myLands} y={-2.2} targetedIds={targetedIds} manaAbilityIds={manaAbilityIds} />
     </group>
   );
 }

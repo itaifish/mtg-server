@@ -61,8 +61,8 @@ fn needs_ordering(triggers: &[PendingTrigger]) -> bool {
     }
 
     // If all effects are identical, ordering doesn't matter
-    let first = &triggers[0].effect;
-    !triggers.iter().all(|t| t.effect == *first)
+    let first = &triggers[0].description;
+    !triggers.iter().all(|t| t.description == *first)
 }
 
 /// Put triggers on the stack as entries. Last in the list goes on top

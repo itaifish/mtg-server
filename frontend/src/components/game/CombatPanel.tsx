@@ -8,8 +8,9 @@ import type { AttackerEntry, BlockerEntry } from '@/types/models';
 
 export function CombatPanel() {
   const legalActions = useGameStore((s) => s.legalActions);
+  const gameState = useGameStore((s) => s.gameState);
   const playerId = useLobbyStore((s) => s.playerId) ?? '';
-  const players = useGameStore((s) => s.gameState?.players);
+  const players = gameState?.players;
   const opponents = useMemo(() => players?.filter((p) => p.playerId !== playerId) ?? [], [players, playerId]);
   const { declareAttackers, declareBlockers, isLoading } = useGameActions();
 
@@ -18,6 +19,33 @@ export function CombatPanel() {
 
   const [attackers, setAttackers] = useState<AttackerEntry[]>([]);
   const [blockers, setBlockers] = useState<BlockerEntry[]>([]);
+
+  // Eligible attackers: our creatures that are untapped and not summoning sick
+  const eligibleAttackers = useMemo(() =>
+    (gameState?.battlefield ?? []).filter((p) =>
+      p.controller === playerId &&
+      p.cardTypes.includes('creature') &&
+      !p.tapped &&
+      !p.summoningSick
+    ), [gameState?.battlefield, playerId]);
+
+  // Eligible blockers: our untapped creatures
+  const eligibleBlockers = useMemo(() =>
+    (gameState?.battlefield ?? []).filter((p) =>
+      p.controller === playerId &&
+      p.cardTypes.includes('creature') &&
+      !p.tapped
+    ), [gameState?.battlefield, playerId]);
+
+  // Attacking creatures (from combat info), resolved with names from battlefield
+  const attackingCreatures = useMemo(() => {
+    const combatAttackers = gameState?.combat?.attackers ?? [];
+    const bf = gameState?.battlefield ?? [];
+    return combatAttackers.map((atk) => {
+      const perm = bf.find((p) => p.objectId === atk.objectId);
+      return { ...atk, name: perm?.name ?? `Creature #${atk.objectId}` };
+    });
+  }, [gameState?.combat, gameState?.battlefield]);
 
   const toggleAttacker = useCallback(
     (objectId: number, targetPlayerId: string) => {
@@ -58,30 +86,31 @@ export function CombatPanel() {
       {isAttacking && (
         <>
           <p style={{ color: 'var(--color-text-muted)', margin: '0 0 8px', fontSize: '0.85rem' }}>
-            Select creatures to attack. Target: {opponents.map((o) => o.name).join(', ') || 'opponent'}
+            Select creatures to attack{opponents.length > 0 ? ` ${opponents.map((o) => o.name).join(', ')}` : ''}.
           </p>
-          {legalActions
-            .filter((a) => a.actionType === LegalActionType.DECLARE_ATTACKERS && a.objectId !== undefined)
-            .map((a) => (
+          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}>
+            {eligibleAttackers.map((p) => (
               <Button
-                key={a.objectId}
-                variant={attackers.some((atk) => atk.objectId === a.objectId) ? 'primary' : 'secondary'}
-                style={{ margin: '0 4px 4px 0' }}
-                onClick={() => toggleAttacker(a.objectId!, defaultTarget)}
+                key={p.objectId}
+                variant={attackers.some((atk) => atk.objectId === p.objectId) ? 'primary' : 'secondary'}
+                onClick={() => toggleAttacker(p.objectId, defaultTarget)}
+                style={{ fontSize: '0.8rem', padding: '4px 10px' }}
               >
-                Creature #{a.objectId}
+                {p.name} {p.effectivePower ?? p.power}/{p.effectiveToughness ?? p.toughness}
               </Button>
             ))}
-          <div style={{ marginTop: '12px' }}>
-            <Button
-              variant="primary"
-              disabled={isLoading}
-              loading={isLoading}
-              onClick={() => declareAttackers(attackers)}
-            >
-              Confirm Attackers ({attackers.length})
-            </Button>
+            {eligibleAttackers.length === 0 && (
+              <span style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>No eligible attackers</span>
+            )}
           </div>
+          <Button
+            variant="primary"
+            disabled={isLoading}
+            loading={isLoading}
+            onClick={() => { declareAttackers(attackers); setAttackers([]); }}
+          >
+            Confirm Attackers ({attackers.length})
+          </Button>
         </>
       )}
 
@@ -90,24 +119,34 @@ export function CombatPanel() {
           <p style={{ color: 'var(--color-text-muted)', margin: '0 0 8px', fontSize: '0.85rem' }}>
             Assign blockers to attacking creatures.
           </p>
-          {legalActions
-            .filter((a) => a.actionType === LegalActionType.DECLARE_BLOCKERS && a.objectId !== undefined)
-            .map((a) => (
-              <Button
-                key={a.objectId}
-                variant={blockers.some((b) => b.objectId === a.objectId) ? 'primary' : 'secondary'}
-                style={{ margin: '0 4px 4px 0' }}
-                onClick={() => toggleBlocker(a.objectId!, attackers[0]?.objectId ?? 0)}
-              >
-                Creature #{a.objectId}
-              </Button>
-            ))}
-          <div style={{ marginTop: '12px' }}>
+          {eligibleBlockers.map((blocker) => {
+            const existing = blockers.find((b) => b.objectId === blocker.objectId);
+            return (
+              <div key={blocker.objectId} style={{ marginBottom: '6px', fontSize: '0.8rem' }}>
+                <span style={{ fontWeight: 600 }}>{blocker.name} {blocker.effectivePower ?? blocker.power}/{blocker.effectiveToughness ?? blocker.toughness}</span>
+                <span style={{ color: 'var(--color-text-muted)', margin: '0 6px' }}>blocks →</span>
+                {attackingCreatures.map((atk) => (
+                  <Button
+                    key={atk.objectId}
+                    variant={existing?.blockingId === atk.objectId ? 'primary' : 'secondary'}
+                    onClick={() => toggleBlocker(blocker.objectId, atk.objectId)}
+                    style={{ fontSize: '0.75rem', padding: '2px 8px', marginRight: '4px' }}
+                  >
+                    {atk.name ?? `#${atk.objectId}`}
+                  </Button>
+                ))}
+              </div>
+            );
+          })}
+          {eligibleBlockers.length === 0 && (
+            <span style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>No eligible blockers</span>
+          )}
+          <div style={{ marginTop: '8px' }}>
             <Button
               variant="primary"
               disabled={isLoading}
               loading={isLoading}
-              onClick={() => declareBlockers(blockers)}
+              onClick={() => { declareBlockers(blockers); setBlockers([]); }}
             >
               Confirm Blockers ({blockers.length})
             </Button>

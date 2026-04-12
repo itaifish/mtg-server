@@ -2,10 +2,9 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use super::ability::{Ability, AbilityEffect};
+use super::ability::Abilities;
 use super::counter::{CounterEntry, CounterType, PtModifier};
 use super::effect::Effect;
-use super::event::TriggeredAbility;
 use super::keyword::Keyword;
 use super::mana::{Color, ManaCost};
 use super::zone::ZoneType;
@@ -84,20 +83,14 @@ pub struct CardDefinition {
     /// CR 310.4 — Defense (battles).
     pub defense: Option<u32>,
     pub rules_text: String,
-    /// CR 113 — Abilities explicitly printed on the card.
-    /// Intrinsic abilities (e.g., basic land mana abilities) are added at
-    /// runtime via `ability::all_abilities()`.
-    pub abilities: Vec<Ability>,
+    /// CR 113 — All abilities on this card (activated, triggered, static),
+    /// keyed by the zone they function in. Intrinsic abilities (e.g., basic
+    /// land mana abilities) are added at runtime via `ability::all_activated()`.
+    pub abilities: Abilities,
     /// CR 702 — Keyword abilities printed on the card.
-    /// Map of keyword → count (e.g., cascade×2).
     pub keywords: HashMap<Keyword, u32>,
     /// Effect when this spell resolves (instants/sorceries only).
     pub spell_effect: Option<Effect>,
-    /// CR 603 — Triggered abilities on this card, keyed by the zone the
-    /// source must be in for the trigger to function. Most triggers only
-    /// work from the battlefield, but some trigger from other zones
-    /// (e.g., Ovalchase Daredevil triggers from the graveyard).
-    pub triggered_abilities: HashMap<ZoneType, Vec<TriggeredAbility>>,
 }
 
 /// A card instance in a game — a specific object with a definition and

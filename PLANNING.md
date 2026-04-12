@@ -281,6 +281,183 @@ A Rust-based server that emulates the rules of Magic: The Gathering, using the c
 - [x] S3 bucket for card images (private, service-only access, added to CDK stack)
 - [ ] Card legality per format
 
+## Boros Energy Deck — Implementation Roadmap
+
+Target: implement all cards from a competitive Modern Boros Energy decklist.
+
+### Decklist (60 mainboard + 13 sideboard)
+
+**Creatures (27)**
+- 4 Ajani, Nacatl Pariah — flip card (creature → planeswalker)
+- 4 Guide of Souls — energy, flying counter, +1/+1 counter on ETB
+- 4 Ocelot Pride — token creation, first strike, lifelink conditional
+- 4 Phlage, Titan of Fire's Fury — escape, ETB/attack trigger (damage + life gain)
+- 4 Ragavan, Nimble Pilferer — dash, combat damage trigger (treasure token, exile top of opponent's library, cast until end of turn)
+- 2 Ranger-Captain of Eos — ETB search library for CMC≤1 creature, sacrifice to silence opponent
+- 3 Seasoned Pyromancer — ETB discard/draw, token creation, graveyard exile ability
+- 2 Voice of Victory — ETB create 1/1 token, tokens get +1/+0
+
+**Enchantments (4)**
+- 1 Blood Moon — static ability (nonbasic lands become Mountains)
+- 3 Goblin Bombardment — sacrifice outlet (sac creature: deal 1 damage to any target)
+
+**Instants (6)**
+- 4 Galvanic Discharge — energy, deal X damage (spend energy)
+- 2 Thraben Charm — modal spell (destroy enchantment, 1 damage to each creature, exile graveyard card)
+
+**Lands (23)**
+- 3 Arena of Glory — tap for R, ETB tapped, energy on ETB, spend energy to give haste
+- 4 Arid Mesa — fetch land (search for Mountain or Plains)
+- 2 Elegant Parlor — triome/dual (surveil on ETB, tap for W or R)
+- 4 Marsh Flats — fetch land (search for Plains or Swamp)
+- 1 Mountain — basic land (already implemented)
+- 2 Plains — basic land (already implemented)
+- 3 Sacred Foundry — shock land (ETB: pay 2 life or enters tapped, tap for W or R)
+- 4 Windswept Heath — fetch land (search for Forest or Plains)
+
+**Sideboard (13)**
+- 1 Blood Moon — (same as mainboard)
+- 2 Celestial Purge — exile target black or red permanent/spell
+- 3 Obsidian Charmaw — ETB destroy nonbasic land, cost reduction for opponent's nonbasics
+- 2 Orim's Chant — prevent opponent from casting spells this turn, optional prevent combat
+- 1 Surgical Extraction — phyrexian mana, exile all copies of a card from graveyard/hand/library
+- 2 The Legend of Roku — saga/flip card (saga → creature)
+- 2 Wrath of the Skies — board wipe (energy-based, destroy each creature/enchantment with MV ≤ X)
+
+### New Engine Features Required
+
+Each feature is listed with the cards that need it.
+
+#### Tier 1 — Core mechanics (many cards depend on these)
+
+1. **Energy counters** (player resource, CR 122.1)
+   - Cards: Guide of Souls, Galvanic Discharge, Arena of Glory, Wrath of the Skies
+   - Add `energy: u32` to `Player`, `GainEnergy`/`PayEnergy` effects, energy payment in costs
+
+2. **Token creation**
+   - Cards: Ocelot Pride, Seasoned Pyromancer, Voice of Victory, Ragavan (Treasure)
+   - `CreateToken` effect, token `CardInstance` (not in any deck), token types (creature, Treasure)
+
+3. **Library search** (CR 701.19)
+   - Cards: Ranger-Captain of Eos, Arid Mesa, Marsh Flats, Windswept Heath, Surgical Extraction
+   - `SearchLibrary` effect with filter, reveal, shuffle after
+
+4. **Fetch lands** (search library for land with type, put onto battlefield, pay 1 life, sacrifice)
+   - Cards: Arid Mesa, Marsh Flats, Windswept Heath
+   - Activated ability: pay 1 life + sacrifice self → search for land with subtype
+
+5. **Dual/special lands** (ETB tapped conditionally, tap for multiple colors)
+   - Cards: Sacred Foundry (shock land), Elegant Parlor (surveil land), Arena of Glory (energy land)
+   - Mana abilities producing choice of color, ETB replacement effects
+
+6. **Activated abilities on permanents** (non-mana)
+   - Cards: Goblin Bombardment, Seasoned Pyromancer (graveyard), Ranger-Captain of Eos (sacrifice)
+   - Extend ability system: sacrifice costs, non-mana activated abilities on the stack
+
+7. **Modal spells** (choose one/more)
+   - Cards: Thraben Charm
+   - `Choose` effect already in DSL, wire up mode selection in cast_spell
+
+#### Tier 2 — Card-specific mechanics
+
+8. **Transform/flip cards** (double-faced cards, CR 712)
+   - Cards: Ajani, Nacatl Pariah (creature → planeswalker), The Legend of Roku (saga → creature)
+   - `CardDefinition` needs back face, transform action, planeswalker loyalty system
+
+9. **Escape** (cast from graveyard, CR 702.138)
+   - Cards: Phlage, Titan of Fire's Fury
+   - Alternative cost from graveyard, exile cards as additional cost
+
+10. **Dash** (alternative cost, haste, return to hand at end of turn, CR 702.109)
+    - Cards: Ragavan, Nimble Pilferer
+    - Alternative casting cost, delayed trigger (return to hand at end step)
+
+11. **Planeswalker loyalty** (CR 306)
+    - Cards: Ajani, Nacatl Pariah (back face)
+    - Loyalty counters, loyalty abilities (+ and −), one per turn, can be attacked
+
+12. **Sagas** (CR 714)
+    - Cards: The Legend of Roku
+    - Lore counters, chapter abilities, sacrifice after final chapter (or transform)
+
+13. **Phyrexian mana** (pay life instead of mana, CR 107.4f)
+    - Cards: Surgical Extraction
+    - Alternative payment option in mana cost
+
+14. **Surveil** (CR 701.42)
+    - Cards: Elegant Parlor
+    - Look at top N, put any into graveyard, rest on top in any order
+
+#### Tier 3 — Supporting mechanics
+
+15. **Static abilities / continuous effects** (CR 604)
+    - Cards: Blood Moon (nonbasics become Mountains), Voice of Victory (tokens get +1/+0)
+    - Layer system for P/T modification, type-changing effects
+
+16. **Replacement effects** (CR 614)
+    - Cards: Sacred Foundry (ETB tapped unless pay life), Elegant Parlor (ETB tapped)
+    - ETB replacement effects, "as ~ enters the battlefield" choices
+
+17. **Attack triggers**
+    - Cards: Phlage (whenever attacks), Ocelot Pride (end of combat token if life gained)
+    - `TriggerEvent::Attacks` already partially supported, needs wiring
+
+18. **Combat damage triggers** (exile from opponent's library, create Treasure)
+    - Cards: Ragavan
+    - `TriggerEvent::DamageDealt` with `IsCombatDamage` filter + player target
+
+19. **Discard/draw effects**
+    - Cards: Seasoned Pyromancer (discard up to 2, draw that many)
+    - `Discard` effect (choice-based), already in Effect DSL
+
+20. **Exile zone interactions** (cast exiled cards, exile from graveyard)
+    - Cards: Ragavan (cast exiled card until end of turn), Surgical Extraction, Celestial Purge
+    - Permission to cast from exile, exile targeting
+
+### Implementation Order
+
+**Sprint 1: Energy + Tokens + Basic Lands**
+- [ ] Energy counter system (Player.energy, GainEnergy/PayEnergy effects)
+- [ ] Token creation (CreateToken effect, token CardInstance)
+- [ ] Treasure tokens (tap + sacrifice for mana)
+- [ ] Shock lands (Sacred Foundry — ETB pay 2 life or tapped, dual mana)
+- [ ] Cards: Guide of Souls (simplified), Arena of Glory, Sacred Foundry
+
+**Sprint 2: Library Search + Fetch Lands**
+- [ ] Library search engine action (filter, reveal, shuffle)
+- [ ] Sacrifice as a cost
+- [ ] Fetch lands (Arid Mesa, Marsh Flats, Windswept Heath)
+- [ ] Surveil (Elegant Parlor)
+- [ ] Cards: Arid Mesa, Marsh Flats, Windswept Heath, Elegant Parlor
+
+**Sprint 3: Non-Mana Activated Abilities + Removal**
+- [ ] Activated abilities on the stack (non-mana)
+- [ ] Sacrifice-a-creature costs
+- [ ] Modal spells (choose one)
+- [ ] Cards: Goblin Bombardment, Thraben Charm, Galvanic Discharge, Celestial Purge
+
+**Sprint 4: Creature Abilities + Combat Triggers**
+- [ ] Attack triggers (TriggerEvent::Attacks)
+- [ ] Combat damage triggers with exile/token creation
+- [ ] First strike / lifelink keywords
+- [ ] Dash (alternative cost + delayed return trigger)
+- [ ] Cards: Ocelot Pride, Ragavan, Phlage (partial — no escape yet), Voice of Victory
+
+**Sprint 5: Transform + Escape + Advanced**
+- [ ] Double-faced cards / transform (CR 712)
+- [ ] Planeswalker loyalty system (CR 306)
+- [ ] Escape mechanic (CR 702.138)
+- [ ] Sagas (CR 714)
+- [ ] Cards: Ajani Nacatl Pariah, Phlage (full with escape), The Legend of Roku
+
+**Sprint 6: Static Abilities + Sideboard**
+- [ ] Continuous effects / layer system (CR 613)
+- [ ] Blood Moon (type-changing static ability)
+- [ ] Phyrexian mana (Surgical Extraction)
+- [ ] Orim's Chant (prevent casting)
+- [ ] Cards: Blood Moon, Surgical Extraction, Orim's Chant, Obsidian Charmaw, Wrath of the Skies
+- [ ] Ranger-Captain of Eos, Seasoned Pyromancer
+
 ## Progress Log
 
 - **2026-03-22**: Project initiated. Decisions D1-D5 finalized. Architecture drafted. Implementation phases defined.
@@ -301,3 +478,4 @@ A Rust-based server that emulates the rules of Magic: The Gathering, using the c
 - **2026-04-05**: Effect DSL and stack targets. Replaced flat `AbilityEffect` enum with composable `Effect` DSL in `game/effect/`. Effect nodes: DealDamage, GainLife, LoseLife (distinct from damage per CR 119.3a), DrawCards, Discard, Mill, AddMana, Destroy, Exile, Bounce, Tap, Untap, AddCounters, RemoveCounters, ModifyPowerToughness, Counter, Sequence, ForEach, Conditional, Choose, Custom. `Value` (Constant, XValue, Count), `TargetSpec` (Chosen, Source, Each), `PlayerSpec` (Controller, Opponent, TargetPlayer, Each), `Selector`/`Filter`/`Condition` for queries. `AbilityEffect` now: `AddMana` (mana abilities) or `Effect(Effect)` (everything else). `Stack` promoted to its own struct in `game/stack/` with `push`, `pop`, `contains`, `remove`, `top`, `is_empty`. `StackEntry` holds object_id, controller, targets (`Vec<SpellTarget>`), mode_choices. `GameState.push_to_stack()` replaces `move_object(Stack)`. `resolve_effect` walks the DSL tree; `eval_value`, `get_referenced_targets`, `get_referenced_players` resolve specs to concrete values. All actions wired to API: castSpell (with mana payment + targets), activateManaAbility, declareAttackers, declareBlockers. Smithy model updated with full action types. Card registry: Lightning Bolt, Healing Salve, Divination using DSL. Keywords system: `Keyword` enum, `HashMap<Keyword, u32>` on both `CardDefinition` and `CardInstance`, `is_summoning_sick()` checks haste. `CardDefinition` derives `Default`. Untap/draw/cleanup steps automated. `generate_sdk.sh` script. Auto-pass priority via `holdPriority` flag. 89 unit tests + 11 integration tests passing.
 - **2026-04-05**: Triggered abilities and event system. Added `game/event/` module with composable trigger system: `TriggerEvent` (EntersZone, LeavesZone, ZoneTransition, DamageDealt, LifeGained, SpellCast, etc.) + `TriggerFilter` (ObjectMatches, ControlledBy, IsSelf, PlayerIs, IsCombatDamage, DamageTargetIsPlayer, Not). `Not(Box<TriggerFilter>)` enables "another creature" via `Not(IsSelf)`. `card_matches_filters` checks card types, subtypes, colors, power, toughness, mana value. `TriggeredAbility` on `CardDefinition` keyed by zone (`HashMap<ZoneType, Vec<TriggeredAbility>>`) — supports triggers from non-battlefield zones (e.g., Ovalchase Daredevil). Unified `ZoneType` — removed duplicate `ZoneRef`. `GameState.emit_event()` scans battlefield and graveyard objects for matching triggers, collects `PendingTrigger`s. Events emitted from all state helpers: `move_object` (ZoneChange), `deal_damage_to_player` (LifeLost), `draw_card` (CardDrawn), `gain_life` (LifeGained). `StackEntry` refactored: `StackEntryKind::Spell` (card moves to stack) vs `StackEntryKind::Ability` (source stays, effect on stack). `resolve_top_of_stack` handles both. `engine/triggers/` module: `process_pending_triggers` groups by controller in APNAP order, auto-orders identical triggers (e.g., two Soul Wardens), puts on stack. `check_state_and_triggers` helper runs SBAs then trigger processing after every action. `AddCounters` effect implemented. Cards: Soul Warden ("whenever another creature ETBs, gain 1 life"), Ajani's Pridemate ("whenever you gain life, +1/+1 counter"). Cascading triggers verified: creature ETB → Soul Warden triggers → gain life → Pridemate triggers. `GetGameStateOutput` expanded: `priorityPlayerId`, `activePlayerId`, `playOrderChooserId`, `battlefield` with full `PermanentInfo` (power, toughness, effective P/T, tapped, summoning sick, damage marked, counters, keywords). `TryFrom<&CardInstance> for PermanentInfo`. Integration test: Soul Warden deck casts creatures over 30 turns, verifies life gain above 20 from triggers. `generate_sdk.sh` script. 101 Rust unit tests + 10 integration tests passing.
 - **2026-04-05**: Card images and oracle IDs. Added `oracle_id: String` to `CardDefinition` with Scryfall oracle IDs for all 23 registry cards (looked up via Scryfall API). Renamed "Grey Ogre" → "Gray Ogre" to match Scryfall. Added `GetCardImage` operation — returns Scryfall image URL by oracle ID (temporary; will serve from S3 once seed pipeline runs). Added `hand` to `GetGameStateOutput` — returns cards in the requesting player's hand (filtered by `perspectivePlayerId`, opponents can't see your hand). `CardInfo` includes objectId, name, oracleId, cardTypes, manaCost, manaValue. Added `PermanentInfo` with full battlefield state. `LeaveGame` and `ListGames` operations with DB-backed pagination, search, and status filtering. Games table schema expanded with indexed columns (name, status, player_count, format, created_at). Stale game handling: auto-delete on get, skip on list. TODO: run `seed-cards` binary as ECS task to populate S3 bucket with card images and cards table from Scryfall bulk data.
+- **2026-04-08**: Auto-pass improvements. `engine::actions::set_auto_pass` now immediately passes priority if the player has it and should auto-pass. `process_auto_passes` clears auto-pass for the priority player when their stop condition is met (other players clear naturally when they next receive priority). `UntilStackOrTurn { set_on_turn }` detects turn changes. Cleanup step skips priority unless triggers are pending (CR 514.3). Reverted pregame `LegalAction` variants (ChooseFirstPlayer, KeepHand, Mulligan) — pregame info is available through `GetGameState` instead. 5 new auto-pass unit tests. `StackEntryKind::Ability` now carries `description: String` for human-readable ability text; `StackEntryInfo` in Smithy model has `abilityText` field. 106 Rust unit tests passing.
