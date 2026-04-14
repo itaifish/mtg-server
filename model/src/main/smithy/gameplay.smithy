@@ -459,11 +459,16 @@ structure LegalAction {
     objectId: Long
 
     /// For CAST_SPELL: target requirements, one entry per required target.
-    /// Each entry lists the valid target kinds for that target slot.
     targetRequirements: TargetRequirementList
 
     /// For CAST_SPELL: mana cost symbols (e.g., ["{1}", "{R}"]).
     manaCost: StringList
+
+    /// For ACTIVATE_MANA_ABILITY: mana that will be produced.
+    manaProduced: ManaPoolInfo
+
+    /// Human-readable description of the action.
+    description: String
 }
 
 list TargetRequirementList {

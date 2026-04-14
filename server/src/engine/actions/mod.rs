@@ -1,8 +1,11 @@
 use crate::engine::triggers::process_pending_triggers;
 use crate::game::ability::{all_activated, AbilityCost, AbilityEffect, StaticAbility};
 use crate::game::card::{CardDefinition, CardInstance, CardType, ObjectId};
-use crate::game::effect::{Condition, ControllerFilter, CounterSpec, Effect, PlayerSpec, Selector, TargetSpec, TokenSource, Value};
-use crate::game::event::EventModification;
+use crate::game::effect::{
+    Condition, ControllerFilter, CounterSpec, Effect, PlayerSpec, Selector, TargetSpec,
+    TokenSource, Value,
+};
+use crate::game::event::{card_matches_filters, EventModification};
 use crate::game::mana::SymbolPayment;
 use crate::game::phases_and_steps::Phase;
 use crate::game::stack::{SpellTarget, StackEntry, StackEntryKind};
@@ -99,7 +102,13 @@ fn process_auto_passes(state: &mut GameState) -> Result<(), ActionError> {
         }
         let priority_id = state.priority_player().id.clone();
         if !state.should_auto_pass(&priority_id) {
-            state.clear_auto_pass(&priority_id);
+            // Clear auto-pass for all players whose stop condition is met
+            for j in 0..state.players.len() {
+                let pid = state.players[j].id.clone();
+                if !state.should_auto_pass(&pid) {
+                    state.clear_auto_pass(&pid);
+                }
+            }
             break;
         }
         if i == 999 {
@@ -272,10 +281,18 @@ pub(crate) fn enter_battlefield(state: &mut GameState, object_id: ObjectId, _fro
     let mut enters_tapped = false;
 
     if let Some(card) = state.objects.get(&object_id) {
-        let controller = card.controller.clone().unwrap_or_else(|| card.owner.clone());
+        let controller = card
+            .controller
+            .clone()
+            .unwrap_or_else(|| card.owner.clone());
 
         for ability in card.definition.abilities.static_in(ZoneType::Battlefield) {
-            if let StaticAbility::Replacement { modification, is_self_replacement: true, .. } = ability {
+            if let StaticAbility::Replacement {
+                modification,
+                is_self_replacement: true,
+                ..
+            } = ability
+            {
                 match modification {
                     EventModification::EntersTapped => {
                         enters_tapped = true;
@@ -286,13 +303,26 @@ pub(crate) fn enter_battlefield(state: &mut GameState, object_id: ObjectId, _fro
                         }
                     }
                     EventModification::ChooseOrElse { cost, fallback } => {
-                        let tapped_on_no = matches!(fallback.as_ref(), EventModification::EntersTapped);
-                        let cost_desc = cost.iter().map(|c| format!("{:?}", c)).collect::<Vec<_>>().join(", ");
+                        let tapped_on_no =
+                            matches!(fallback.as_ref(), EventModification::EntersTapped);
+                        let cost_desc = cost
+                            .iter()
+                            .map(|c| format!("{:?}", c))
+                            .collect::<Vec<_>>()
+                            .join(", ");
                         state.pending_choice = Some(PendingChoice {
                             player_id: controller.clone(),
                             kind: ChoiceKind::YesNo {
-                                yes: ChoiceEffect::EnterBattlefield { object_id, tapped: false, costs: cost.clone() },
-                                no: ChoiceEffect::EnterBattlefield { object_id, tapped: tapped_on_no, costs: vec![] },
+                                yes: ChoiceEffect::EnterBattlefield {
+                                    object_id,
+                                    tapped: false,
+                                    costs: cost.clone(),
+                                },
+                                no: ChoiceEffect::EnterBattlefield {
+                                    object_id,
+                                    tapped: tapped_on_no,
+                                    costs: vec![],
+                                },
                             },
                             prompt: format!("Pay {}?", cost_desc),
                         });
@@ -322,38 +352,48 @@ fn evaluate_condition(
     use crate::game::effect::{Condition, ControllerFilter, Selector};
 
     match condition {
-        Condition::ControlPermanent(selector) => match selector {
-            Selector::Permanents { controller: cf, filters } => {
-                let check_controller = match cf {
-                    ControllerFilter::You => Some(controller),
-                    ControllerFilter::Any => None,
-                    ControllerFilter::Opponent => return false, // TODO
+        Condition::ControlPermanent(Selector::Permanents {
+            controller: cf,
+            filters,
+        }) => {
+            let check_controller = match cf {
+                ControllerFilter::You => Some(controller),
+                ControllerFilter::Any => None,
+                ControllerFilter::Opponent => return false, // TODO
+            };
+            state.battlefield.iter().any(|&oid| {
+                let Some(card) = state.objects.get(&oid) else {
+                    return false;
                 };
-                state.battlefield.iter().any(|&oid| {
-                    let Some(card) = state.objects.get(&oid) else { return false };
-                    if let Some(pid) = check_controller {
-                        if card.controller.as_deref() != Some(pid) {
-                            return false;
-                        }
+                if let Some(pid) = check_controller {
+                    if card.controller.as_deref() != Some(pid) {
+                        return false;
                     }
-                    crate::game::event::card_matches_filters(&card.definition, filters)
-                })
-            }
-            _ => false,
-        },
-        Condition::LifeAtOrBelow(n) => {
-            state.get_player(controller).map(|p| p.life_total <= *n as i32).unwrap_or(false)
+                }
+                card_matches_filters(&card.definition, filters)
+            })
         }
-        Condition::LifeAtOrAbove(n) => {
-            state.get_player(controller).map(|p| p.life_total >= *n as i32).unwrap_or(false)
-        }
+        Condition::LifeAtOrBelow(n) => state
+            .get_player(controller)
+            .map(|p| p.life_total <= *n as i32)
+            .unwrap_or(false),
+        Condition::LifeAtOrAbove(n) => state
+            .get_player(controller)
+            .map(|p| p.life_total >= *n as i32)
+            .unwrap_or(false),
         _ => false,
     }
 }
 
 /// Resolve a pending yes/no choice.
-pub fn resolve_choice(state: &mut GameState, player_id: &str, answer: bool) -> Result<(), ActionError> {
-    let choice = state.pending_choice.take()
+pub fn resolve_choice(
+    state: &mut GameState,
+    player_id: &str,
+    answer: bool,
+) -> Result<(), ActionError> {
+    let choice = state
+        .pending_choice
+        .take()
         .ok_or_else(|| ActionError::Illegal("no pending choice".into()))?;
 
     if choice.player_id != player_id {
@@ -362,7 +402,13 @@ pub fn resolve_choice(state: &mut GameState, player_id: &str, answer: bool) -> R
     }
 
     let effect = match choice.kind {
-        ChoiceKind::YesNo { yes, no } => if answer { yes } else { no },
+        ChoiceKind::YesNo { yes, no } => {
+            if answer {
+                yes
+            } else {
+                no
+            }
+        }
         _ => return Err(ActionError::Illegal("expected a yes/no choice".into())),
     };
 
@@ -373,7 +419,11 @@ pub fn resolve_choice(state: &mut GameState, player_id: &str, answer: bool) -> R
 
 fn apply_choice_effect(state: &mut GameState, player_id: &str, effect: &ChoiceEffect) {
     match effect {
-        ChoiceEffect::EnterBattlefield { object_id, tapped, costs } => {
+        ChoiceEffect::EnterBattlefield {
+            object_id,
+            tapped,
+            costs,
+        } => {
             for cost in costs {
                 match cost {
                     AbilityCost::PayLife(n) => {

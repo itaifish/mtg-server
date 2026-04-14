@@ -69,26 +69,31 @@ pub fn player_info(
 impl From<crate::engine::legal_actions::LegalAction> for mtg_server_sdk::model::LegalAction {
     fn from(a: crate::engine::legal_actions::LegalAction) -> Self {
         use crate::engine::legal_actions::LegalAction as LA;
+        use crate::game::mana::ManaPool;
         use mtg_server_sdk::model::LegalActionType as T;
-        match a {
-            LA::PassPriority => Self {
-                action_type: T::PassPriority,
+
+        fn base(action_type: T) -> mtg_server_sdk::model::LegalAction {
+            mtg_server_sdk::model::LegalAction {
+                action_type,
                 object_id: None,
                 target_requirements: None,
                 mana_cost: None,
-            },
+                mana_produced: None,
+                description: None,
+            }
+        }
+
+        match a {
+            LA::PassPriority => base(T::PassPriority),
             LA::PlayLand { object_id } => Self {
-                action_type: T::PlayLand,
                 object_id: Some(object_id as i64),
-                target_requirements: None,
-                mana_cost: None,
+                ..base(T::PlayLand)
             },
             LA::CastSpell {
                 object_id,
                 target_requirements,
                 mana_cost_symbols,
             } => Self {
-                action_type: T::CastSpell,
                 object_id: Some(object_id as i64),
                 target_requirements: Some(
                     target_requirements
@@ -99,31 +104,23 @@ impl From<crate::engine::legal_actions::LegalAction> for mtg_server_sdk::model::
                         .collect(),
                 ),
                 mana_cost: Some(mana_cost_symbols),
+                ..base(T::CastSpell)
             },
-            LA::ActivateManaAbility { object_id, .. } => Self {
-                action_type: T::ActivateManaAbility,
-                object_id: Some(object_id as i64),
-                target_requirements: None,
-                mana_cost: None,
-            },
-            LA::DeclareAttackers => Self {
-                action_type: T::DeclareAttackers,
-                object_id: None,
-                target_requirements: None,
-                mana_cost: None,
-            },
-            LA::DeclareBlockers => Self {
-                action_type: T::DeclareBlockers,
-                object_id: None,
-                target_requirements: None,
-                mana_cost: None,
-            },
-            LA::Concede => Self {
-                action_type: T::Concede,
-                object_id: None,
-                target_requirements: None,
-                mana_cost: None,
-            },
+            LA::ActivateManaAbility {
+                object_id,
+                mana_produced,
+                ..
+            } => {
+                let pool = ManaPool::from(mana_produced.as_slice());
+                Self {
+                    object_id: Some(object_id as i64),
+                    mana_produced: Some((&pool).into()),
+                    ..base(T::ActivateManaAbility)
+                }
+            }
+            LA::DeclareAttackers => base(T::DeclareAttackers),
+            LA::DeclareBlockers => base(T::DeclareBlockers),
+            LA::Concede => base(T::Concede),
         }
     }
 }
@@ -283,6 +280,7 @@ impl From<crate::game::phases_and_steps::Phase> for mtg_server_sdk::model::GameP
             Phase::Combat(CombatStep::BeginningOfCombat) => Self::BeginningOfCombat,
             Phase::Combat(CombatStep::DeclareAttackers) => Self::DeclareAttackers,
             Phase::Combat(CombatStep::DeclareBlockers) => Self::DeclareBlockers,
+            Phase::Combat(CombatStep::FirstStrikeDamage) => Self::FirstStrikeDamage,
             Phase::Combat(CombatStep::CombatDamage) => Self::CombatDamage,
             Phase::Combat(CombatStep::EndOfCombat) => Self::EndOfCombat,
             Phase::PostcombatMain => Self::PostcombatMain,
@@ -427,6 +425,9 @@ impl From<mtg_server_sdk::model::GamePhase> for crate::game::phases_and_steps::P
             }
             mtg_server_sdk::model::GamePhase::DeclareBlockers => {
                 Self::Combat(CombatStep::DeclareBlockers)
+            }
+            mtg_server_sdk::model::GamePhase::FirstStrikeDamage => {
+                Self::Combat(CombatStep::FirstStrikeDamage)
             }
             mtg_server_sdk::model::GamePhase::CombatDamage => {
                 Self::Combat(CombatStep::CombatDamage)

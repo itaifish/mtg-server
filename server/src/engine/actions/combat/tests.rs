@@ -22,7 +22,6 @@ fn make_creature(id: u64, owner: &str, power: i32, toughness: i32) -> CardInstan
 
 fn setup_combat(state: &mut GameState) {
     state.phase = Phase::Combat(CombatStep::DeclareAttackers);
-    // Alice has a 3/3, Bob has a 2/2
     let attacker = make_creature(10, "alice", 3, 3);
     let blocker = make_creature(20, "bob", 2, 2);
     state.objects.insert(10, attacker);
@@ -106,11 +105,11 @@ fn unblocked_attacker_deals_damage_to_player() {
     )
     .unwrap();
 
+    // Advance to combat damage — deal_combat_damage runs via on_phase_enter
     state.phase = Phase::Combat(CombatStep::CombatDamage);
+    state.deal_combat_damage_for_test();
 
-    resolve_combat_damage(&mut state).unwrap();
-
-    assert_eq!(state.get_player("bob").unwrap().life_total, 17); // 20 - 3
+    assert_eq!(state.get_player("bob").unwrap().life_total, 17);
 }
 
 #[test]
@@ -140,12 +139,9 @@ fn blocked_attacker_and_blocker_deal_damage_to_each_other() {
     .unwrap();
 
     state.phase = Phase::Combat(CombatStep::CombatDamage);
-    resolve_combat_damage(&mut state).unwrap();
+    state.deal_combat_damage_for_test();
 
-    // 3/3 attacker takes 2 damage from 2/2 blocker
     assert_eq!(state.objects.get(&10).unwrap().damage_marked, 2);
-    // 2/2 blocker takes 3 damage from 3/3 attacker
     assert_eq!(state.objects.get(&20).unwrap().damage_marked, 3);
-    // Bob takes no damage (attacker was blocked)
     assert_eq!(state.get_player("bob").unwrap().life_total, 20);
 }

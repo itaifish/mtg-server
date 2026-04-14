@@ -25,6 +25,9 @@ export function PlayerPanel({ player, isActive }: PlayerPanelProps) {
         {player.poisonCounters > 0 && (
           <span title="Poison counters" style={{ color: 'var(--color-danger)' }}>☠️ {player.poisonCounters}</span>
         )}
+        {player.energy > 0 && (
+          <span title="Energy counters" style={{ color: '#f0c040' }}>⚡ {player.energy}</span>
+        )}
       </div>
     </div>
   );

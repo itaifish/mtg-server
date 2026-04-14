@@ -36,7 +36,9 @@ pub enum CombatStep {
     DeclareAttackers,
     /// CR 509
     DeclareBlockers,
-    /// CR 510
+    /// CR 510.4 — First combat damage step (only if first strike/double strike present).
+    FirstStrikeDamage,
+    /// CR 510 — Regular (or second) combat damage step.
     CombatDamage,
     /// CR 511
     EndOfCombat,
@@ -67,6 +69,9 @@ impl Phase {
                 Some(Phase::Combat(CombatStep::DeclareBlockers))
             }
             Phase::Combat(CombatStep::DeclareBlockers) => {
+                Some(Phase::Combat(CombatStep::FirstStrikeDamage))
+            }
+            Phase::Combat(CombatStep::FirstStrikeDamage) => {
                 Some(Phase::Combat(CombatStep::CombatDamage))
             }
             Phase::Combat(CombatStep::CombatDamage) => Some(Phase::Combat(CombatStep::EndOfCombat)),

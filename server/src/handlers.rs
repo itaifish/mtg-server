@@ -15,6 +15,7 @@ use mtg_server_sdk::model::{
 
 use crate::deck::loader::{load_deck, DeckEntry};
 use crate::engine;
+use crate::engine::actions::{cast_spell, pass_priority};
 use crate::game::state::{GameState, GameStatus, Player, PlayerZones};
 use crate::handler_helpers::{get_game, server_err};
 use crate::store::GameStore;
@@ -322,7 +323,11 @@ pub async fn get_game_state(
                                 None,
                             )
                         }
-                        StackEntryKind::Ability { source_id, description, .. } => {
+                        StackEntryKind::Ability {
+                            source_id,
+                            description,
+                            ..
+                        } => {
                             let card = state.objects.get(source_id);
                             (
                                 format!(
@@ -374,13 +379,18 @@ pub async fn submit_action(
                 .iter()
                 .map(Into::into)
                 .collect();
-            engine::actions::cast_spell(
+            cast_spell(
                 &mut state,
                 &input.player_id,
                 cast.object_id as u64,
                 &payments,
                 targets,
             )?;
+            // Players pass priority after they put a spell on the stack unless they explicitly hold priority
+            let hold = input.hold_priority.unwrap_or(false);
+            if !hold && state.has_priority(&input.player_id) {
+                pass_priority(&mut state, &input.player_id)?;
+            }
         }
         ActionInput::ActivateManaAbility(act) => {
             engine::actions::activate_mana_ability(
@@ -432,17 +442,6 @@ pub async fn submit_action(
             return Err(engine::actions::ActionError::Illegal("unsupported action".into()).into());
         }
     };
-
-    // CR 117.3c — Auto-pass priority unless the player explicitly holds it.
-    // Mana abilities and playing lands don't use the stack, so the player
-    // retains priority. PassPriority handles its own passing.
-    let hold = input.hold_priority.unwrap_or(false);
-    let no_auto_pass = is_pass
-        || matches!(&input.action, ActionInput::ActivateManaAbility(_))
-        || matches!(&input.action, ActionInput::PlayLand(_));
-    if !no_auto_pass && !hold && state.has_priority(&input.player_id) {
-        engine::actions::pass_priority(&mut state, &input.player_id)?;
-    }
 
     store
         .update(state.clone())

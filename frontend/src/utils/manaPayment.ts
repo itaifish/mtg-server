@@ -32,26 +32,32 @@ export function buildManaPayment(manaCost: string[], pool: ManaPoolInfo): Symbol
     [ManaType.GREEN]: pool.green.unrestricted,
     [ManaType.COLORLESS]: pool.colorless.unrestricted,
   };
-  const payments: SymbolPaymentEntry[] = [];
+  const parsed = manaCost.map((s) => parseSymbol(s));
+  const payments: SymbolPaymentEntry[] = new Array(parsed.length);
 
-  // Colored/colorless first
-  for (const symbol of manaCost) {
-    const { type, count } = parseSymbol(symbol);
+  // Pass 1: reserve colored/colorless mana so generic doesn't steal it
+  for (let i = 0; i < parsed.length; i++) {
+    const { type } = parsed[i];
     if (type) {
-      payments.push({ paidWith: [type] });
+      payments[i] = { paidWith: [type] };
       available[type] = Math.max(0, available[type] - 1);
-    } else {
-      // Generic — pay with whatever's available
-      for (let i = 0; i < count; i++) {
-        const avail = Object.keys(available).find((k) => available[k] > 0);
-        if (avail) {
-          payments.push({ paidWith: [avail as ManaType] });
-          available[avail]--;
-        } else {
-          payments.push({ paidWith: [ManaType.COLORLESS] });
-        }
-      }
     }
   }
+
+  // Pass 2: fill in generic with whatever remains
+  for (let i = 0; i < parsed.length; i++) {
+    if (payments[i]) continue;
+    const { count } = parsed[i];
+    const paidWith: ManaType[] = [];
+    for (let j = 0; j < count; j++) {
+      const avail = Object.keys(available).find((k) => available[k] > 0);
+      if (avail) {
+        paidWith.push(avail as ManaType);
+        available[avail]--;
+      }
+    }
+    payments[i] = { paidWith };
+  }
+
   return payments;
 }

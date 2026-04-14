@@ -40,7 +40,7 @@ vi.mock('@/theme', async () => {
 });
 
 // Mock selectOpponentPlayers to return stable reference
-const stableOpponents = [{ playerId: 'p2', name: 'Bob', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0, mulliganCount: 0, hasKept: false }];
+const stableOpponents = [{ playerId: 'p2', name: 'Bob', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0, mulliganCount: 0, hasKept: false, energy: 0 }];
 vi.mock('@/stores/gameStore', async () => {
   const actual = await vi.importActual<typeof import('@/stores/gameStore')>('@/stores/gameStore');
   return {
@@ -53,8 +53,8 @@ const baseState: GetGameStateResponse = {
   gameId: 'g1',
   status: GameStatus.IN_PROGRESS,
   players: [
-    { playerId: 'p1', name: 'Alice', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0, mulliganCount: 0, hasKept: false },
-    { playerId: 'p2', name: 'Bob', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0, mulliganCount: 0, hasKept: false },
+    { playerId: 'p1', name: 'Alice', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0, mulliganCount: 0, hasKept: false, energy: 0 },
+    { playerId: 'p2', name: 'Bob', lifeTotal: 20, ready: true, handSize: 7, librarySize: 53, poisonCounters: 0, mulliganCount: 0, hasKept: false, energy: 0 },
   ],
   turnNumber: 1,
   actionCount: 0,

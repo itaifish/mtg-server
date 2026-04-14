@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useApiClient } from '@/api/hooks';
 import { useGameStore, selectIsMyTurn } from '@/stores/gameStore';
@@ -21,7 +21,9 @@ import { StackOverlay } from './StackOverlay';
 import { GraveyardOverlay } from './GraveyardOverlay';
 import { TargetArrows } from './TargetArrows';
 import { ManaPoolDisplay, EMPTY_POOL } from './ManaPoolDisplay';
+import { ManaAbilityPicker } from './ManaAbilityPicker';
 import { useUiStore } from '@/stores/uiStore';
+import { useGameActions } from '@/hooks/useGameActions';
 import type { ActionInput } from '@/types/actions';
 import { createSetAutoPass } from '@/types/actions';
 import type { GamePhase } from '@/types/enums';
@@ -34,12 +36,41 @@ export function GamePage() {
   const isMyTurn = useGameStore((s) => selectIsMyTurn(s, playerId ?? ''));
   const autoPassMode = useUiStore((s) => s.autoPassMode);
   const autoPassStopAtPhase = useUiStore((s) => s.autoPassStopAtPhase);
+  const { activateManaAbility } = useGameActions();
 
   useEffect(() => {
     if (!gameId || !playerId) return;
     startPolling(client, gameId, playerId, 2000);
     return () => stopPolling();
   }, [client, gameId, playerId, startPolling, stopPolling]);
+
+  // Always sync mana ability IDs so Card3D highlights tappable lands
+  const manaAbilities = legalActions.filter(
+    (a) => a.actionType === LegalActionType.ACTIVATE_MANA_ABILITY && a.objectId != null,
+  );
+  useEffect(() => {
+    useUiStore.getState().setManaAbilityIds(new Set(manaAbilities.map((a) => a.objectId!)));
+    return () => useUiStore.getState().setManaAbilityIds(new Set());
+  }, [legalActions]);
+
+  // Global mana-tap handler for clicking lands outside of casting mode
+  const handleManaTap = useCallback((e: Event) => {
+    const objectId = (e as CustomEvent).detail?.objectId;
+    if (objectId == null) return;
+    // During casting, CastingOverlay handles this — skip here
+    if (useUiStore.getState().pendingCast) return;
+    const abilities = manaAbilities.filter((a) => a.objectId === objectId);
+    if (abilities.length === 1) {
+      activateManaAbility(objectId, abilities[0].abilityIndex ?? 0);
+    } else if (abilities.length > 1) {
+      useUiStore.getState().setManaAbilityPicker({ objectId, abilities });
+    }
+  }, [manaAbilities, activateManaAbility]);
+
+  useEffect(() => {
+    window.addEventListener('mana-tap', handleManaTap);
+    return () => window.removeEventListener('mana-tap', handleManaTap);
+  }, [handleManaTap]);
 
   const handleAction = (action: ActionInput) => {
     if (gameId && playerId) submitAction(client, gameId, playerId, action);
@@ -107,6 +138,7 @@ export function GamePage() {
 
       <CardPreview />
       <CastingOverlay />
+      <ManaAbilityPicker />
       <StackOverlay />
       <TargetArrows />
       <GraveyardOverlay />

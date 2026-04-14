@@ -163,6 +163,20 @@ pub struct ManaPool {
     pub colorless: ManaPoolSlot,
 }
 
+impl From<&[ManaProduction]> for ManaPool {
+    fn from(productions: &[ManaProduction]) -> Self {
+        let mut pool = Self::default();
+        for p in productions {
+            if let Some(ref restriction) = p.restriction {
+                pool.add_restricted(p.mana_type, p.amount, restriction.clone());
+            } else {
+                pool.add(p.mana_type, p.amount);
+            }
+        }
+        pool
+    }
+}
+
 impl ManaPool {
     fn slot(&self, mana_type: ManaType) -> &ManaPoolSlot {
         match mana_type {

@@ -10,6 +10,7 @@ fn full_turn_sequence() {
         Phase::Combat(CombatStep::BeginningOfCombat),
         Phase::Combat(CombatStep::DeclareAttackers),
         Phase::Combat(CombatStep::DeclareBlockers),
+        Phase::Combat(CombatStep::FirstStrikeDamage),
         Phase::Combat(CombatStep::CombatDamage),
         Phase::Combat(CombatStep::EndOfCombat),
         Phase::PostcombatMain,

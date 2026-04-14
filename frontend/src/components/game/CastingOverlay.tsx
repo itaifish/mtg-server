@@ -7,6 +7,22 @@ import { ManaPoolDisplay, EMPTY_POOL } from './ManaPoolDisplay';
 import { Button } from '@/components/shared';
 import { buildManaPayment } from '@/utils/manaPayment';
 import type { SpellTarget } from '@/types/actions';
+import type { LegalAction, ManaPoolInfo } from '@/types/models';
+
+const MANA_SYMBOLS: [keyof ManaPoolInfo, string][] = [
+  ['white', '{W}'], ['blue', '{U}'], ['black', '{B}'],
+  ['red', '{R}'], ['green', '{G}'], ['colorless', '{C}'],
+];
+
+function manaLabel(action: LegalAction): string {
+  if (action.manaProduced) {
+    const parts = MANA_SYMBOLS
+      .filter(([k]) => action.manaProduced![k].unrestricted > 0)
+      .map(([, sym]) => sym);
+    if (parts.length > 0) return parts.join('');
+  }
+  return action.description ?? `Ability ${(action.abilityIndex ?? 0) + 1}`;
+}
 
 export function CastingOverlay() {
   const pendingCast = useUiStore((s) => s.pendingCast);
@@ -30,14 +46,7 @@ export function CastingOverlay() {
   const manaAbilityPicker = useUiStore((s) => s.manaAbilityPicker);
   const setManaAbilityPicker = useUiStore((s) => s.setManaAbilityPicker);
 
-  // Sync mana ability IDs to store so Card3D can highlight tappable lands
-  useEffect(() => {
-    if (pendingCast && !autoTapLands) {
-      useUiStore.getState().setManaAbilityIds(new Set(manaAbilities.map((a) => a.objectId!)));
-    } else {
-      useUiStore.getState().setManaAbilityIds(new Set());
-    }
-  }, [pendingCast, autoTapLands, legalActions]);
+  // Sync mana ability IDs is handled by GamePage globally
 
   // Listen for land clicks during casting
   useEffect(() => {
@@ -219,12 +228,15 @@ export function CastingOverlay() {
       {manaAbilityPicker && (
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', padding: '6px', background: 'var(--color-bg-secondary)', borderRadius: 'var(--radius)', border: '1px solid var(--color-gold)' }}>
           <span style={{ fontSize: '0.75rem', width: '100%', marginBottom: '2px' }}>Choose mana ability:</span>
-          {manaAbilityPicker.abilities.map((a, i) => (
-            <Button key={i} variant="secondary" style={{ fontSize: '0.75rem', padding: '4px 10px' }}
-              onClick={() => { activateManaAbility(manaAbilityPicker.objectId, a.abilityIndex ?? i); setManaAbilityPicker(null); }}>
-              Ability {(a.abilityIndex ?? i) + 1}
-            </Button>
-          ))}
+          {manaAbilityPicker.abilities.map((a, i) => {
+            const label = manaLabel(a);
+            return (
+              <Button key={i} variant="secondary" style={{ fontSize: '0.75rem', padding: '4px 10px' }}
+                onClick={() => { activateManaAbility(manaAbilityPicker.objectId, a.abilityIndex ?? i); setManaAbilityPicker(null); }}>
+                {label}
+              </Button>
+            );
+          })}
           <Button variant="secondary" style={{ fontSize: '0.7rem', padding: '2px 8px' }} onClick={() => setManaAbilityPicker(null)}>
             Cancel
           </Button>

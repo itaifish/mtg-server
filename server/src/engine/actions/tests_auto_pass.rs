@@ -196,3 +196,128 @@ fn auto_pass_precombat_to_postcombat_traverses_combat() {
 
     assert_eq!(state.phase, Phase::PostcombatMain);
 }
+
+#[test]
+fn auto_pass_one_until_end_of_turn_other_until_phase() {
+    let mut state = in_progress_game();
+    let turn = state.turn_number;
+
+    // Alice passes until end of turn, bob passes until postcombat main
+    set_auto_pass(
+        &mut state,
+        "alice",
+        AutoPassMode::UntilStackOrTurn { set_on_turn: turn },
+    )
+    .unwrap();
+    set_auto_pass(
+        &mut state,
+        "bob",
+        AutoPassMode::UntilPhase(Phase::PostcombatMain),
+    )
+    .unwrap();
+
+    // Should reach postcombat main (bob's stop)
+    assert_eq!(state.phase, Phase::PostcombatMain);
+
+    // Bob's auto-pass should be cleared
+    let bob_ap = &state.get_player("bob").unwrap().auto_pass;
+    assert_eq!(*bob_ap, AutoPassMode::None, "bob's auto-pass should be cleared at postcombat main");
+
+    // Alice should still have auto-pass (her turn hasn't ended)
+    let alice_ap = &state.get_player("alice").unwrap().auto_pass;
+    assert!(
+        matches!(alice_ap, AutoPassMode::UntilStackOrTurn { .. }),
+        "alice should still be auto-passing, got {:?}",
+        alice_ap
+    );
+
+    // Now bob manually passes each priority — alice auto-passes — should advance to next turn
+    for _ in 0..30 {
+        if state.turn_number > turn {
+            break;
+        }
+        let pid = state.priority_player().id.clone();
+        if pid == "bob" {
+            pass_priority(&mut state, "bob").unwrap();
+        }
+    }
+
+    assert!(state.turn_number > turn, "turn should have advanced");
+    // Alice's auto-pass should now be cleared (turn changed)
+    assert_eq!(
+        state.get_player("alice").unwrap().auto_pass,
+        AutoPassMode::None,
+    );
+}
+
+#[test]
+fn auto_pass_until_end_of_turn_both() {
+    let mut state = in_progress_game();
+    let turn = state.turn_number;
+
+    set_auto_pass(
+        &mut state,
+        "alice",
+        AutoPassMode::UntilStackOrTurn { set_on_turn: turn },
+    )
+    .unwrap();
+    set_auto_pass(
+        &mut state,
+        "bob",
+        AutoPassMode::UntilStackOrTurn { set_on_turn: turn },
+    )
+    .unwrap();
+
+    assert!(state.turn_number > turn, "turn should have advanced");
+}
+
+#[test]
+fn auto_pass_until_phase_does_not_overshoot() {
+    // Set auto-pass to a specific phase, verify we stop exactly there
+    // and the priority player is correct
+    let mut state = in_progress_game();
+
+    set_auto_pass(&mut state, "alice", AutoPassMode::UntilPhase(Phase::Combat(CombatStep::BeginningOfCombat))).unwrap();
+    set_auto_pass(&mut state, "bob", AutoPassMode::UntilPhase(Phase::Combat(CombatStep::BeginningOfCombat))).unwrap();
+
+    assert_eq!(
+        state.phase,
+        Phase::Combat(CombatStep::BeginningOfCombat),
+        "should stop exactly at beginning of combat"
+    );
+
+    // Priority player should be the active player
+    assert_eq!(state.priority_player().id, state.active_player().id);
+}
+
+#[test]
+fn auto_pass_phase_click_advances_exactly_one_phase() {
+    // Simulates: both players are in precombat main, alice clicks "combat"
+    // to auto-pass to beginning of combat
+    let mut state = in_progress_game();
+    state.phase = Phase::PrecombatMain;
+
+    // Alice clicks combat phase
+    set_auto_pass(
+        &mut state,
+        "alice",
+        AutoPassMode::UntilPhase(Phase::Combat(CombatStep::BeginningOfCombat)),
+    )
+    .unwrap();
+
+    // Alice auto-passed, bob has priority
+    assert_eq!(state.priority_player().id, "bob");
+    // Still in precombat main — bob hasn't passed yet
+    assert_eq!(state.phase, Phase::PrecombatMain);
+
+    // Bob also clicks combat
+    set_auto_pass(
+        &mut state,
+        "bob",
+        AutoPassMode::UntilPhase(Phase::Combat(CombatStep::BeginningOfCombat)),
+    )
+    .unwrap();
+
+    // Now both have auto-passed, should be at beginning of combat
+    assert_eq!(state.phase, Phase::Combat(CombatStep::BeginningOfCombat));
+}

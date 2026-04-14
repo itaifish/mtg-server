@@ -1,5 +1,6 @@
-use crate::game::ability::{all_activated, AbilityCost};
+use crate::game::ability::{all_activated, AbilityCost, AbilityEffect};
 use crate::game::card::CardType;
+use crate::game::mana::ManaProduction;
 use crate::game::phases_and_steps::{CombatStep, Phase};
 use crate::game::state::GameState;
 use crate::game::zone::ZoneType;
@@ -21,6 +22,8 @@ pub enum LegalAction {
     ActivateManaAbility {
         object_id: u64,
         ability_index: usize,
+        // TODO: also surface positive effects (e.g., Arena of Glory haste grant)
+        mana_produced: Vec<ManaProduction>,
     },
     DeclareAttackers,
     DeclareBlockers,
@@ -62,9 +65,14 @@ pub fn for_player(state: &GameState, player_id: &str) -> Vec<LegalAction> {
                 _ => false,
             });
             if can_pay {
+                let mana_produced = match &ability.effect {
+                    AbilityEffect::AddMana(prods) => prods.clone(),
+                    _ => vec![],
+                };
                 actions.push(LegalAction::ActivateManaAbility {
                     object_id: obj_id,
                     ability_index: idx,
+                    mana_produced,
                 });
             }
         }

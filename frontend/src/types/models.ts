@@ -26,6 +26,7 @@ export interface PlayerInfo {
   handSize: number;
   librarySize: number;
   poisonCounters: number;
+  energy: number;
   mulliganCount: number;
   hasKept: boolean;
   manaPool?: ManaPoolInfo;
@@ -41,6 +42,8 @@ export interface LegalAction {
   abilityIndex?: number;
   targetRequirements?: TargetRequirement[];
   manaCost?: string[];
+  manaProduced?: ManaPoolInfo;
+  description?: string;
 }
 
 export interface SymbolPaymentEntry {

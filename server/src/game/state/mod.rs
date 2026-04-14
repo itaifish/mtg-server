@@ -4,7 +4,7 @@ use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use serde::{Deserialize, Serialize};
 
-use crate::game::phases_and_steps::{BeginningStep, EndingStep};
+use crate::game::phases_and_steps::{BeginningStep, CombatStep, EndingStep};
 
 use super::ability::AbilityCost;
 use super::card::{CardInstance, CardType, ObjectId, PlayerId};
@@ -79,17 +79,11 @@ pub struct PendingChoice {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ChoiceKind {
     /// Yes or no (e.g., "pay 2 life?").
-    YesNo {
-        yes: ChoiceEffect,
-        no: ChoiceEffect,
-    },
+    YesNo { yes: ChoiceEffect, no: ChoiceEffect },
     /// Pick one of N options (e.g., modal spells).
     PickOne { options: Vec<ChoiceOption> },
     /// Choose N objects matching a filter.
-    ChooseObjects {
-        count: u32,
-        from: Vec<ObjectId>,
-    },
+    ChooseObjects { count: u32, from: Vec<ObjectId> },
 }
 
 /// What happens as a result of a choice.
@@ -120,6 +114,8 @@ pub struct CombatState {
     pub attackers: Vec<AttackerInfo>,
     /// CR 509 — Each blocker and which attacker it's blocking.
     pub blockers: Vec<BlockerInfo>,
+    /// CR 510.4 — Creatures that dealt damage in the first strike step.
+    pub dealt_first_strike: HashSet<ObjectId>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -554,6 +550,14 @@ impl GameState {
         {
             self.advance_phase();
         }
+
+        // CR 510.4 — Skip the first strike damage step if no combatant
+        // has first strike or double strike.
+        if matches!(self.phase, Phase::Combat(CombatStep::FirstStrikeDamage))
+            && !self.any_combatant_has_first_strike()
+        {
+            self.advance_phase();
+        }
     }
     fn on_phase_enter(&mut self) {
         let active_id = self.active_player().id.clone();
@@ -587,6 +591,15 @@ impl GameState {
                 if !skip {
                     self.draw_card(&active_id);
                 }
+            }
+            // CR 510.2 — Combat damage is dealt as a turn-based action.
+            Phase::Combat(CombatStep::FirstStrikeDamage)
+            | Phase::Combat(CombatStep::CombatDamage) => {
+                self.deal_combat_damage();
+            }
+            // CR 511 — End of combat: clear combat state.
+            Phase::Combat(CombatStep::EndOfCombat) => {
+                self.combat = None;
             }
             // CR 514.2 — Remove all damage from permanents, end "until end
             // of turn" and "this turn" effects.
@@ -645,7 +658,11 @@ impl GameState {
                     .controller
                     .clone()
                     .unwrap_or_else(|| card.owner.clone());
-                for trigger in card.definition.abilities.triggered_in(ZoneType::Battlefield) {
+                for trigger in card
+                    .definition
+                    .abilities
+                    .triggered_in(ZoneType::Battlefield)
+                {
                     if trigger_matches(trigger, event, obj_id, &controller, &self.objects) {
                         new_triggers.push(PendingTrigger {
                             source_id: obj_id,
@@ -788,6 +805,146 @@ impl GameState {
     /// Move an object to its owner's graveyard.
     /// TODO: replacement effects (e.g., Rest in Peace exiles instead)
     /// TODO: triggered abilities (e.g., Blood Artist)
+    /// CR 510.4 — Check if any attacking or blocking creature has first strike or double strike.
+    fn any_combatant_has_first_strike(&self) -> bool {
+        use super::keyword::Keyword;
+        let combat = match &self.combat {
+            Some(c) => c,
+            None => return false,
+        };
+        combat
+            .attackers
+            .iter()
+            .map(|a| a.object_id)
+            .chain(combat.blockers.iter().map(|b| b.object_id))
+            .any(|id| {
+                self.objects
+                    .get(&id)
+                    .map(|c| {
+                        c.has_keyword(&Keyword::FirstStrike)
+                            || c.has_keyword(&Keyword::DoubleStrike)
+                    })
+                    .unwrap_or(false)
+            })
+    }
+
+    /// CR 510.2 — Deal combat damage as a turn-based action.
+    /// Called for both FirstStrikeDamage and CombatDamage steps.
+    fn deal_combat_damage(&mut self) {
+        use super::keyword::Keyword;
+        use super::phases_and_steps::CombatStep;
+
+        let is_first_strike_step =
+            matches!(self.phase, Phase::Combat(CombatStep::FirstStrikeDamage));
+
+        let combat = match &self.combat {
+            Some(c) => c.clone(),
+            None => return,
+        };
+
+        for attacker_info in &combat.attackers {
+            let oid = attacker_info.object_id;
+            let card = match self.objects.get(&oid) {
+                Some(c) => c,
+                None => continue,
+            };
+
+            let has_fs = card.has_keyword(&Keyword::FirstStrike);
+            let has_ds = card.has_keyword(&Keyword::DoubleStrike);
+            let dealt_in_first = combat.dealt_first_strike.contains(&oid);
+
+            // CR 510.4 — Determine if this creature deals damage in this step
+            let deals_damage = if is_first_strike_step {
+                has_fs || has_ds
+            } else {
+                // Regular step: creatures that didn't deal first strike damage,
+                // plus double strikers (who deal damage in both steps)
+                !dealt_in_first || has_ds
+            };
+
+            if !deals_damage {
+                continue;
+            }
+
+            let power = card.effective_power().unwrap_or(0);
+            if power <= 0 {
+                continue;
+            }
+
+            let blockers_for_this: Vec<ObjectId> = combat
+                .blockers
+                .iter()
+                .filter(|b| b.blocking == oid)
+                .map(|b| b.object_id)
+                .collect();
+
+            if blockers_for_this.is_empty() {
+                if let AttackTarget::Player(pid) = &attacker_info.target {
+                    self.deal_damage_to_player(pid, power as u32);
+                }
+                // TODO: damage to planeswalkers/battles
+            } else {
+                // TODO: damage assignment order, trample
+                if let Some(&first_blocker_id) = blockers_for_this.first() {
+                    if let Some(b) = self.objects.get_mut(&first_blocker_id) {
+                        b.damage_marked += power as u32;
+                    }
+                }
+            }
+
+            // Track that this creature dealt damage in the first strike step
+            if is_first_strike_step {
+                if let Some(c) = self.combat.as_mut() {
+                    c.dealt_first_strike.insert(oid);
+                }
+            }
+        }
+
+        // Blockers deal damage too
+        for blocker_info in &combat.blockers {
+            let oid = blocker_info.object_id;
+            let card = match self.objects.get(&oid) {
+                Some(c) => c,
+                None => continue,
+            };
+
+            let has_fs = card.has_keyword(&Keyword::FirstStrike);
+            let has_ds = card.has_keyword(&Keyword::DoubleStrike);
+            let dealt_in_first = combat.dealt_first_strike.contains(&oid);
+
+            let deals_damage = if is_first_strike_step {
+                has_fs || has_ds
+            } else {
+                !dealt_in_first || has_ds
+            };
+
+            if !deals_damage {
+                continue;
+            }
+
+            let power = card.effective_power().unwrap_or(0);
+            if power <= 0 {
+                continue;
+            }
+
+            if let Some(a) = self.objects.get_mut(&blocker_info.blocking) {
+                a.damage_marked += power as u32;
+            }
+
+            if is_first_strike_step {
+                if let Some(c) = self.combat.as_mut() {
+                    c.dealt_first_strike.insert(oid);
+                }
+            }
+        }
+    }
+
+    /// Test helper — expose deal_combat_damage for unit tests.
+    #[cfg(test)]
+    pub fn deal_combat_damage_for_test(&mut self) {
+        self.deal_combat_damage();
+    }
+
     pub fn send_to_graveyard(&mut self, object_id: ObjectId) {
         self.move_object(object_id, ZoneType::Graveyard);
     }
