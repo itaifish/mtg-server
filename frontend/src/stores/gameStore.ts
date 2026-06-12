@@ -79,6 +79,11 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     try {
       const gameState = await client.getGameState({ gameId, perspectivePlayerId });
       set({ gameState, isLoading: false });
+      // Clear auto-pass indicator when we've reached the target phase
+      const ui = useUiStore.getState();
+      if (ui.autoPassMode === 'UNTIL_PHASE' && ui.autoPassStopAtPhase && gameState.phase === ui.autoPassStopAtPhase) {
+        ui.cancelAutoPass();
+      }
     } catch (e) {
       set({ isLoading: false, error: e instanceof Error ? e.message : 'Failed to fetch game state' });
     }

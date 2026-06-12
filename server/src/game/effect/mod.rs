@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use super::ability::Abilities;
 use super::card::CardType;
+use super::counter::CounterType;
 use super::keyword::Keyword;
 use super::mana::{Color, ManaType};
 
@@ -68,12 +69,12 @@ pub enum Effect {
     // --- Counters ---
     AddCounters {
         target: TargetSpec,
-        counter: CounterSpec,
+        counter: CounterType,
         count: Value,
     },
     RemoveCounters {
         target: TargetSpec,
-        counter: CounterSpec,
+        counter: CounterType,
         count: Value,
     },
 
@@ -202,15 +203,6 @@ pub enum Filter {
     PowerGreaterOrEqual(i32),
     ToughnessLessOrEqual(i32),
     ManaValueLessOrEqual(u32),
-}
-
-/// Counter types for AddCounters/RemoveCounters effects.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum CounterSpec {
-    PlusOnePlusOne,
-    MinusOneMinusOne,
-    Loyalty,
-    Named(String),
 }
 
 /// Conditions for conditional effects.

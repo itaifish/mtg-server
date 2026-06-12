@@ -155,4 +155,40 @@ describe('uiStore', () => {
     expect(state.showSettings).toBe(false);
     expect(state.chatMessages).toEqual([]);
   });
+
+  describe('combat attacker selection', () => {
+    it('setCombatSelection sets mode and eligible attacker ids', () => {
+      useUiStore.getState().setCombatSelection('attackers', new Set([10, 11]));
+      const state = useUiStore.getState();
+      expect(state.combatSelectionMode).toBe('attackers');
+      expect(state.eligibleAttackerIds).toEqual(new Set([10, 11]));
+    });
+
+    it('setCombatSelection(null) clears mode and eligible ids', () => {
+      useUiStore.getState().setCombatSelection('attackers', new Set([10]));
+      useUiStore.getState().setCombatSelection(null);
+      const state = useUiStore.getState();
+      expect(state.combatSelectionMode).toBeNull();
+      expect(state.eligibleAttackerIds).toEqual(new Set());
+    });
+
+    it('toggleDeclaredAttacker adds then removes an attacker', () => {
+      useUiStore.getState().toggleDeclaredAttacker(10);
+      expect(useUiStore.getState().declaredAttackerIds).toEqual(new Set([10]));
+      useUiStore.getState().toggleDeclaredAttacker(11);
+      expect(useUiStore.getState().declaredAttackerIds).toEqual(new Set([10, 11]));
+      useUiStore.getState().toggleDeclaredAttacker(10);
+      expect(useUiStore.getState().declaredAttackerIds).toEqual(new Set([11]));
+    });
+
+    it('clearDeclaredAttackers resets attacker selection state', () => {
+      useUiStore.getState().setCombatSelection('attackers', new Set([10]));
+      useUiStore.getState().toggleDeclaredAttacker(10);
+      useUiStore.getState().clearDeclaredAttackers();
+      const state = useUiStore.getState();
+      expect(state.declaredAttackerIds).toEqual(new Set());
+      expect(state.combatSelectionMode).toBeNull();
+      expect(state.eligibleAttackerIds).toEqual(new Set());
+    });
+  });
 });

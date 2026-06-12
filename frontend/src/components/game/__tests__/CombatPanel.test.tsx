@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { CombatPanel } from '../CombatPanel';
 import { useGameStore } from '@/stores/gameStore';
 import { useLobbyStore } from '@/stores/lobbyStore';
+import { useUiStore } from '@/stores/uiStore';
 import { LegalActionType, GameStatus } from '@/types/enums';
 import type { PlayerInfo } from '@/types/models';
 import type { PermanentInfo } from '@/types/api';
@@ -42,6 +43,7 @@ describe('CombatPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useGameStore.getState().reset();
+    useUiStore.getState().reset();
     useLobbyStore.setState({ gameId: 'g1', playerId: 'p1' });
     useGameStore.setState({
       gameState: {
@@ -66,10 +68,13 @@ describe('CombatPanel', () => {
     useGameStore.setState({
       legalActions: [{ actionType: LegalActionType.DECLARE_ATTACKERS }],
     });
-    render(<CombatPanel />);
+    const { rerender } = render(<CombatPanel />);
     expect(screen.getByRole('region', { name: /declare attackers/i })).toBeInTheDocument();
 
-    await user.click(screen.getByText('Grizzly Bears 2/2'));
+    // Simulate clicking the creature on the 3D board (Card3D toggles via uiStore)
+    useUiStore.getState().toggleDeclaredAttacker(10);
+    rerender(<CombatPanel />);
+
     await user.click(screen.getByText('Confirm Attackers (1)'));
     expect(mockDeclareAttackers).toHaveBeenCalledWith([{ objectId: 10, targetPlayerId: 'p2' }]);
   });
@@ -79,9 +84,12 @@ describe('CombatPanel', () => {
     useGameStore.setState({
       legalActions: [{ actionType: LegalActionType.DECLARE_ATTACKERS }],
     });
-    render(<CombatPanel />);
-    await user.click(screen.getByText('Grizzly Bears 2/2'));
-    await user.click(screen.getByText('Grizzly Bears 2/2'));
+    const { rerender } = render(<CombatPanel />);
+
+    useUiStore.getState().toggleDeclaredAttacker(10);
+    useUiStore.getState().toggleDeclaredAttacker(10);
+    rerender(<CombatPanel />);
+
     await user.click(screen.getByText('Confirm Attackers (0)'));
     expect(mockDeclareAttackers).toHaveBeenCalledWith([]);
   });

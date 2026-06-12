@@ -5,6 +5,8 @@ import { useSpring, animated } from '@react-spring/three';
 import * as THREE from 'three';
 import { cardWorldPositions } from './cardPositions';
 import { useUiStore } from '@/stores/uiStore';
+import { useGameStore } from '@/stores/gameStore';
+import { useLobbyStore } from '@/stores/lobbyStore';
 import { useTheme } from '@/theme';
 import {
   CARD_WIDTH,
@@ -48,7 +50,7 @@ function CardBackTexture() {
 }
 
 /** Animated pulsing glow ring around playable cards */
-function PlayableGlow({ color }: { color: string }) {
+function PlayableGlow({ color, margin = 0.14 }: { color: string; margin?: number }) {
   const meshRef = useRef<THREE.Mesh>(null);
   useFrame((state) => {
     if (!meshRef.current || !state?.clock) return;
@@ -59,7 +61,7 @@ function PlayableGlow({ color }: { color: string }) {
   });
   return (
     <mesh ref={meshRef} position={[0, 0, -CARD_DEPTH]}>
-      <planeGeometry args={[CARD_WIDTH + 0.14, CARD_HEIGHT + 0.14]} />
+      <planeGeometry args={[CARD_WIDTH + margin, CARD_HEIGHT + margin]} />
       <meshBasicMaterial color={color} transparent opacity={0.4} />
     </mesh>
   );
@@ -73,6 +75,18 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
   const isDragging = dragOffset !== null;
   const selectedObjectId = useUiStore((s) => s.selectedObjectId);
   const selectObject = useUiStore((s) => s.selectObject);
+  const isDeclaredAttacker = useUiStore((s) => s.declaredAttackerIds.has(card.objectId));
+  const isCombatAttacker = useGameStore(
+    (s) => s.gameState?.combat?.attackers?.some((a) => a.objectId === card.objectId) ?? false,
+  );
+  const showAttackerGlow = isDeclaredAttacker || isCombatAttacker;
+  const combatSelectionMode = useUiStore((s) => s.combatSelectionMode);
+  const isEligibleAttacker = useUiStore((s) => s.eligibleAttackerIds.has(card.objectId));
+  const myPlayerId = useLobbyStore((s) => s.playerId);
+  const isMine = card.controller != null && card.controller === myPlayerId;
+  // A creature I control that can't currently attack (e.g. summoning sick / tapped)
+  const isIneligibleAttacker =
+    combatSelectionMode === 'attackers' && isMine && card.cardType === 'creature' && !isEligibleAttacker;
   const deselectObject = useUiStore((s) => s.deselectObject);
   const hoverObject = useUiStore((s) => s.hoverObject);
   const unhoverObject = useUiStore((s) => s.unhoverObject);
@@ -185,10 +199,14 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
   const selected = selectedObjectId === card.objectId;
   const faceColor = getCardColor(card.color, scene);
 
+  // Attacking creatures scoot forward (toward the opponent). My creatures move +Y, opponents -Y.
+  const ATTACK_SCOOT = 0.7;
+  const scootY = showAttackerGlow ? (isMine ? ATTACK_SCOOT : -ATTACK_SCOOT) : 0;
+
   const spring = useSpring({
     scale: hovered && !isDragging ? 1.08 : 1,
     posX: isDragging ? dragOffset![0] : 0,
-    posY: isDragging ? dragOffset![1] : hovered ? 0.15 : 0,
+    posY: isDragging ? dragOffset![1] : scootY + (hovered ? 0.15 : 0),
     posZ: isDragging ? dragOffset![2] + 1 : 0,
     config: isDragging
       ? { tension: 300, friction: 30 }
@@ -227,6 +245,12 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
       window.dispatchEvent(new CustomEvent('mana-tap', { detail: { objectId: card.objectId } }));
       return;
     }
+    // If declaring attackers and this creature is eligible, toggle it as an attacker
+    const ui = useUiStore.getState();
+    if (ui.combatSelectionMode === 'attackers' && ui.eligibleAttackerIds.has(card.objectId)) {
+      ui.toggleDeclaredAttacker(card.objectId);
+      return;
+    }
     if (selected) {
       deselectObject();
     } else {
@@ -238,11 +262,18 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
     (e as unknown as { stopPropagation: () => void }).stopPropagation();
     setHovered(true);
     hoverObject(card.objectId);
+    // Show a not-allowed cursor on creatures I control that can't attack right now
+    if (isIneligibleAttacker) {
+      document.body.style.cursor = 'not-allowed';
+    } else if (combatSelectionMode === 'attackers' && isEligibleAttacker) {
+      document.body.style.cursor = 'pointer';
+    }
   };
 
   const handlePointerOut = () => {
     setHovered(false);
     unhoverObject();
+    document.body.style.cursor = 'auto';
   };
 
   return (
@@ -266,13 +297,18 @@ export function Card3D({ card, position, rotation = [0, 0, 0], highlighted = fal
           <meshBasicMaterial color={faceColor} attach="material-5" />
         </mesh>
 
+        {/* Declared attacker glow — red, persists through all of combat */}
+        {showAttackerGlow && (
+          <PlayableGlow color="#ff2d2d" margin={0.4} />
+        )}
+
         {/* Playable card glow — animated pulsing ring */}
-        {highlighted && !selected && (
+        {highlighted && !selected && !showAttackerGlow && (
           <PlayableGlow color={scene.cardHighlight} />
         )}
 
         {/* Selection glow */}
-        {selected && (
+        {selected && !showAttackerGlow && (
           <PlayableGlow color={scene.cardGlowSelected} />
         )}
 

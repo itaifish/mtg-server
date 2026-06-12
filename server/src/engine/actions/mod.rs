@@ -2,8 +2,7 @@ use crate::engine::triggers::process_pending_triggers;
 use crate::game::ability::{all_activated, AbilityCost, AbilityEffect, StaticAbility};
 use crate::game::card::{CardDefinition, CardInstance, CardType, ObjectId};
 use crate::game::effect::{
-    Condition, ControllerFilter, CounterSpec, Effect, PlayerSpec, Selector, TargetSpec,
-    TokenSource, Value,
+    Condition, ControllerFilter, Effect, PlayerSpec, Selector, TargetSpec, TokenSource, Value,
 };
 use crate::game::event::{card_matches_filters, EventModification};
 use crate::game::mana::SymbolPayment;
@@ -18,7 +17,7 @@ pub mod combat;
 pub mod pregame;
 
 /// Run state-based actions and process any pending triggers.
-fn check_state_and_triggers(state: &mut GameState) {
+pub(crate) fn check_state_and_triggers(state: &mut GameState) {
     state_based::check(state);
     process_pending_triggers(state);
 }
@@ -215,29 +214,7 @@ fn resolve_effect(
             for target in get_referenced_targets(state, target, entry) {
                 if let SpellTarget::Object(oid) = target {
                     if let Some(card) = state.objects.get_mut(&oid) {
-                        let counter_type = match counter {
-                            CounterSpec::PlusOnePlusOne => {
-                                crate::game::counter::CounterType::PowerToughness(
-                                    crate::game::counter::PtModifier {
-                                        power: 1,
-                                        toughness: 1,
-                                    },
-                                )
-                            }
-                            CounterSpec::MinusOneMinusOne => {
-                                crate::game::counter::CounterType::PowerToughness(
-                                    crate::game::counter::PtModifier {
-                                        power: -1,
-                                        toughness: -1,
-                                    },
-                                )
-                            }
-                            CounterSpec::Loyalty => crate::game::counter::CounterType::Loyalty,
-                            CounterSpec::Named(name) => {
-                                crate::game::counter::CounterType::Named(name.clone())
-                            }
-                        };
-                        card.add_counters(counter_type, count);
+                        card.add_counters(counter.clone(), count);
                     }
                 }
             }

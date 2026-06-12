@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use crate::game::card::{CardType, ObjectId};
+use crate::game::event::GameEvent;
 use crate::game::phases_and_steps::{CombatStep, Phase};
 use crate::game::state::{AttackTarget, AttackerInfo, BlockerInfo, CombatState, GameState};
 
@@ -66,13 +67,26 @@ pub fn declare_attackers(
             .tapped = true;
     }
 
+    // CR 508.2 — Emit the attack event so "whenever you attack" abilities trigger.
+    let attack_pairs: Vec<(ObjectId, AttackTarget)> = attackers
+        .iter()
+        .map(|a| (a.object_id, a.target.clone()))
+        .collect();
+
     state.combat = Some(CombatState {
         attackers,
         blockers: vec![],
+        blockers_declared: false,
         dealt_first_strike: HashSet::new(),
     });
 
+    state.emit_event(&GameEvent::Attacking {
+        player_id: player_id.to_string(),
+        attackers: attack_pairs,
+    });
+
     state.record_action();
+    super::check_state_and_triggers(state);
     Ok(())
 }
 
@@ -104,6 +118,13 @@ pub fn declare_blockers(
     if !is_defending {
         return Err(ActionError::Illegal(
             "you are not a defending player".into(),
+        ));
+    }
+
+    // CR 509.1 — Blockers are declared once per combat.
+    if combat.blockers_declared {
+        return Err(ActionError::Illegal(
+            "blockers have already been declared".into(),
         ));
     }
 
@@ -139,11 +160,12 @@ pub fn declare_blockers(
         }
     }
 
-    state
+    let combat = state
         .combat
         .as_mut()
-        .ok_or_else(|| ActionError::Illegal("no combat in progress".into()))?
-        .blockers = blockers;
+        .ok_or_else(|| ActionError::Illegal("no combat in progress".into()))?;
+    combat.blockers = blockers;
+    combat.blockers_declared = true;
 
     state.record_action();
     Ok(())

@@ -33,6 +33,9 @@ export interface UiState {
   pendingCast: PendingCast | null;
   manaAbilityIds: Set<number>;
   manaAbilityPicker: { objectId: number; abilities: LegalAction[] } | null;
+  combatSelectionMode: 'attackers' | null;
+  eligibleAttackerIds: Set<number>;
+  declaredAttackerIds: Set<number>;
   mulliganCount: number;
   showSettings: boolean;
   showDeckBuilder: boolean;
@@ -61,6 +64,9 @@ export interface UiActions {
   cancelCasting: () => void;
   setManaAbilityIds: (ids: Set<number>) => void;
   setManaAbilityPicker: (picker: { objectId: number; abilities: LegalAction[] } | null) => void;
+  setCombatSelection: (mode: 'attackers' | null, eligibleIds?: Set<number>) => void;
+  toggleDeclaredAttacker: (objectId: number) => void;
+  clearDeclaredAttackers: () => void;
   toggleSettings: () => void;
   toggleDeckBuilder: () => void;
   setCameraPosition: (pos: UiState['cameraPosition']) => void;
@@ -82,6 +88,9 @@ const initialState: UiState = {
   pendingCast: null,
   manaAbilityIds: new Set<number>(),
   manaAbilityPicker: null,
+  combatSelectionMode: null,
+  eligibleAttackerIds: new Set<number>(),
+  declaredAttackerIds: new Set<number>(),
   mulliganCount: 0,
   showSettings: false,
   showDeckBuilder: false,
@@ -143,6 +152,17 @@ export const useUiStore = create<UiState & UiActions>()((set, get) => ({
   cancelCasting: () => set({ pendingCast: null, manaAbilityIds: new Set<number>(), manaAbilityPicker: null }),
   setManaAbilityIds: (ids) => set({ manaAbilityIds: ids }),
   setManaAbilityPicker: (picker) => set({ manaAbilityPicker: picker }),
+  setCombatSelection: (mode, eligibleIds) =>
+    set({ combatSelectionMode: mode, eligibleAttackerIds: eligibleIds ?? new Set<number>() }),
+  toggleDeclaredAttacker: (objectId) =>
+    set((s) => {
+      const next = new Set(s.declaredAttackerIds);
+      if (next.has(objectId)) next.delete(objectId);
+      else next.add(objectId);
+      return { declaredAttackerIds: next };
+    }),
+  clearDeclaredAttackers: () =>
+    set({ declaredAttackerIds: new Set<number>(), combatSelectionMode: null, eligibleAttackerIds: new Set<number>() }),
   toggleSettings: () => set((s) => ({ showSettings: !s.showSettings })),
   toggleDeckBuilder: () => set((s) => ({ showDeckBuilder: !s.showDeckBuilder })),
   setCameraPosition: (pos) => set({ cameraPosition: pos }),

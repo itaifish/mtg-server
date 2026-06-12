@@ -1,6 +1,7 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useGameStore } from '@/stores/gameStore';
 import { useLobbyStore } from '@/stores/lobbyStore';
+import { useUiStore } from '@/stores/uiStore';
 import { useGameActions } from '@/hooks/useGameActions';
 import { LegalActionType } from '@/types/enums';
 import { Button } from '@/components/shared';
@@ -14,10 +15,13 @@ export function CombatPanel() {
   const opponents = useMemo(() => players?.filter((p) => p.playerId !== playerId) ?? [], [players, playerId]);
   const { declareAttackers, declareBlockers, isLoading } = useGameActions();
 
+  const declaredAttackerIds = useUiStore((s) => s.declaredAttackerIds);
+  const setCombatSelection = useUiStore((s) => s.setCombatSelection);
+  const clearDeclaredAttackers = useUiStore((s) => s.clearDeclaredAttackers);
+
   const isAttacking = legalActions.some((a) => a.actionType === LegalActionType.DECLARE_ATTACKERS);
   const isBlocking = legalActions.some((a) => a.actionType === LegalActionType.DECLARE_BLOCKERS);
 
-  const [attackers, setAttackers] = useState<AttackerEntry[]>([]);
   const [blockers, setBlockers] = useState<BlockerEntry[]>([]);
 
   // Eligible attackers: our creatures that are untapped and not summoning sick
@@ -28,6 +32,21 @@ export function CombatPanel() {
       !p.tapped &&
       !p.summoningSick
     ), [gameState?.battlefield, playerId]);
+
+  // Sync combat mode + eligible attacker IDs to uiStore so Card3D can handle clicks/highlights.
+  // This is idempotent and does NOT clear the player's current selection (important across polls).
+  useEffect(() => {
+    if (isAttacking) {
+      setCombatSelection('attackers', new Set(eligibleAttackers.map((p) => p.objectId)));
+    }
+  }, [isAttacking, eligibleAttackers, setCombatSelection]);
+
+  // Clear declared attackers only when leaving the declare-attackers step entirely.
+  useEffect(() => {
+    if (!isAttacking) {
+      clearDeclaredAttackers();
+    }
+  }, [isAttacking, clearDeclaredAttackers]);
 
   // Eligible blockers: our untapped creatures
   const eligibleBlockers = useMemo(() =>
@@ -47,17 +66,6 @@ export function CombatPanel() {
     });
   }, [gameState?.combat, gameState?.battlefield]);
 
-  const toggleAttacker = useCallback(
-    (objectId: number, targetPlayerId: string) => {
-      setAttackers((prev) =>
-        prev.some((a) => a.objectId === objectId)
-          ? prev.filter((a) => a.objectId !== objectId)
-          : [...prev, { objectId, targetPlayerId }],
-      );
-    },
-    [],
-  );
-
   const toggleBlocker = useCallback(
     (objectId: number, blockingId: number) => {
       setBlockers((prev) =>
@@ -69,9 +77,17 @@ export function CombatPanel() {
     [],
   );
 
-  if (!isAttacking && !isBlocking) return null;
+  const confirmAttackers = useCallback(() => {
+    const defaultTarget = opponents[0]?.playerId ?? '';
+    const entries: AttackerEntry[] = Array.from(declaredAttackerIds).map((objectId) => ({
+      objectId,
+      targetPlayerId: defaultTarget,
+    }));
+    declareAttackers(entries);
+    clearDeclaredAttackers();
+  }, [opponents, declaredAttackerIds, declareAttackers, clearDeclaredAttackers]);
 
-  const defaultTarget = opponents[0]?.playerId ?? '';
+  if (!isAttacking && !isBlocking) return null;
 
   return (
     <div
@@ -86,30 +102,17 @@ export function CombatPanel() {
       {isAttacking && (
         <>
           <p style={{ color: 'var(--color-text-muted)', margin: '0 0 8px', fontSize: '0.85rem' }}>
-            Select creatures to attack{opponents.length > 0 ? ` ${opponents.map((o) => o.name).join(', ')}` : ''}.
+            {eligibleAttackers.length === 0
+              ? 'No eligible attackers.'
+              : `Click your creatures to declare them as attackers${opponents.length > 0 ? ` against ${opponents.map((o) => o.name).join(', ')}` : ''}. Attacking creatures are highlighted in red.`}
           </p>
-          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}>
-            {eligibleAttackers.map((p) => (
-              <Button
-                key={p.objectId}
-                variant={attackers.some((atk) => atk.objectId === p.objectId) ? 'primary' : 'secondary'}
-                onClick={() => toggleAttacker(p.objectId, defaultTarget)}
-                style={{ fontSize: '0.8rem', padding: '4px 10px' }}
-              >
-                {p.name} {p.effectivePower ?? p.power}/{p.effectiveToughness ?? p.toughness}
-              </Button>
-            ))}
-            {eligibleAttackers.length === 0 && (
-              <span style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>No eligible attackers</span>
-            )}
-          </div>
           <Button
             variant="primary"
             disabled={isLoading}
             loading={isLoading}
-            onClick={() => { declareAttackers(attackers); setAttackers([]); }}
+            onClick={confirmAttackers}
           >
-            Confirm Attackers ({attackers.length})
+            Confirm Attackers ({declaredAttackerIds.size})
           </Button>
         </>
       )}

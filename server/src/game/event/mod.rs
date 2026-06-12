@@ -7,6 +7,7 @@ use super::card::{CardInstance, CardType, ObjectId, PlayerId};
 use super::counter::CounterType;
 use super::effect::{Condition, Effect, Filter, PlayerSpec, Selector};
 use super::mana::ManaType;
+use super::state::AttackTarget;
 use super::zone::ZoneType;
 
 /// A game event that can trigger abilities or be modified by replacement effects.
@@ -49,6 +50,13 @@ pub enum GameEvent {
         phase: String,
         active_player: PlayerId,
     },
+    /// CR 508.2 — One or more creatures are declared as attackers.
+    Attacking {
+        /// The attacking player.
+        player_id: PlayerId,
+        /// Each attacker paired with what it is attacking.
+        attackers: Vec<(ObjectId, AttackTarget)>,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -78,6 +86,8 @@ pub enum TriggerEvent {
     SpellCast,
     /// A phase or step begins.
     PhaseStarted { phase: String },
+    /// CR 508.2 — A player declares attackers ("whenever you attack").
+    Attacks,
 }
 
 /// Filters that narrow which events match a trigger.
@@ -165,6 +175,7 @@ pub fn trigger_matches(
         (TriggerEvent::PhaseStarted { phase: tp }, GameEvent::PhaseStarted { phase: ep, .. }) => {
             tp == ep
         }
+        (TriggerEvent::Attacks, GameEvent::Attacking { .. }) => true,
         _ => false,
     };
 
@@ -268,6 +279,7 @@ fn event_player(event: &GameEvent) -> Option<String> {
         GameEvent::LifeLost { player_id, .. } => Some(player_id.clone()),
         GameEvent::CardDrawn { player_id, .. } => Some(player_id.clone()),
         GameEvent::ManaAdded { player_id, .. } => Some(player_id.clone()),
+        GameEvent::Attacking { player_id, .. } => Some(player_id.clone()),
         _ => None,
     }
 }

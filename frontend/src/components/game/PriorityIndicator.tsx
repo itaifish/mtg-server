@@ -1,5 +1,6 @@
 import { useGameStore } from '@/stores/gameStore';
 import { useLobbyStore } from '@/stores/lobbyStore';
+import { GameStatus } from '@/types/enums';
 
 const pulseKeyframes = `
 @keyframes priority-pulse {
@@ -17,29 +18,47 @@ export function PriorityIndicator() {
   const hasPriority = gameState.priorityPlayerId === playerId;
   const isActiveTurn = gameState.activePlayerId === playerId;
 
-  let label: string;
-  let bg: string;
-  let fg: string;
-  let animate: boolean;
+  let label = '';
+  let bg = 'var(--color-surface)';
+  let fg = 'var(--color-text-muted)';
+  let animate = false;
 
-  if (isActiveTurn && hasPriority) {
+  const activeBg = () => { bg = 'var(--color-accent, #3388ff)'; fg = '#fff'; animate = true; };
+  const waitingBg = () => { bg = 'var(--color-surface)'; fg = 'var(--color-text-muted)'; animate = false; };
+
+  if (gameState.status === GameStatus.CHOOSING_PLAY_ORDER) {
+    // The play-order chooser is tracked separately from priority during pregame.
+    if (gameState.playOrderChooserId === playerId) {
+      label = 'Choose who goes first';
+      activeBg();
+    } else {
+      const chooser = gameState.players.find((p) => p.playerId === gameState.playOrderChooserId);
+      label = `Waiting for ${chooser?.name ?? 'opponent'}`;
+      waitingBg();
+    }
+  } else if (gameState.status === GameStatus.MULLIGAN) {
+    const me = gameState.players.find((p) => p.playerId === playerId);
+    if (me && !me.hasKept) {
+      label = 'Mulligan decision';
+      activeBg();
+    } else {
+      label = 'Waiting for opponent';
+      waitingBg();
+    }
+  } else if (isActiveTurn && hasPriority) {
     label = 'Your turn';
     bg = 'var(--color-gold)';
     fg = 'var(--color-bg)';
     animate = true;
   } else if (hasPriority) {
     label = 'You have priority';
-    bg = 'var(--color-accent, #3388ff)';
-    fg = '#fff';
-    animate = true;
+    activeBg();
   } else {
     const priorityPlayer = gameState.players.find(
       (p) => p.playerId === gameState.priorityPlayerId,
     );
     label = `Waiting for ${priorityPlayer?.name ?? 'opponent'}`;
-    bg = 'var(--color-surface)';
-    fg = 'var(--color-text-muted)';
-    animate = false;
+    waitingBg();
   }
 
   return (

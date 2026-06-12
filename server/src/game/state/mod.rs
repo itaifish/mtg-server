@@ -114,6 +114,10 @@ pub struct CombatState {
     pub attackers: Vec<AttackerInfo>,
     /// CR 509 — Each blocker and which attacker it's blocking.
     pub blockers: Vec<BlockerInfo>,
+    /// CR 509.1 — Whether the defending player has declared blockers this
+    /// combat. Declaring zero blockers is legal, so an empty `blockers` list
+    /// doesn't indicate whether the step has been completed.
+    pub blockers_declared: bool,
     /// CR 510.4 — Creatures that dealt damage in the first strike step.
     pub dealt_first_strike: HashSet<ObjectId>,
 }

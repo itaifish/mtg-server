@@ -5,9 +5,9 @@ use crate::game::ability::{
     Abilities, AbilityCost, AbilityEffect, ActivatedAbility, TriggeredAbility,
 };
 use crate::game::card::{CardDefinition, CardType, Supertype};
+use crate::game::counter::CounterType;
 use crate::game::effect::{
-    CounterSpec, Effect, Filter, PlayerSpec, TargetKind, TargetSpec, TokenDefinition, TokenSource,
-    Value,
+    Effect, Filter, PlayerSpec, TargetKind, TargetSpec, TokenDefinition, TokenSource, Value,
 };
 use crate::game::event::{TriggerEvent, TriggerFilter, TriggerPlayerRef};
 use crate::game::keyword::Keyword;
@@ -384,7 +384,7 @@ fn ajanis_pridemate() -> CardDefinition {
             filters: vec![TriggerFilter::PlayerIs(TriggerPlayerRef::You)],
             effect: Effect::AddCounters {
                 target: TargetSpec::Source,
-                counter: CounterSpec::PlusOnePlusOne,
+                counter: CounterType::plus_one_plus_one(),
                 count: Value::Constant(1),
             },
             needs_targets: false,

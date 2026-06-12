@@ -124,18 +124,24 @@ pub fn for_player(state: &GameState, player_id: &str) -> Vec<LegalAction> {
         }
     }
 
-    // Declare attackers — active player during declare attackers step
-    if is_active && matches!(state.phase, Phase::Combat(CombatStep::DeclareAttackers)) {
+    // Declare attackers — active player during declare attackers step,
+    // only once per combat (CR 508.1). Once attackers are declared,
+    // `state.combat` is set, so don't offer it again.
+    if is_active
+        && matches!(state.phase, Phase::Combat(CombatStep::DeclareAttackers))
+        && state.combat.is_none()
+    {
         actions.push(LegalAction::DeclareAttackers);
     }
 
-    // Declare blockers — defending player during declare blockers step
+    // Declare blockers — defending player during declare blockers step,
+    // only once per combat (CR 509.1).
     if matches!(state.phase, Phase::Combat(CombatStep::DeclareBlockers)) {
         if let Some(combat) = &state.combat {
             let is_defending = combat.attackers.iter().any(|a| {
                 matches!(&a.target, crate::game::state::AttackTarget::Player(pid) if pid == player_id)
             });
-            if is_defending {
+            if is_defending && !combat.blockers_declared {
                 actions.push(LegalAction::DeclareBlockers);
             }
         }

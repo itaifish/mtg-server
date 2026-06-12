@@ -50,6 +50,22 @@ pub enum CounterType {
 }
 
 impl CounterType {
+    /// Shorthand for a +1/+1 counter.
+    pub fn plus_one_plus_one() -> Self {
+        CounterType::PowerToughness(PtModifier {
+            power: 1,
+            toughness: 1,
+        })
+    }
+
+    /// Shorthand for a -1/-1 counter.
+    pub fn minus_one_minus_one() -> Self {
+        CounterType::PowerToughness(PtModifier {
+            power: -1,
+            toughness: -1,
+        })
+    }
+
     /// CR 122.1a — Returns the power/toughness modification this counter
     /// applies to a creature, if any.
     pub fn pt_modifier(&self) -> Option<PtModifier> {
