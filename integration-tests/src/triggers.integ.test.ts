@@ -8,12 +8,17 @@ import {
 	findAllActions,
 	cleanupGame,
 } from './game-helpers';
+import type { LegalAction } from '@mtg-server/client';
 
+/// Soul Warden is a third of the deck so one reliably arrives early. The loop below also refuses to
+/// cast anything else until a Soul Warden is on the battlefield: a Soul Warden that enters after the
+/// other creatures sees nothing enter behind it, gains no life, and leaves the Pridemates at base
+/// power, which is what the assertions read.
 const SOUL_WARDEN_DECK = [
 	{ cardName: 'Plains', count: 20 },
-	{ cardName: 'Soul Warden', count: 10 },
+	{ cardName: 'Soul Warden', count: 20 },
 	{ cardName: "Ajani's Pridemate", count: 10 },
-	{ cardName: 'Savannah Lions', count: 20 },
+	{ cardName: 'Savannah Lions', count: 10 },
 ];
 
 describe('Triggered abilities', () => {
@@ -62,8 +67,28 @@ describe('Triggered abilities', () => {
 
 			// Tap one land and try to cast a 1-mana creature, then try 2-mana
 			const manaAbilities = findAllActions(actions, 'ACTIVATE_MANA_ABILITY');
-			const castSpell = findAction(actions, 'CAST_SPELL');
-			if (manaAbilities.length > 0 && castSpell) {
+			if (manaAbilities.length > 0 && findAllActions(actions, 'CAST_SPELL').length > 0) {
+				const hand = (await getState(gameId, aliceId)).hand ?? [];
+				const wardenIds = new Set(
+					hand.filter((c) => c.name === 'Soul Warden').map((c) => c.objectId),
+				);
+				const wardenOnField = (state.battlefield ?? []).some((p) => p.name === 'Soul Warden');
+
+				/// A Soul Warden if one is castable, otherwise anything once a Soul Warden is already
+				/// out. Undefined means hold and draw instead of casting out of order.
+				const pickCast = (from: LegalAction[]): LegalAction | undefined => {
+					const options = findAllActions(from, 'CAST_SPELL');
+					return (
+						options.find((a) => wardenIds.has(a.objectId)) ??
+						(wardenOnField ? options[0] : undefined)
+					);
+				};
+
+				if (!pickCast(actions)) {
+					await passPriority(gameId, aliceId);
+					continue;
+				}
+
 				// Tap one land first
 				await submitAction(gameId, aliceId, {
 					activateManaAbility: {
@@ -74,7 +99,7 @@ describe('Triggered abilities', () => {
 
 				// Try casting with 1 WHITE
 				const afterMana = await getLegalActions(gameId, aliceId);
-				const cast = findAction(afterMana, 'CAST_SPELL');
+				const cast = pickCast(afterMana);
 				if (cast) {
 					try {
 						await submitAction(gameId, aliceId, {
@@ -96,7 +121,7 @@ describe('Triggered abilities', () => {
 								},
 							});
 							const afterMana2 = await getLegalActions(gameId, aliceId);
-							const cast2 = findAction(afterMana2, 'CAST_SPELL');
+							const cast2 = pickCast(afterMana2);
 							if (cast2) {
 								try {
 									await submitAction(gameId, aliceId, {

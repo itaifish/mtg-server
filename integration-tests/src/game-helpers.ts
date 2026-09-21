@@ -25,7 +25,10 @@ export interface GameSetup {
 	bobId: string;
 }
 
-export async function getState(gameId: string, perspectivePlayerId?: string): Promise<GetGameStateCommandOutput> {
+export async function getState(
+	gameId: string,
+	perspectivePlayerId?: string,
+): Promise<GetGameStateCommandOutput> {
 	return client.send(new GetGameStateCommand({ gameId, perspectivePlayerId }));
 }
 
@@ -89,6 +92,22 @@ export function findAction(actions: LegalAction[], type: string): LegalAction | 
 
 export function findAllActions(actions: LegalAction[], type: string): LegalAction[] {
 	return actions.filter((a) => a.actionType === type);
+}
+
+/// Pass priority until the active player reaches their precombat main phase, the
+/// first point in a turn where a land can be played.
+export async function advanceToPrecombatMain(
+	gameId: string,
+	maxPasses = 20,
+): Promise<GetGameStateCommandOutput> {
+	let state = await getState(gameId);
+	for (let i = 0; i < maxPasses && state.phase !== 'PRECOMBAT_MAIN'; i++) {
+		const priorityId = state.priorityPlayerId;
+		if (!priorityId) break;
+		await passPriority(gameId, priorityId);
+		state = await getState(gameId);
+	}
+	return state;
 }
 
 /// Pass priority for both players until the game state changes

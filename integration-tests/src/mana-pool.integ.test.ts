@@ -5,9 +5,12 @@ import {
 	submitAction,
 	passPriority,
 	findAction,
+	advanceToPrecombatMain,
 	cleanupGame,
 } from './game-helpers';
 
+/// Lands only, so the opening hand is always playable whatever the shuffle produces. Each of these
+/// taps for exactly one mana, which is what the pool assertions below count.
 const LAND_DECK = [
 	{ cardName: 'Island', count: 20 },
 	{ cardName: 'Mountain', count: 10 },
@@ -29,12 +32,8 @@ describe('Mana pool', () => {
 		bobId = setup.bobId;
 
 		// Pass to precombat main
-		let state = await getState(gameId);
-		while (state.phase !== 'PRECOMBAT_MAIN') {
-			const pid = state.priorityPlayerId!;
-			await passPriority(gameId, pid);
-			state = await getState(gameId);
-		}
+		let state = await advanceToPrecombatMain(gameId);
+		expect(state.phase).toBe('PRECOMBAT_MAIN');
 
 		// Play a land
 		let actions = await getLegalActions(gameId, aliceId);
