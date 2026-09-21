@@ -1,9 +1,16 @@
 import * as cdk from 'aws-cdk-lib';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as events_targets from 'aws-cdk-lib/aws-events-targets';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as pipelines from 'aws-cdk-lib/pipelines';
 import { Construct } from 'constructs';
 import { MtgServerStack, StageName } from './infra-stack';
+
+/** Day 2, not day 1, so the epoch has certainly rolled over by the time the synth runs. */
+const OS_PATCH_REBUILD_DAY_OF_MONTH = '2';
+const OS_PATCH_REBUILD_HOUR_UTC = '7';
+const OS_PATCH_REBUILD_MINUTE = '0';
 
 export interface MtgPipelineStackProps extends cdk.StackProps {
 	readonly githubOwner: string;
@@ -11,6 +18,8 @@ export interface MtgPipelineStackProps extends cdk.StackProps {
 	readonly githubBranch?: string;
 	/** Name of the Secrets Manager secret holding the GitHub OAuth token (plaintext). */
 	readonly githubTokenSecretName: string;
+	/** `YYYY-MM` build arg that moves the container asset hash monthly. See `os-patch-epoch.ts`. */
+	readonly osPatchEpoch: string;
 }
 
 /** CDK Pipelines self-mutating pipeline: source → build → deploy. */
@@ -61,6 +70,7 @@ export class MtgPipelineStack extends cdk.Stack {
 		for (const { stage, manualApproval } of stages) {
 			const appStage = new MtgServerStage(this, `Deploy-${stage}`, {
 				stage,
+				osPatchEpoch: props.osPatchEpoch,
 				env: props.env,
 			});
 
@@ -95,11 +105,29 @@ export class MtgPipelineStack extends cdk.Stack {
 				],
 			});
 		}
+
+		// `pipeline.pipeline` throws until the pipeline is built, and building it seals the
+		// stage list, so this has to sit after the last addStage call.
+		pipeline.buildPipeline();
+
+		// Monthly rebuild so the image picks up the Debian patches released since the last one.
+		// The epoch build arg is what makes the rerun produce a new asset instead of a cache hit.
+		new events.Rule(this, 'MonthlyOsPatchRebuild', {
+			description: 'Monthly container rebuild to pick up Debian OS package patches',
+			schedule: events.Schedule.cron({
+				minute: OS_PATCH_REBUILD_MINUTE,
+				hour: OS_PATCH_REBUILD_HOUR_UTC,
+				day: OS_PATCH_REBUILD_DAY_OF_MONTH,
+				month: '*',
+			}),
+			targets: [new events_targets.CodePipeline(pipeline.pipeline)],
+		});
 	}
 }
 
 interface MtgServerStageProps extends cdk.StageProps {
 	readonly stage: StageName;
+	readonly osPatchEpoch: string;
 }
 
 class MtgServerStage extends cdk.Stage {
@@ -111,6 +139,7 @@ class MtgServerStage extends cdk.Stage {
 
 		const stack = new MtgServerStack(this, `MtgServer-${props.stage}`, {
 			stage: props.stage,
+			osPatchEpoch: props.osPatchEpoch,
 		});
 
 		this.apiUrl = new cdk.CfnOutput(stack, 'IntegApiUrl', { value: stack.api.url });

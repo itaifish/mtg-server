@@ -438,8 +438,8 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
             "DataTraceEnabled": false,
             "HttpMethod": "*",
             "ResourcePath": "/*",
-            "ThrottlingBurstLimit": 40,
-            "ThrottlingRateLimit": 20,
+            "ThrottlingBurstLimit": 1000,
+            "ThrottlingRateLimit": 500,
           },
         ],
         "RestApiId": {
@@ -497,8 +497,8 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
           },
         ],
         "Throttle": {
-          "BurstLimit": 40,
-          "RateLimit": 20,
+          "BurstLimit": 1000,
+          "RateLimit": 500,
         },
         "UsagePlanName": "mtg-server-beta-usage-plan",
       },
@@ -1061,7 +1061,7 @@ exports[`MtgServerStack (beta) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:5a299a2136720278dbc96d5901485481a1fee10bbcb19cc3827f8164078d1b1d",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:40c2f4c59410fb353d916174191897b38020e158fa3f28c427a41cd1243597a7",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",
@@ -2100,8 +2100,8 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
             "DataTraceEnabled": false,
             "HttpMethod": "*",
             "ResourcePath": "/*",
-            "ThrottlingBurstLimit": 200,
-            "ThrottlingRateLimit": 100,
+            "ThrottlingBurstLimit": 1000,
+            "ThrottlingRateLimit": 500,
           },
         ],
         "RestApiId": {
@@ -2159,8 +2159,8 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
           },
         ],
         "Throttle": {
-          "BurstLimit": 200,
-          "RateLimit": 100,
+          "BurstLimit": 1000,
+          "RateLimit": 500,
         },
         "UsagePlanName": "mtg-server-gamma-usage-plan",
       },
@@ -2723,7 +2723,7 @@ exports[`MtgServerStack (gamma) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:5a299a2136720278dbc96d5901485481a1fee10bbcb19cc3827f8164078d1b1d",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:40c2f4c59410fb353d916174191897b38020e158fa3f28c427a41cd1243597a7",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",
@@ -3798,8 +3798,8 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
             "DataTraceEnabled": false,
             "HttpMethod": "*",
             "ResourcePath": "/*",
-            "ThrottlingBurstLimit": 200,
-            "ThrottlingRateLimit": 100,
+            "ThrottlingBurstLimit": 1000,
+            "ThrottlingRateLimit": 500,
           },
         ],
         "RestApiId": {
@@ -3857,8 +3857,8 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
           },
         ],
         "Throttle": {
-          "BurstLimit": 200,
-          "RateLimit": 100,
+          "BurstLimit": 1000,
+          "RateLimit": 500,
         },
         "UsagePlanName": "mtg-server-prod-usage-plan",
       },
@@ -4423,7 +4423,7 @@ exports[`MtgServerStack (prod) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:5a299a2136720278dbc96d5901485481a1fee10bbcb19cc3827f8164078d1b1d",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:40c2f4c59410fb353d916174191897b38020e158fa3f28c427a41cd1243597a7",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",
@@ -5498,8 +5498,8 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
             "DataTraceEnabled": false,
             "HttpMethod": "*",
             "ResourcePath": "/*",
-            "ThrottlingBurstLimit": 40,
-            "ThrottlingRateLimit": 20,
+            "ThrottlingBurstLimit": 1000,
+            "ThrottlingRateLimit": 500,
           },
         ],
         "RestApiId": {
@@ -5557,8 +5557,8 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
           },
         ],
         "Throttle": {
-          "BurstLimit": 40,
-          "RateLimit": 20,
+          "BurstLimit": 1000,
+          "RateLimit": 500,
         },
         "UsagePlanName": "mtg-server-test-usage-plan",
       },
@@ -6121,7 +6121,7 @@ exports[`MtgServerStack (test) matches snapshot 1`] = `
             ],
             "Essential": true,
             "Image": {
-              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:5a299a2136720278dbc96d5901485481a1fee10bbcb19cc3827f8164078d1b1d",
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:40c2f4c59410fb353d916174191897b38020e158fa3f28c427a41cd1243597a7",
             },
             "LogConfiguration": {
               "LogDriver": "awslogs",

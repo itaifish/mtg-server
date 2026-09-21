@@ -8,11 +8,14 @@ import * as elbv2_targets from 'aws-cdk-lib/aws-elasticloadbalancingv2-targets';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
+import { OS_PATCH_EPOCH_BUILD_ARG } from './os-patch-epoch';
 
 export type StageName = 'test' | 'beta' | 'gamma' | 'prod';
 
 export interface MtgServerStackProps extends cdk.StackProps {
 	readonly stage: StageName;
+	/** `YYYY-MM` build arg that moves the container asset hash monthly. See `os-patch-epoch.ts`. */
+	readonly osPatchEpoch: string;
 }
 
 /** Gamma and prod are "prod-like" in terms of resource allocation. */
@@ -99,6 +102,7 @@ export class MtgServerStack extends cdk.Stack {
 				taskImageOptions: {
 					image: ecs.ContainerImage.fromAsset('..', {
 						file: 'Dockerfile',
+						buildArgs: { [OS_PATCH_EPOCH_BUILD_ARG]: props.osPatchEpoch },
 					}),
 					containerPort: 13734,
 					environment: {

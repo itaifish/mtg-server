@@ -4,10 +4,14 @@ import { MtgServerStack, StageName } from '../lib/infra-stack';
 
 const stages: StageName[] = ['test', 'beta', 'gamma', 'prod'];
 
+/** Pinned: the real epoch feeds the image asset hash, which would move the snapshot every month. */
+const OS_PATCH_EPOCH = '2026-09';
+
 describe.each(stages)('MtgServerStack (%s)', (stage) => {
 	const app = new cdk.App();
 	const stack = new MtgServerStack(app, `MtgServer-${stage}`, {
 		stage,
+		osPatchEpoch: OS_PATCH_EPOCH,
 		env: { account: '123456789012', region: 'us-east-1' },
 	});
 	const template = Template.fromStack(stack);
